@@ -15,6 +15,7 @@ import { CampaignSessionsPage } from './pages/app/campaign/CampaignSessionsPage'
 import { CampaignCharactersPage } from './pages/app/campaign/CampaignCharactersPage'
 import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPage'
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
+import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="characters" element={<CampaignCharactersPage />} />
             <Route path="locations" element={<CampaignLocationsPage />} />
             <Route path="quests" element={<CampaignQuestsPage />} />
+            <Route path="notes" element={<CampaignNotesPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>
           <Route path="settings" element={<SettingsPage />} />

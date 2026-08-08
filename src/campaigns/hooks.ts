@@ -5,6 +5,7 @@ import {
   listCampaignInvitations,
   listCampaignLocations,
   listCampaignMembers,
+  listCampaignNotes,
   listCampaignQuests,
   listCampaignSessions,
   listCampaigns,
@@ -84,6 +85,15 @@ export function useCampaignQuests(campaignId: string) {
     'Could not load the quests of this campaign.',
   )
   return { quests: data ?? [], loading, error, reload }
+}
+
+export function useCampaignNotes(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignNotes(campaignId),
+    `notes:${campaignId}`,
+    'Could not load the notes of this campaign.',
+  )
+  return { notes: data ?? [], loading, error, reload }
 }
 
 /** Invitations addressed to the signed-in user. */

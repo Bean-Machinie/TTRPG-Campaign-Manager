@@ -45,6 +45,7 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/:campaignId/characters` | authenticated | Player characters and NPCs |
 | `/app/campaigns/:campaignId/locations` | authenticated | Locations              |
 | `/app/campaigns/:campaignId/quests` | authenticated | Quests                    |
+| `/app/campaigns/:campaignId/notes` | authenticated | Notes, shared or private   |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
 
@@ -71,13 +72,15 @@ to read, `can_manage_campaign()` (owner or GM) to write. Rows are inserted
 directly by the client, because unlike memberships there is no companion row to
 keep in step.
 
-There are two variants to copy from:
+There are three variants to copy from:
 
 - **`campaign_sessions`** — only owners and GMs write. The simpler case, and what
   locations and quests copy verbatim.
 - **`campaign_characters`** — adds per-row ownership through `player_user_id`, so
-  a player may write their own character and nothing else. Copy this one for
-  anything a player should be able to author.
+  a player may write their own character and nothing else.
+- **`campaign_notes`** — every member writes, only the author edits or deletes,
+  and `is_private` narrows the read policy to the author alone. Copy this one for
+  anything with a visibility flag.
 
 On the UI side the matching pages share one stylesheet,
 `pages/app/campaign/entryList.css`. The pages themselves stay separate and
@@ -118,7 +121,7 @@ src/
   profile/                the signed-in user's own profile
   lib/supabase/client.ts  the only place Supabase is constructed
   lib/useAsyncData.ts     the app's entire data-loading strategy
-  components/ui/          Alert, Button, Card, Input, Select, Textarea, Page
+  components/ui/          Alert, Button, Card, Input, Select, Textarea, Checkbox, Page
   components/layout/      PublicLayout, AppLayout (application shell)
   pages/public|auth|app/  one file per page
   pages/app/campaign/     the campaign workspace layout and its child routes

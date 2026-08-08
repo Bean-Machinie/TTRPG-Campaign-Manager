@@ -114,3 +114,19 @@ export type QuestInput = {
   status: QuestStatus
   description: string | null
 }
+
+export type CampaignNote = {
+  id: string
+  title: string
+  body: string | null
+  authorId: string
+  /** Private notes are readable only by their author. */
+  isPrivate: boolean
+  createdAt: string
+}
+
+export type NoteInput = {
+  title: string
+  body: string | null
+  isPrivate: boolean
+}

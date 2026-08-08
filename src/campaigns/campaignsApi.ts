@@ -8,6 +8,7 @@ import type {
   CampaignMembership,
   CampaignCharacter,
   CampaignLocation,
+  CampaignNote,
   CampaignQuest,
   CampaignRole,
   CampaignSession,
@@ -16,6 +17,7 @@ import type {
   CharacterKind,
   InvitableRole,
   LocationInput,
+  NoteInput,
   PendingInvitation,
   QuestInput,
   QuestStatus,
@@ -574,5 +576,71 @@ export async function deleteQuest(questId: string): Promise<void> {
   const supabase = requireSupabase()
 
   const { error } = await supabase.from('campaign_quests').delete().eq('id', questId)
+  if (error) throw error
+}
+
+// ----------------------------------------------------------------- notes --
+
+type NoteRow = {
+  id: string
+  title: string
+  body: string | null
+  author_id: string
+  is_private: boolean
+  created_at: string
+}
+
+function toNoteRow(input: NoteInput) {
+  return {
+    title: input.title.trim(),
+    body: input.body?.trim() || null,
+    is_private: input.isPrivate,
+  }
+}
+
+/** Shared notes plus the user's own private ones. The policy does the filtering. */
+export async function listCampaignNotes(campaignId: string): Promise<CampaignNote[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_notes')
+    .select('id, title, body, author_id, is_private, created_at')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data as NoteRow[]).map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    authorId: row.author_id,
+    isPrivate: row.is_private,
+    createdAt: row.created_at,
+  }))
+}
+
+/** `author_id` is left to its `auth.uid()` default, which the policy also requires. */
+export async function createNote(campaignId: string, input: NoteInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_notes')
+    .insert({ campaign_id: campaignId, ...toNoteRow(input) })
+
+  if (error) throw error
+}
+
+export async function updateNote(noteId: string, input: NoteInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_notes').update(toNoteRow(input)).eq('id', noteId)
+  if (error) throw error
+}
+
+export async function deleteNote(noteId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_notes').delete().eq('id', noteId)
   if (error) throw error
 }
