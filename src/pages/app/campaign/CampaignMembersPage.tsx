@@ -77,9 +77,13 @@ export function CampaignMembersPage() {
             return (
               <li className="members__row" key={member.membershipId}>
                 <div>
-                  <span className="members__email">{member.email}</span>
+                  <span className="members__email">{member.name}</span>
                   {isSelf ? <span className="members__you"> (you)</span> : null}
                   <span className="members__role">{ROLE_LABELS[member.role]}</span>
+                  {/* The email still identifies them when a display name is set. */}
+                  {member.displayName ? (
+                    <span className="members__meta">{member.email}</span>
+                  ) : null}
                 </div>
 
                 {isSelf && member.role !== 'owner' ? (

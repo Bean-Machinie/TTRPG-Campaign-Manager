@@ -26,6 +26,9 @@ export type CampaignMember = {
   membershipId: string
   userId: string
   email: string
+  displayName: string | null
+  /** The display name when set, the email otherwise. What lists should show. */
+  name: string
   role: CampaignRole
 }
 

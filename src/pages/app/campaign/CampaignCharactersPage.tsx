@@ -31,7 +31,7 @@ export function CampaignCharactersPage() {
   const playerCharacters = characters.filter((character) => character.kind === 'pc')
   const nonPlayerCharacters = characters.filter((character) => character.kind === 'npc')
 
-  const emailByUserId = new Map(members.map((member) => [member.userId, member.email]))
+  const nameByUserId = new Map(members.map((member) => [member.userId, member.name]))
 
   /** Owners and GMs edit anything; a player edits only their own character. */
   function canEdit(character: CampaignCharacter) {
@@ -64,7 +64,7 @@ export function CampaignCharactersPage() {
   }
 
   function renderCharacter(character: CampaignCharacter) {
-    const playedBy = character.playerUserId ? emailByUserId.get(character.playerUserId) : null
+    const playedBy = character.playerUserId ? nameByUserId.get(character.playerUserId) : null
 
     return (
       <li className="characters__item" key={character.id}>

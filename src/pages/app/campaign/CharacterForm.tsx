@@ -79,7 +79,7 @@ export function CharacterForm({
           <option value="">Unassigned</option>
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
-              {member.email}
+              {member.name}
             </option>
           ))}
         </Select>

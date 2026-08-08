@@ -1,0 +1,25 @@
+.settings__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.settings__form .page-actions {
+  margin-top: 0;
+  align-items: center;
+}
+
+.settings__hint {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.settings__saved {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.settings__account {
+  margin-top: var(--space-4);
+}

@@ -85,7 +85,9 @@ that, so a campaign and its first member always appear together:
 - `accept_invitation(p_invitation_id)` — creates the membership and consumes the invitation
 
 `profiles` exists because `auth.users` is not reachable through the API; a trigger
-keeps it in step. `campaign_invitations` is addressed to an email because the
+keeps `email` in step. `display_name` is the one field a user writes themselves,
+and a column level grant — not a policy — is what stops them touching `email`:
+policies cannot compare against the old row. `campaign_invitations` is addressed to an email because the
 invited person may not have an account yet — a pending invitation is simply a row
 that still exists. Nothing sends email; the invitee sees it on their dashboard.
 
@@ -104,6 +106,7 @@ src/
   main.tsx                entry: BrowserRouter + AuthProvider
   auth/                   session state and route guards
   campaigns/              types, queries (campaignsApi.ts) and hooks
+  profile/                the signed-in user's own profile
   lib/supabase/client.ts  the only place Supabase is constructed
   lib/useAsyncData.ts     the app's entire data-loading strategy
   components/ui/          Alert, Button, Card, Input, Select, Textarea, Page

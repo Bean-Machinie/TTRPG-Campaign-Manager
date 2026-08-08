@@ -1,5 +1,6 @@
 import { requireSupabase } from '../lib/supabase/client'
 import { todayIsoDate } from '../lib/format'
+import { PROFILE_COLUMNS, personLabel } from '../profile/profileApi'
 import type {
   Campaign,
   CampaignInvitation,
@@ -25,7 +26,7 @@ const CAMPAIGN_COLUMNS = 'id, name, created_at'
 
 type CampaignRow = { id: string; name: string; created_at: string }
 type MembershipRow = { id: string; user_id: string; role: CampaignRole }
-type ProfileRow = { id: string; email: string }
+type MemberProfileRow = { id: string; email: string; display_name: string | null }
 type InvitationRow = {
   id: string
   campaign_id: string
@@ -148,7 +149,7 @@ export async function listCampaignMembers(campaignId: string): Promise<CampaignM
 
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
-    .select('id, email')
+    .select(PROFILE_COLUMNS)
     .in(
       'id',
       memberships.map((membership) => membership.user_id),
@@ -156,18 +157,26 @@ export async function listCampaignMembers(campaignId: string): Promise<CampaignM
 
   if (profileError) throw profileError
 
-  const emailByUserId = new Map(
-    (profileData as ProfileRow[]).map((profile) => [profile.id, profile.email]),
+  const profileByUserId = new Map(
+    (profileData as MemberProfileRow[]).map((profile) => [profile.id, profile]),
   )
 
   return memberships
-    .map((membership) => ({
-      membershipId: membership.id,
-      userId: membership.user_id,
-      email: emailByUserId.get(membership.user_id) ?? 'Unknown user',
-      role: membership.role,
-    }))
-    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.email.localeCompare(b.email))
+    .map((membership) => {
+      const profile = profileByUserId.get(membership.user_id)
+      const email = profile?.email ?? 'Unknown user'
+      const displayName = profile?.display_name ?? null
+
+      return {
+        membershipId: membership.id,
+        userId: membership.user_id,
+        email,
+        displayName,
+        name: personLabel(displayName, email),
+        role: membership.role,
+      }
+    })
+    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name))
 }
 
 /** Removes a member, or leaves the campaign. Owners cannot be removed. */
