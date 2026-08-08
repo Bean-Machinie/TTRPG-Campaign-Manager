@@ -61,3 +61,24 @@ export type SessionInput = {
   scheduledFor: string | null
   notes: string | null
 }
+
+/** Player character or non-player character. */
+export type CharacterKind = 'pc' | 'npc'
+
+export type CampaignCharacter = {
+  id: string
+  name: string
+  kind: CharacterKind
+  /** The member who plays this one. Null for NPCs and unassigned PCs. */
+  playerUserId: string | null
+  description: string | null
+  createdAt: string
+}
+
+/** The editable fields of a character, shared by create and update. */
+export type CharacterInput = {
+  name: string
+  kind: CharacterKind
+  playerUserId: string | null
+  description: string | null
+}

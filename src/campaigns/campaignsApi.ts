@@ -5,9 +5,12 @@ import type {
   CampaignInvitation,
   CampaignMember,
   CampaignMembership,
+  CampaignCharacter,
   CampaignRole,
   CampaignSession,
   CampaignSummary,
+  CharacterInput,
+  CharacterKind,
   InvitableRole,
   PendingInvitation,
   SessionInput,
@@ -353,5 +356,80 @@ export async function deleteSession(sessionId: string): Promise<void> {
   const supabase = requireSupabase()
 
   const { error } = await supabase.from('campaign_sessions').delete().eq('id', sessionId)
+  if (error) throw error
+}
+
+// ------------------------------------------------------------ characters --
+
+const CHARACTER_COLUMNS = 'id, name, kind, player_user_id, description, created_at'
+
+type CharacterRow = {
+  id: string
+  name: string
+  kind: CharacterKind
+  player_user_id: string | null
+  description: string | null
+  created_at: string
+}
+
+function toCharacter(row: CharacterRow): CampaignCharacter {
+  return {
+    id: row.id,
+    name: row.name,
+    kind: row.kind,
+    playerUserId: row.player_user_id,
+    description: row.description,
+    createdAt: row.created_at,
+  }
+}
+
+function toCharacterRow(input: CharacterInput) {
+  return {
+    name: input.name.trim(),
+    kind: input.kind,
+    // Only a PC belongs to a player; the policies reject anything else.
+    player_user_id: input.kind === 'pc' ? input.playerUserId : null,
+    description: input.description?.trim() || null,
+  }
+}
+
+export async function listCampaignCharacters(campaignId: string): Promise<CampaignCharacter[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_characters')
+    .select(CHARACTER_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .order('name', { ascending: true })
+
+  if (error) throw error
+  return (data as CharacterRow[]).map(toCharacter)
+}
+
+export async function createCharacter(campaignId: string, input: CharacterInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_characters')
+    .insert({ campaign_id: campaignId, ...toCharacterRow(input) })
+
+  if (error) throw error
+}
+
+export async function updateCharacter(characterId: string, input: CharacterInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_characters')
+    .update(toCharacterRow(input))
+    .eq('id', characterId)
+
+  if (error) throw error
+}
+
+export async function deleteCharacter(characterId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_characters').delete().eq('id', characterId)
   if (error) throw error
 }

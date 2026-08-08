@@ -42,12 +42,13 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/new`         | authenticated | Create a campaign              |
 | `/app/campaigns/:campaignId` | authenticated | Campaign workspace (Overview)  |
 | `/app/campaigns/:campaignId/sessions` | authenticated | Game sessions          |
+| `/app/campaigns/:campaignId/characters` | authenticated | Player characters and NPCs |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
 
 Campaign sections are child routes of `:campaignId`. The layout loads the campaign
-once and passes it down through the router outlet context, so `Characters`,
-`Locations` and the rest are added the same way `sessions` and `members` were.
+once and passes it down through the router outlet context, so `Locations`,
+`Quests` and the rest are added the same way `sessions` and `characters` were.
 
 ## Database
 
@@ -61,11 +62,18 @@ auth.users  <->  campaign_memberships (role: owner | gm | player)  <->  campaign
   profiles (email)                    campaign_invitations (email, role)   campaign_sessions
 ```
 
-`campaign_sessions` is the template for every later content table (characters,
-locations, quests, notes): a `campaign_id` foreign key, and policies built only
-from the membership helpers — `is_campaign_member()` to read,
+Content tables (`campaign_sessions`, `campaign_characters`, and later locations,
+quests, notes) all follow one shape: a `campaign_id` foreign key, and policies
+built only from the membership helpers — `is_campaign_member()` to read,
 `can_manage_campaign()` (owner or GM) to write. Rows are inserted directly by the
 client, because unlike memberships there is no companion row to keep in step.
+
+There are two variants to copy from:
+
+- **`campaign_sessions`** — only owners and GMs write. The simpler case.
+- **`campaign_characters`** — adds per-row ownership through `player_user_id`, so
+  a player may write their own character and nothing else. Copy this one for
+  anything a player should be able to author.
 
 Row level security is the only access control: a user sees a campaign because a
 membership row connects them to it.

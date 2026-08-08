@@ -12,6 +12,7 @@ import { CampaignWorkspaceLayout } from './pages/app/campaign/CampaignWorkspaceL
 import { CampaignOverviewPage } from './pages/app/campaign/CampaignOverviewPage'
 import { CampaignMembersPage } from './pages/app/campaign/CampaignMembersPage'
 import { CampaignSessionsPage } from './pages/app/campaign/CampaignSessionsPage'
+import { CampaignCharactersPage } from './pages/app/campaign/CampaignCharactersPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="campaigns/:campaignId" element={<CampaignWorkspaceLayout />}>
             <Route index element={<CampaignOverviewPage />} />
             <Route path="sessions" element={<CampaignSessionsPage />} />
+            <Route path="characters" element={<CampaignCharactersPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>
           <Route path="settings" element={<SettingsPage />} />

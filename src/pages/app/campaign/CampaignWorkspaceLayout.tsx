@@ -12,7 +12,7 @@ import './CampaignWorkspaceLayout.css'
  * Sections that do not exist yet. Each becomes a NavLink to a child route as it
  * is built, exactly like Members did.
  */
-const FUTURE_SECTIONS = ['Characters', 'Locations', 'Quests', 'Notes', 'Maps']
+const FUTURE_SECTIONS = ['Locations', 'Quests', 'Notes', 'Maps']
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -79,6 +79,9 @@ export function CampaignWorkspaceLayout() {
           </NavLink>
           <NavLink className="workspace-nav__item" to="sessions">
             Sessions
+          </NavLink>
+          <NavLink className="workspace-nav__item" to="characters">
+            Characters
           </NavLink>
           <NavLink className="workspace-nav__item" to="members">
             Members

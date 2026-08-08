@@ -1,6 +1,7 @@
 import { useAsyncData } from '../lib/useAsyncData'
 import {
   getCampaignMembership,
+  listCampaignCharacters,
   listCampaignInvitations,
   listCampaignMembers,
   listCampaignSessions,
@@ -54,6 +55,15 @@ export function useCampaignSessions(campaignId: string) {
     'Could not load the sessions of this campaign.',
   )
   return { sessions: data ?? [], loading, error, reload }
+}
+
+export function useCampaignCharacters(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignCharacters(campaignId),
+    `characters:${campaignId}`,
+    'Could not load the characters of this campaign.',
+  )
+  return { characters: data ?? [], loading, error, reload }
 }
 
 /** Invitations addressed to the signed-in user. */
