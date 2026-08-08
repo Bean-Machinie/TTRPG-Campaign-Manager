@@ -8,11 +8,7 @@ import { Page, PageHeader } from '../../../components/ui/Page'
 import type { CampaignOutletContext } from './useCampaignOutlet'
 import './CampaignWorkspaceLayout.css'
 
-/**
- * Sections that do not exist yet. Each becomes a NavLink to a child route as it
- * is built, exactly like Members did.
- */
-const FUTURE_SECTIONS = ['Maps']
+// Every planned section now exists as a real child route.
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
@@ -92,14 +88,12 @@ export function CampaignWorkspaceLayout() {
           <NavLink className="workspace-nav__item" to="notes">
             Notes
           </NavLink>
+          <NavLink className="workspace-nav__item" to="maps">
+            Maps
+          </NavLink>
           <NavLink className="workspace-nav__item" to="members">
             Members
           </NavLink>
-          {FUTURE_SECTIONS.map((section) => (
-            <span key={section} className="workspace-nav__item workspace-nav__item--future">
-              {section}
-            </span>
-          ))}
         </nav>
 
         <div>

@@ -8,6 +8,7 @@ import type {
   CampaignMembership,
   CampaignCharacter,
   CampaignLocation,
+  CampaignMap,
   CampaignNote,
   CampaignQuest,
   CampaignRole,
@@ -17,6 +18,7 @@ import type {
   CharacterKind,
   InvitableRole,
   LocationInput,
+  MapInput,
   NoteInput,
   PendingInvitation,
   QuestInput,
@@ -643,4 +645,142 @@ export async function deleteNote(noteId: string): Promise<void> {
 
   const { error } = await supabase.from('campaign_notes').delete().eq('id', noteId)
   if (error) throw error
+}
+
+// ------------------------------------------------------------------ maps --
+
+/** Must match the bucket created in the maps migration. */
+export const MAPS_BUCKET = 'campaign-maps'
+
+/** Kept in step with the bucket's own file_size_limit, to fail early and nicely. */
+export const MAP_MAX_BYTES = 10 * 1024 * 1024
+
+export const MAP_ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+
+/** How long a map image URL stays valid, in seconds. */
+const SIGNED_URL_TTL = 60 * 60
+
+type MapRow = {
+  id: string
+  name: string
+  storage_path: string
+  location_id: string | null
+  created_at: string
+}
+
+/**
+ * Maps of a campaign, each with a freshly signed image URL. The bucket is
+ * private, so there is no permanent URL to store — the links expire an hour
+ * after this call.
+ */
+export async function listCampaignMaps(campaignId: string): Promise<CampaignMap[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_maps')
+    .select('id, name, storage_path, location_id, created_at')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  const rows = data as MapRow[]
+  if (rows.length === 0) return []
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from(MAPS_BUCKET)
+    .createSignedUrls(
+      rows.map((row) => row.storage_path),
+      SIGNED_URL_TTL,
+    )
+
+  // A failure to sign should not hide the maps themselves; the card renders
+  // without its image instead.
+  const urlByPath = new Map<string, string>()
+  if (!signError && signed) {
+    for (const item of signed) {
+      if (item.path && item.signedUrl) urlByPath.set(item.path, item.signedUrl)
+    }
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    storagePath: row.storage_path,
+    locationId: row.location_id,
+    signedUrl: urlByPath.get(row.storage_path) ?? null,
+    createdAt: row.created_at,
+  }))
+}
+
+function fileExtension(file: File): string {
+  const fromName = file.name.split('.').pop()?.toLowerCase()
+  if (fromName && /^[a-z0-9]{1,5}$/.test(fromName)) return fromName
+  return file.type === 'image/png' ? 'png' : 'jpg'
+}
+
+/**
+ * Uploads the image, then records it. The path must start with the campaign id:
+ * that is what the storage policies read to check membership.
+ */
+export async function createMap(
+  campaignId: string,
+  input: MapInput,
+  file: File,
+): Promise<void> {
+  const supabase = requireSupabase()
+
+  if (file.size > MAP_MAX_BYTES) {
+    throw new Error('That image is larger than 10 MB.')
+  }
+  if (!MAP_ACCEPTED_TYPES.includes(file.type)) {
+    throw new Error('Maps must be a PNG, JPEG, WebP or GIF image.')
+  }
+
+  const storagePath = `${campaignId}/${crypto.randomUUID()}.${fileExtension(file)}`
+
+  const { error: uploadError } = await supabase.storage
+    .from(MAPS_BUCKET)
+    .upload(storagePath, file, { contentType: file.type })
+
+  if (uploadError) throw uploadError
+
+  const { error } = await supabase.from('campaign_maps').insert({
+    campaign_id: campaignId,
+    name: input.name.trim(),
+    location_id: input.locationId,
+    storage_path: storagePath,
+  })
+
+  if (error) {
+    // Do not leave a file behind that nothing points at.
+    await supabase.storage.from(MAPS_BUCKET).remove([storagePath])
+    throw error
+  }
+}
+
+/** Renames a map or re-points it at a location. The image itself is not replaced. */
+export async function updateMap(mapId: string, input: MapInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_maps')
+    .update({ name: input.name.trim(), location_id: input.locationId })
+    .eq('id', mapId)
+
+  if (error) throw error
+}
+
+/**
+ * Removes the row first, then the file. If the second step fails the image is
+ * orphaned in the bucket, which is invisible and harmless — the other order
+ * would leave a map row pointing at nothing.
+ */
+export async function deleteMap(mapId: string, storagePath: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_maps').delete().eq('id', mapId)
+  if (error) throw error
+
+  await supabase.storage.from(MAPS_BUCKET).remove([storagePath])
 }

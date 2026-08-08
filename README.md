@@ -46,6 +46,7 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/:campaignId/locations` | authenticated | Locations              |
 | `/app/campaigns/:campaignId/quests` | authenticated | Quests                    |
 | `/app/campaigns/:campaignId/notes` | authenticated | Notes, shared or private   |
+| `/app/campaigns/:campaignId/maps` | authenticated | Uploaded map images         |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
 
@@ -81,6 +82,14 @@ There are three variants to copy from:
 - **`campaign_notes`** — every member writes, only the author edits or deletes,
   and `is_private` narrows the read policy to the author alone. Copy this one for
   anything with a visibility flag.
+
+Maps are the exception to "everything is a row": the image lives in the private
+`campaign-maps` storage bucket and `campaign_maps` records it, optionally tied to
+a location (`location_id`, nullable — a map either depicts one location or the
+whole campaign). Object paths are always `<campaign_id>/<uuid>.<ext>`; the
+policies on `storage.objects` parse the campaign id out of the path and call the
+same membership helpers, so storage access mirrors table access. Size and MIME
+limits live on the bucket. Images are displayed through hour-long signed URLs.
 
 On the UI side the matching pages share one stylesheet,
 `pages/app/campaign/entryList.css`. The pages themselves stay separate and

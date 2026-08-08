@@ -130,3 +130,20 @@ export type NoteInput = {
   body: string | null
   isPrivate: boolean
 }
+
+export type CampaignMap = {
+  id: string
+  name: string
+  storagePath: string
+  /** The location this map depicts, when it depicts one. */
+  locationId: string | null
+  /** Short-lived signed URL. The bucket is private, so there is no public URL. */
+  signedUrl: string | null
+  createdAt: string
+}
+
+/** The editable fields of a map. The image itself is only set on upload. */
+export type MapInput = {
+  name: string
+  locationId: string | null
+}

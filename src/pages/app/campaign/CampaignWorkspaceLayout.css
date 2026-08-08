@@ -41,11 +41,6 @@ a.workspace-nav__item.active {
   border-color: var(--color-border);
 }
 
-/* Placeholders only: these sections do not exist yet. */
-.workspace-nav__item--future {
-  color: var(--color-text-subtle);
-}
-
 .workspace-status {
   margin: 0;
   color: var(--color-text-muted);
