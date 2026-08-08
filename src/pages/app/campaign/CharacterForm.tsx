@@ -47,8 +47,8 @@ export function CharacterForm({
   }
 
   return (
-    <form className="character-form" onSubmit={handleSubmit}>
-      <div className="character-form__row">
+    <form className="entry-form" onSubmit={handleSubmit}>
+      <div className="entry-form__row">
         <Input
           label="Name"
           required

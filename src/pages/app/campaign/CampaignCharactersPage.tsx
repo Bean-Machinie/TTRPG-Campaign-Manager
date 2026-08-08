@@ -13,7 +13,7 @@ import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { CharacterForm } from './CharacterForm'
 import { useCampaignOutlet } from './useCampaignOutlet'
-import './CampaignCharactersPage.css'
+import './entryList.css'
 
 export function CampaignCharactersPage() {
   const { campaign, role } = useCampaignOutlet()
@@ -67,19 +67,17 @@ export function CampaignCharactersPage() {
     const playedBy = character.playerUserId ? nameByUserId.get(character.playerUserId) : null
 
     return (
-      <li className="characters__item" key={character.id}>
-        <div className="characters__heading">
+      <li className="entry" key={character.id}>
+        <div className="entry__heading">
           <div>
-            <h3 className="characters__name">{character.name}</h3>
+            <h3 className="entry__title">{character.name}</h3>
             {character.kind === 'pc' ? (
-              <p className="characters__player">
-                {playedBy ? `Played by ${playedBy}` : 'Unassigned'}
-              </p>
+              <p className="entry__meta">{playedBy ? `Played by ${playedBy}` : 'Unassigned'}</p>
             ) : null}
           </div>
 
           {canEdit(character) ? (
-            <div className="characters__actions">
+            <div className="entry__actions">
               <Button
                 variant="secondary"
                 disabled={busy}
@@ -105,15 +103,13 @@ export function CampaignCharactersPage() {
           ) : null}
         </div>
 
-        {character.description ? (
-          <p className="characters__description">{character.description}</p>
-        ) : null}
+        {character.description ? <p className="entry__body">{character.description}</p> : null}
       </li>
     )
   }
 
   return (
-    <div className="characters">
+    <div className="entry-section">
       {actionError ? <Alert>{actionError}</Alert> : null}
 
       <Card>
@@ -147,13 +143,13 @@ export function CampaignCharactersPage() {
         <h2 className="section-title">Player characters</h2>
 
         {error ? <Alert>{error}</Alert> : null}
-        {loading ? <p className="characters__status">Loading characters…</p> : null}
+        {loading ? <p className="entry-status">Loading characters…</p> : null}
 
         {!loading && !error && playerCharacters.length === 0 ? (
-          <p className="characters__status">No player characters yet.</p>
+          <p className="entry-status">No player characters yet.</p>
         ) : null}
 
-        <ul className="characters__list">{playerCharacters.map(renderCharacter)}</ul>
+        <ul className="entry-list">{playerCharacters.map(renderCharacter)}</ul>
       </Card>
 
       {canManage || nonPlayerCharacters.length > 0 ? (
@@ -161,10 +157,10 @@ export function CampaignCharactersPage() {
           <h2 className="section-title">NPCs</h2>
 
           {!loading && nonPlayerCharacters.length === 0 ? (
-            <p className="characters__status">No NPCs yet.</p>
+            <p className="entry-status">No NPCs yet.</p>
           ) : null}
 
-          <ul className="characters__list">{nonPlayerCharacters.map(renderCharacter)}</ul>
+          <ul className="entry-list">{nonPlayerCharacters.map(renderCharacter)}</ul>
         </Card>
       ) : null}
     </div>

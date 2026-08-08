@@ -1,47 +1,54 @@
-.characters {
+/*
+ * Shared by every campaign content section: sessions, characters, locations,
+ * quests. They all render the same thing — a form above a list of entries, each
+ * with a title, a line of context, optional body text and edit/delete actions —
+ * so they share one stylesheet rather than four near-identical ones.
+ */
+
+.entry-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.character-form {
+.entry-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.character-form .page-actions {
+.entry-form .page-actions {
   margin-top: 0;
 }
 
-.character-form__row {
+.entry-form__row {
   display: grid;
   gap: var(--space-3);
 }
 
 @media (min-width: 34rem) {
-  .character-form__row {
+  .entry-form__row {
     grid-template-columns: 1fr 12rem;
   }
 }
 
-.characters__list {
+.entry-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.characters__item {
+.entry {
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--color-border);
 }
 
-.characters__item:last-child {
+.entry:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.characters__heading {
+.entry__heading {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -49,30 +56,39 @@
   gap: var(--space-3);
 }
 
-.characters__name {
+.entry__title {
   margin: 0;
   font-size: 1rem;
 }
 
-.characters__player {
+.entry__meta {
   margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 
-.characters__actions {
+.entry__badge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+}
+
+.entry__actions {
   display: flex;
   gap: var(--space-2);
 }
 
-.characters__description {
+.entry__body {
   margin: var(--space-2) 0 0;
   color: var(--color-text-muted);
   white-space: pre-wrap;
 }
 
-.characters__status {
+.entry-status {
   margin: 0;
   color: var(--color-text-muted);
 }

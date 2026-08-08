@@ -1,28 +1,26 @@
 import { useState } from 'react'
-import { useCampaignSessions } from '../../../campaigns/hooks'
-import { createSession, deleteSession, updateSession } from '../../../campaigns/campaignsApi'
-import type { SessionInput } from '../../../campaigns/types'
+import { useCampaignLocations } from '../../../campaigns/hooks'
+import { createLocation, deleteLocation, updateLocation } from '../../../campaigns/campaignsApi'
+import type { LocationInput } from '../../../campaigns/types'
 import { errorMessage } from '../../../lib/errors'
-import { formatDateOnly, todayIsoDate } from '../../../lib/format'
 import { Alert } from '../../../components/ui/Alert'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
-import { SessionForm } from './SessionForm'
+import { LocationForm } from './LocationForm'
 import { useCampaignOutlet } from './useCampaignOutlet'
 import './entryList.css'
 
-export function CampaignSessionsPage() {
+export function CampaignLocationsPage() {
   const { campaign, role } = useCampaignOutlet()
   const canManage = role === 'owner' || role === 'gm'
 
-  const { sessions, loading, error, reload } = useCampaignSessions(campaign.id)
+  const { locations, loading, error, reload } = useCampaignLocations(campaign.id)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const editing = sessions.find((session) => session.id === editingId) ?? null
-  const today = todayIsoDate()
+  const editing = locations.find((location) => location.id === editingId) ?? null
 
   async function run(action: () => Promise<void>, fallback: string) {
     setActionError(null)
@@ -36,17 +34,17 @@ export function CampaignSessionsPage() {
     }
   }
 
-  function handleSubmit(input: SessionInput) {
+  function handleSubmit(input: LocationInput) {
     const id = editingId
     void run(async () => {
       if (id) {
-        await updateSession(id, input)
+        await updateLocation(id, input)
       } else {
-        await createSession(campaign.id, input)
+        await createLocation(campaign.id, input)
       }
       setEditingId(null)
       reload()
-    }, 'Could not save the session.')
+    }, 'Could not save the location.')
   }
 
   return (
@@ -55,20 +53,14 @@ export function CampaignSessionsPage() {
 
       {canManage ? (
         <Card>
-          <h2 className="section-title">{editing ? 'Edit session' : 'Plan a session'}</h2>
-          <SessionForm
+          <h2 className="section-title">{editing ? 'Edit location' : 'Add a location'}</h2>
+          <LocationForm
             // Remounting resets the fields when switching between create and edit.
             key={editingId ?? 'new'}
             initialValue={
-              editing
-                ? {
-                    title: editing.title,
-                    scheduledFor: editing.scheduledFor,
-                    notes: editing.notes,
-                  }
-                : undefined
+              editing ? { name: editing.name, description: editing.description } : undefined
             }
-            submitLabel={editing ? 'Save changes' : 'Add session'}
+            submitLabel={editing ? 'Save changes' : 'Add location'}
             busy={busy}
             onSubmit={handleSubmit}
             onCancel={editing ? () => setEditingId(null) : undefined}
@@ -77,38 +69,30 @@ export function CampaignSessionsPage() {
       ) : null}
 
       <Card>
-        <h2 className="section-title">Sessions</h2>
+        <h2 className="section-title">Locations</h2>
 
         {error ? <Alert>{error}</Alert> : null}
-        {loading ? <p className="entry-status">Loading sessions…</p> : null}
+        {loading ? <p className="entry-status">Loading locations…</p> : null}
 
-        {!loading && !error && sessions.length === 0 ? (
+        {!loading && !error && locations.length === 0 ? (
           <p className="entry-status">
-            No sessions yet.
+            No locations yet.
             {canManage ? ' Add the first one above.' : ' Your GM has not added any.'}
           </p>
         ) : null}
 
         <ul className="entry-list">
-          {sessions.map((session) => (
-            <li className="entry" key={session.id}>
+          {locations.map((location) => (
+            <li className="entry" key={location.id}>
               <div className="entry__heading">
-                <div>
-                  <h3 className="entry__title">{session.title}</h3>
-                  <p className="entry__meta">
-                    {session.scheduledFor ? formatDateOnly(session.scheduledFor) : 'No date yet'}
-                    {session.scheduledFor && session.scheduledFor > today ? (
-                      <span className="entry__badge">Upcoming</span>
-                    ) : null}
-                  </p>
-                </div>
+                <h3 className="entry__title">{location.name}</h3>
 
                 {canManage ? (
                   <div className="entry__actions">
                     <Button
                       variant="secondary"
                       disabled={busy}
-                      onClick={() => setEditingId(session.id)}
+                      onClick={() => setEditingId(location.id)}
                     >
                       Edit
                     </Button>
@@ -116,12 +100,12 @@ export function CampaignSessionsPage() {
                       variant="secondary"
                       disabled={busy}
                       onClick={() => {
-                        if (!window.confirm(`Delete "${session.title}"?`)) return
+                        if (!window.confirm(`Delete "${location.name}"?`)) return
                         void run(async () => {
-                          await deleteSession(session.id)
-                          if (editingId === session.id) setEditingId(null)
+                          await deleteLocation(location.id)
+                          if (editingId === location.id) setEditingId(null)
                           reload()
-                        }, 'Could not delete that session.')
+                        }, 'Could not delete that location.')
                       }}
                     >
                       Delete
@@ -130,7 +114,7 @@ export function CampaignSessionsPage() {
                 ) : null}
               </div>
 
-              {session.notes ? <p className="entry__body">{session.notes}</p> : null}
+              {location.description ? <p className="entry__body">{location.description}</p> : null}
             </li>
           ))}
         </ul>

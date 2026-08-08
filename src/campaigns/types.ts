@@ -85,3 +85,32 @@ export type CharacterInput = {
   playerUserId: string | null
   description: string | null
 }
+
+export type CampaignLocation = {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+}
+
+export type LocationInput = {
+  name: string
+  description: string | null
+}
+
+/** Mirrors the `status` check constraint on public.campaign_quests. */
+export type QuestStatus = 'active' | 'completed' | 'abandoned'
+
+export type CampaignQuest = {
+  id: string
+  title: string
+  status: QuestStatus
+  description: string | null
+  createdAt: string
+}
+
+export type QuestInput = {
+  title: string
+  status: QuestStatus
+  description: string | null
+}

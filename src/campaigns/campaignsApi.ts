@@ -7,13 +7,18 @@ import type {
   CampaignMember,
   CampaignMembership,
   CampaignCharacter,
+  CampaignLocation,
+  CampaignQuest,
   CampaignRole,
   CampaignSession,
   CampaignSummary,
   CharacterInput,
   CharacterKind,
   InvitableRole,
+  LocationInput,
   PendingInvitation,
+  QuestInput,
+  QuestStatus,
   SessionInput,
 } from './types'
 
@@ -440,5 +445,134 @@ export async function deleteCharacter(characterId: string): Promise<void> {
   const supabase = requireSupabase()
 
   const { error } = await supabase.from('campaign_characters').delete().eq('id', characterId)
+  if (error) throw error
+}
+
+// ------------------------------------------------------------- locations --
+
+type LocationRow = {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+}
+
+function toLocationRow(input: LocationInput) {
+  return {
+    name: input.name.trim(),
+    description: input.description?.trim() || null,
+  }
+}
+
+export async function listCampaignLocations(campaignId: string): Promise<CampaignLocation[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_locations')
+    .select('id, name, description, created_at')
+    .eq('campaign_id', campaignId)
+    .order('name', { ascending: true })
+
+  if (error) throw error
+
+  return (data as LocationRow[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    createdAt: row.created_at,
+  }))
+}
+
+export async function createLocation(campaignId: string, input: LocationInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_locations')
+    .insert({ campaign_id: campaignId, ...toLocationRow(input) })
+
+  if (error) throw error
+}
+
+export async function updateLocation(locationId: string, input: LocationInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_locations')
+    .update(toLocationRow(input))
+    .eq('id', locationId)
+
+  if (error) throw error
+}
+
+export async function deleteLocation(locationId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_locations').delete().eq('id', locationId)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------- quests --
+
+type QuestRow = {
+  id: string
+  title: string
+  status: QuestStatus
+  description: string | null
+  created_at: string
+}
+
+function toQuestRow(input: QuestInput) {
+  return {
+    title: input.title.trim(),
+    status: input.status,
+    description: input.description?.trim() || null,
+  }
+}
+
+export async function listCampaignQuests(campaignId: string): Promise<CampaignQuest[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_quests')
+    .select('id, title, status, description, created_at')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data as QuestRow[]).map((row) => ({
+    id: row.id,
+    title: row.title,
+    status: row.status,
+    description: row.description,
+    createdAt: row.created_at,
+  }))
+}
+
+export async function createQuest(campaignId: string, input: QuestInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_quests')
+    .insert({ campaign_id: campaignId, ...toQuestRow(input) })
+
+  if (error) throw error
+}
+
+export async function updateQuest(questId: string, input: QuestInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_quests')
+    .update(toQuestRow(input))
+    .eq('id', questId)
+
+  if (error) throw error
+}
+
+export async function deleteQuest(questId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_quests').delete().eq('id', questId)
   if (error) throw error
 }

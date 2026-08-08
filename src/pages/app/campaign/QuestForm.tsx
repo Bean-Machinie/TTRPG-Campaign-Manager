@@ -1,33 +1,33 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { SessionInput } from '../../../campaigns/types'
+import type { QuestInput, QuestStatus } from '../../../campaigns/types'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
+import { Select } from '../../../components/ui/Select'
 import { Textarea } from '../../../components/ui/Textarea'
 
-type SessionFormProps = {
-  /** Present when editing. The parent remounts the form with a key to reset it. */
-  initialValue?: SessionInput
+type QuestFormProps = {
+  initialValue?: QuestInput
   submitLabel: string
   busy: boolean
-  onSubmit: (input: SessionInput) => void
+  onSubmit: (input: QuestInput) => void
   onCancel?: () => void
 }
 
-export function SessionForm({
+export function QuestForm({
   initialValue,
   submitLabel,
   busy,
   onSubmit,
   onCancel,
-}: SessionFormProps) {
+}: QuestFormProps) {
   const [title, setTitle] = useState(initialValue?.title ?? '')
-  const [scheduledFor, setScheduledFor] = useState(initialValue?.scheduledFor ?? '')
-  const [notes, setNotes] = useState(initialValue?.notes ?? '')
+  const [status, setStatus] = useState<QuestStatus>(initialValue?.status ?? 'active')
+  const [description, setDescription] = useState(initialValue?.description ?? '')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSubmit({ title, scheduledFor: scheduledFor || null, notes: notes || null })
+    onSubmit({ title, status, description: description || null })
   }
 
   return (
@@ -37,23 +37,26 @@ export function SessionForm({
           label="Title"
           required
           maxLength={200}
-          placeholder="Session 4 — Into the catacombs"
+          placeholder="Recover the shattered crown"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
         />
-        <Input
-          label="Date"
-          type="date"
-          value={scheduledFor}
-          onChange={(event) => setScheduledFor(event.target.value)}
-        />
+        <Select
+          label="Status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as QuestStatus)}
+        >
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="abandoned">Abandoned</option>
+        </Select>
       </div>
 
       <Textarea
-        label="Notes"
-        placeholder="What happened, or what to prepare."
-        value={notes}
-        onChange={(event) => setNotes(event.target.value)}
+        label="Description"
+        placeholder="What the party is trying to do, and why."
+        value={description}
+        onChange={(event) => setDescription(event.target.value)}
       />
 
       <div className="page-actions">

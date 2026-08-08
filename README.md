@@ -43,6 +43,8 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/:campaignId` | authenticated | Campaign workspace (Overview)  |
 | `/app/campaigns/:campaignId/sessions` | authenticated | Game sessions          |
 | `/app/campaigns/:campaignId/characters` | authenticated | Player characters and NPCs |
+| `/app/campaigns/:campaignId/locations` | authenticated | Locations              |
+| `/app/campaigns/:campaignId/quests` | authenticated | Quests                    |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
 
@@ -62,18 +64,25 @@ auth.users  <->  campaign_memberships (role: owner | gm | player)  <->  campaign
   profiles (email)                    campaign_invitations (email, role)   campaign_sessions
 ```
 
-Content tables (`campaign_sessions`, `campaign_characters`, and later locations,
-quests, notes) all follow one shape: a `campaign_id` foreign key, and policies
-built only from the membership helpers — `is_campaign_member()` to read,
-`can_manage_campaign()` (owner or GM) to write. Rows are inserted directly by the
-client, because unlike memberships there is no companion row to keep in step.
+Content tables (`campaign_sessions`, `campaign_characters`, `campaign_locations`,
+`campaign_quests`, and later notes) all follow one shape: a `campaign_id` foreign
+key, and policies built only from the membership helpers — `is_campaign_member()`
+to read, `can_manage_campaign()` (owner or GM) to write. Rows are inserted
+directly by the client, because unlike memberships there is no companion row to
+keep in step.
 
 There are two variants to copy from:
 
-- **`campaign_sessions`** — only owners and GMs write. The simpler case.
+- **`campaign_sessions`** — only owners and GMs write. The simpler case, and what
+  locations and quests copy verbatim.
 - **`campaign_characters`** — adds per-row ownership through `player_user_id`, so
   a player may write their own character and nothing else. Copy this one for
   anything a player should be able to author.
+
+On the UI side the matching pages share one stylesheet,
+`pages/app/campaign/entryList.css`. The pages themselves stay separate and
+explicit — they differ in fields, grouping and permissions, and a generic
+"section" component would hide more than it saved.
 
 Row level security is the only access control: a user sees a campaign because a
 membership row connects them to it.

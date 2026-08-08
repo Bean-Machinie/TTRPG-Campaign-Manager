@@ -3,7 +3,9 @@ import {
   getCampaignMembership,
   listCampaignCharacters,
   listCampaignInvitations,
+  listCampaignLocations,
   listCampaignMembers,
+  listCampaignQuests,
   listCampaignSessions,
   listCampaigns,
   listPendingInvitations,
@@ -64,6 +66,24 @@ export function useCampaignCharacters(campaignId: string) {
     'Could not load the characters of this campaign.',
   )
   return { characters: data ?? [], loading, error, reload }
+}
+
+export function useCampaignLocations(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignLocations(campaignId),
+    `locations:${campaignId}`,
+    'Could not load the locations of this campaign.',
+  )
+  return { locations: data ?? [], loading, error, reload }
+}
+
+export function useCampaignQuests(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignQuests(campaignId),
+    `quests:${campaignId}`,
+    'Could not load the quests of this campaign.',
+  )
+  return { quests: data ?? [], loading, error, reload }
 }
 
 /** Invitations addressed to the signed-in user. */
