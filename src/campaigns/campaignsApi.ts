@@ -1,12 +1,16 @@
 import { requireSupabase } from '../lib/supabase/client'
+import { todayIsoDate } from '../lib/format'
 import type {
   Campaign,
   CampaignInvitation,
   CampaignMember,
   CampaignMembership,
   CampaignRole,
+  CampaignSession,
+  CampaignSummary,
   InvitableRole,
   PendingInvitation,
+  SessionInput,
 } from './types'
 
 /**
@@ -35,8 +39,11 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 // ------------------------------------------------------------- campaigns --
 
-/** Campaigns the signed-in user is a member of. Row level security does the filtering. */
-export async function listCampaigns(): Promise<Campaign[]> {
+/**
+ * Campaigns the signed-in user is a member of, each with the date it was last
+ * played. Row level security does the filtering.
+ */
+export async function listCampaigns(): Promise<CampaignSummary[]> {
   const supabase = requireSupabase()
 
   const { data, error } = await supabase
@@ -45,7 +52,33 @@ export async function listCampaigns(): Promise<Campaign[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data as CampaignRow[]).map(toCampaign)
+
+  const campaigns = (data as CampaignRow[]).map(toCampaign)
+  if (campaigns.length === 0) return []
+
+  // Every past session across the user's campaigns, reduced to the latest per
+  // campaign. Postgres could do this in one grouped view; at this size a second
+  // query and a Map is less machinery to maintain.
+  const { data: sessionData, error: sessionError } = await supabase
+    .from('campaign_sessions')
+    .select('campaign_id, scheduled_for')
+    .not('scheduled_for', 'is', null)
+    .lte('scheduled_for', todayIsoDate())
+
+  if (sessionError) throw sessionError
+
+  const lastPlayedByCampaign = new Map<string, string>()
+  for (const row of sessionData as { campaign_id: string; scheduled_for: string }[]) {
+    const current = lastPlayedByCampaign.get(row.campaign_id)
+    if (!current || row.scheduled_for > current) {
+      lastPlayedByCampaign.set(row.campaign_id, row.scheduled_for)
+    }
+  }
+
+  return campaigns.map((campaign) => ({
+    ...campaign,
+    lastPlayedOn: lastPlayedByCampaign.get(campaign.id) ?? null,
+  }))
 }
 
 /**
@@ -247,4 +280,78 @@ export async function acceptInvitation(invitationId: string): Promise<Campaign> 
 
   if (error) throw error
   return toCampaign(data as CampaignRow)
+}
+
+// -------------------------------------------------------------- sessions --
+
+const SESSION_COLUMNS = 'id, title, scheduled_for, notes, created_at'
+
+type SessionRow = {
+  id: string
+  title: string
+  scheduled_for: string | null
+  notes: string | null
+  created_at: string
+}
+
+function toSession(row: SessionRow): CampaignSession {
+  return {
+    id: row.id,
+    title: row.title,
+    scheduledFor: row.scheduled_for,
+    notes: row.notes,
+    createdAt: row.created_at,
+  }
+}
+
+/** Trims the form values and turns empty strings into nulls. */
+function toSessionRow(input: SessionInput) {
+  return {
+    title: input.title.trim(),
+    scheduled_for: input.scheduledFor?.trim() || null,
+    notes: input.notes?.trim() || null,
+  }
+}
+
+/** Sessions of a campaign, newest date first. Undated ones come last. */
+export async function listCampaignSessions(campaignId: string): Promise<CampaignSession[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_sessions')
+    .select(SESSION_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .order('scheduled_for', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data as SessionRow[]).map(toSession)
+}
+
+export async function createSession(campaignId: string, input: SessionInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_sessions')
+    .insert({ campaign_id: campaignId, ...toSessionRow(input) })
+
+  if (error) throw error
+}
+
+export async function updateSession(sessionId: string, input: SessionInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_sessions')
+    .update(toSessionRow(input))
+    .eq('id', sessionId)
+
+  if (error) throw error
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_sessions').delete().eq('id', sessionId)
+  if (error) throw error
 }

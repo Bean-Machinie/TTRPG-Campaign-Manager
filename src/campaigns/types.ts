@@ -10,6 +10,11 @@ export type Campaign = {
   createdAt: string
 }
 
+/** A campaign in the dashboard list, with the date it was last played. */
+export type CampaignSummary = Campaign & {
+  lastPlayedOn: string | null
+}
+
 /** A campaign together with the current user's role in it. */
 export type CampaignMembership = {
   campaign: Campaign
@@ -39,4 +44,20 @@ export type PendingInvitation = {
   campaignName: string
   role: InvitableRole
   createdAt: string
+}
+
+export type CampaignSession = {
+  id: string
+  title: string
+  /** A plain yyyy-mm-dd date, or null when the session is not scheduled yet. */
+  scheduledFor: string | null
+  notes: string | null
+  createdAt: string
+}
+
+/** The editable fields of a session, shared by create and update. */
+export type SessionInput = {
+  title: string
+  scheduledFor: string | null
+  notes: string | null
 }

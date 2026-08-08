@@ -41,12 +41,13 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app`                       | authenticated | Campaign dashboard             |
 | `/app/campaigns/new`         | authenticated | Create a campaign              |
 | `/app/campaigns/:campaignId` | authenticated | Campaign workspace (Overview)  |
+| `/app/campaigns/:campaignId/sessions` | authenticated | Game sessions          |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
 
 Campaign sections are child routes of `:campaignId`. The layout loads the campaign
-once and passes it down through the router outlet context, so `Sessions`,
-`Characters` and the rest are added the same way `members` was.
+once and passes it down through the router outlet context, so `Characters`,
+`Locations` and the rest are added the same way `sessions` and `members` were.
 
 ## Database
 
@@ -56,9 +57,15 @@ linked). They must be run in filename order.
 
 ```
 auth.users  <->  campaign_memberships (role: owner | gm | player)  <->  campaigns
-     |                                                                    |
-  profiles (email)                              campaign_invitations (email, role)
+     |                                                              /        \
+  profiles (email)                    campaign_invitations (email, role)   campaign_sessions
 ```
+
+`campaign_sessions` is the template for every later content table (characters,
+locations, quests, notes): a `campaign_id` foreign key, and policies built only
+from the membership helpers — `is_campaign_member()` to read,
+`can_manage_campaign()` (owner or GM) to write. Rows are inserted directly by the
+client, because unlike memberships there is no companion row to keep in step.
 
 Row level security is the only access control: a user sees a campaign because a
 membership row connects them to it.
@@ -91,7 +98,7 @@ src/
   campaigns/              types, queries (campaignsApi.ts) and hooks
   lib/supabase/client.ts  the only place Supabase is constructed
   lib/useAsyncData.ts     the app's entire data-loading strategy
-  components/ui/          Alert, Button, Card, Input, Select, Page primitives
+  components/ui/          Alert, Button, Card, Input, Select, Textarea, Page
   components/layout/      PublicLayout, AppLayout (application shell)
   pages/public|auth|app/  one file per page
   pages/app/campaign/     the campaign workspace layout and its child routes

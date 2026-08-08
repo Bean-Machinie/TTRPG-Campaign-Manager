@@ -3,6 +3,7 @@ import {
   getCampaignMembership,
   listCampaignInvitations,
   listCampaignMembers,
+  listCampaignSessions,
   listCampaigns,
   listPendingInvitations,
 } from './campaignsApi'
@@ -44,6 +45,15 @@ export function useCampaignInvitations(campaignId: string) {
     'Could not load the pending invitations.',
   )
   return { invitations: data ?? [], loading, error, reload }
+}
+
+export function useCampaignSessions(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignSessions(campaignId),
+    `sessions:${campaignId}`,
+    'Could not load the sessions of this campaign.',
+  )
+  return { sessions: data ?? [], loading, error, reload }
 }
 
 /** Invitations addressed to the signed-in user. */

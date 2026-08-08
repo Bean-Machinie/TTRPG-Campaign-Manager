@@ -11,6 +11,7 @@ import { NewCampaignPage } from './pages/app/NewCampaignPage'
 import { CampaignWorkspaceLayout } from './pages/app/campaign/CampaignWorkspaceLayout'
 import { CampaignOverviewPage } from './pages/app/campaign/CampaignOverviewPage'
 import { CampaignMembersPage } from './pages/app/campaign/CampaignMembersPage'
+import { CampaignSessionsPage } from './pages/app/campaign/CampaignSessionsPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -45,6 +46,7 @@ export default function App() {
           {/* Campaign features are child routes here; the layout loads the campaign. */}
           <Route path="campaigns/:campaignId" element={<CampaignWorkspaceLayout />}>
             <Route index element={<CampaignOverviewPage />} />
+            <Route path="sessions" element={<CampaignSessionsPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>
           <Route path="settings" element={<SettingsPage />} />

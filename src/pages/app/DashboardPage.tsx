@@ -1,5 +1,5 @@
 import { useCampaigns } from '../../campaigns/hooks'
-import { formatDate } from '../../lib/format'
+import { formatDateOnly } from '../../lib/format'
 import { Alert } from '../../components/ui/Alert'
 import { ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -38,7 +38,11 @@ export function DashboardPage() {
             <li key={campaign.id}>
               <Card className="campaign-card">
                 <h2 className="campaign-card__name">{campaign.name}</h2>
-                <p className="campaign-card__meta">Created {formatDate(campaign.createdAt)}</p>
+                <p className="campaign-card__meta">
+                  {campaign.lastPlayedOn
+                    ? `Last played ${formatDateOnly(campaign.lastPlayedOn)}`
+                    : 'Not played yet'}
+                </p>
                 <ButtonLink to={`/app/campaigns/${campaign.id}`} variant="secondary">
                   Open campaign
                 </ButtonLink>
