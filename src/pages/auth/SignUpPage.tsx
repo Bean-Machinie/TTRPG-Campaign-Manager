@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { errorMessage } from '../../lib/errors'
 import { SUPABASE_SETUP_MESSAGE } from '../../lib/supabase/client'
+import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
@@ -33,7 +35,7 @@ export function SignUpPage() {
       }
       navigate('/app', { replace: true })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not create the account.')
+      setError(errorMessage(caught, 'Could not create the account.'))
       setSubmitting(false)
     }
   }
@@ -43,9 +45,9 @@ export function SignUpPage() {
       <Page width="narrow">
         <PageHeader title="Check your email" />
         <Card>
-          <p className="auth-form__notice">
+          <Alert variant="info">
             We sent a confirmation link to {email}. Confirm your address, then sign in.
-          </p>
+          </Alert>
         </Card>
         <p className="auth-footer">
           <Link to="/login">Back to sign in</Link>
@@ -60,12 +62,8 @@ export function SignUpPage() {
 
       <Card>
         <form className="auth-form" onSubmit={handleSubmit}>
-          {!isConfigured ? <p className="auth-form__notice">{SUPABASE_SETUP_MESSAGE}</p> : null}
-          {error ? (
-            <p className="auth-form__error" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {!isConfigured ? <Alert variant="info">{SUPABASE_SETUP_MESSAGE}</Alert> : null}
+          {error ? <Alert>{error}</Alert> : null}
 
           <Input
             label="Email"

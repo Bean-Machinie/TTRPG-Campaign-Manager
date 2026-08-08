@@ -1,5 +1,9 @@
 import { Link, useParams } from 'react-router'
-import { findDemoCampaign } from '../../data/demoCampaigns'
+import { useAuth } from '../../auth/useAuth'
+import { useCampaignMembership } from '../../campaigns/useCampaignMembership'
+import { formatDate } from '../../lib/format'
+import { Alert } from '../../components/ui/Alert'
+import { ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Page, PageHeader } from '../../components/ui/Page'
 import './CampaignWorkspacePage.css'
@@ -19,28 +23,62 @@ const FUTURE_SECTIONS = [
   'Settings',
 ]
 
+const ROLE_LABELS = {
+  owner: 'Owner',
+  gm: 'GM',
+  player: 'Player',
+}
+
 export function CampaignWorkspacePage() {
   const { campaignId } = useParams()
-  const campaign = campaignId ? findDemoCampaign(campaignId) : undefined
+  const { user } = useAuth()
+  const { membership, loading, error } = useCampaignMembership(campaignId, user?.id)
+
+  if (loading) {
+    return (
+      <Page>
+        <p className="workspace-status">Loading campaign…</p>
+      </Page>
+    )
+  }
+
+  if (error) {
+    return (
+      <Page>
+        <Alert>{error}</Alert>
+      </Page>
+    )
+  }
+
+  if (!membership) {
+    return (
+      <Page width="narrow">
+        <PageHeader
+          title="Campaign not found"
+          description="It does not exist, or it is not shared with you."
+        />
+        <div className="page-actions">
+          <ButtonLink to="/app" variant="secondary">
+            Back to campaigns
+          </ButtonLink>
+        </div>
+      </Page>
+    )
+  }
+
+  const { campaign, role } = membership
 
   return (
     <Page>
       <PageHeader
-        title={campaign?.name ?? 'Campaign'}
+        title={campaign.name}
         description={
           <>
-            Campaign workspace ·{' '}
+            {ROLE_LABELS[role]} · Created {formatDate(campaign.createdAt)} ·{' '}
             <Link to="/app">Back to campaigns</Link>
           </>
         }
       />
-
-      {!campaign ? (
-        <p className="workspace-unknown">
-          No demo campaign matches <code>{campaignId}</code>. Real campaigns arrive with
-          persistence.
-        </p>
-      ) : null}
 
       <div className="workspace">
         <nav className="workspace-nav" aria-label="Campaign sections">

@@ -1,0 +1,10 @@
+.new-campaign-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The action row already carries its own top margin from .page-actions. */
+.new-campaign-form .page-actions {
+  margin-top: 0;
+}

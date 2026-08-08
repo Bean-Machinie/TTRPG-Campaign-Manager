@@ -39,9 +39,29 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/login`                     | public only   | Sign in                        |
 | `/signup`                    | public only   | Create account                 |
 | `/app`                       | authenticated | Campaign dashboard             |
-| `/app/campaigns/new`         | authenticated | Create campaign (placeholder)  |
+| `/app/campaigns/new`         | authenticated | Create a campaign              |
 | `/app/campaigns/:campaignId` | authenticated | Campaign workspace shell       |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
+
+## Database
+
+Migrations live in `supabase/migrations/` and are applied by pasting them into the
+Supabase dashboard SQL editor (or with `npx supabase db push` once the project is
+linked). They must be run in filename order.
+
+```
+auth.users  <->  campaign_memberships (role: owner | gm | player)  <->  campaigns
+```
+
+Row level security is the only access control: a user sees a campaign because a
+membership row connects them to it. Campaigns are created through the
+`create_campaign(p_name)` function so the campaign and its owner membership are
+written in one transaction.
+
+Everything campaign-scoped added later (sessions, characters, locations, quests,
+notes, maps) should reference `campaigns(id)`, reuse the `is_campaign_member()` /
+`is_campaign_owner()` helpers in its policies, and live beneath
+`/app/campaigns/:campaignId/...` in the UI.
 
 ## Source layout
 
@@ -50,19 +70,10 @@ src/
   App.tsx                 route table
   main.tsx                entry: BrowserRouter + AuthProvider
   auth/                   session state and route guards
+  campaigns/              campaign types, queries and data-loading hooks
   lib/supabase/client.ts  the only place Supabase is constructed
-  components/ui/          Button, Card, Input, Page primitives
+  components/ui/          Alert, Button, Card, Input, Page primitives
   components/layout/      PublicLayout, AppLayout (application shell)
   pages/public|auth|app/  one file per page
-  data/demoCampaigns.ts   temporary demo data, delete once persisted
   styles/global.css       CSS custom properties and base styles
 ```
-
-## Future data model (not implemented)
-
-```
-User  <->  CampaignMembership (role: owner | gm | player)  <->  Campaign
-```
-
-Everything campaign-scoped (sessions, characters, locations, quests, notes, maps)
-will belong to a campaign and live beneath `/app/campaigns/:campaignId/...`.

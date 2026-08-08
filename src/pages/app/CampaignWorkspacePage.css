@@ -46,7 +46,7 @@
   font-size: 1.05rem;
 }
 
-.workspace-unknown {
-  margin: 0 0 var(--space-4);
+.workspace-status {
+  margin: 0;
   color: var(--color-text-muted);
 }

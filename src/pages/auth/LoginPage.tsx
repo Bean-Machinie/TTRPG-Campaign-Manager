@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { errorMessage } from '../../lib/errors'
 import { SUPABASE_SETUP_MESSAGE } from '../../lib/supabase/client'
+import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
@@ -31,7 +33,7 @@ export function LoginPage() {
       await signIn(email, password)
       navigate(from, { replace: true })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not sign in.')
+      setError(errorMessage(caught, 'Could not sign in.'))
       setSubmitting(false)
     }
   }
@@ -42,12 +44,8 @@ export function LoginPage() {
 
       <Card>
         <form className="auth-form" onSubmit={handleSubmit}>
-          {!isConfigured ? <p className="auth-form__notice">{SUPABASE_SETUP_MESSAGE}</p> : null}
-          {error ? (
-            <p className="auth-form__error" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {!isConfigured ? <Alert variant="info">{SUPABASE_SETUP_MESSAGE}</Alert> : null}
+          {error ? <Alert>{error}</Alert> : null}
 
           <Input
             label="Email"
