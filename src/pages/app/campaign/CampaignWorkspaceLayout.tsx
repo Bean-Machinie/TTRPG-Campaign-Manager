@@ -1,35 +1,26 @@
-import { Link, useParams } from 'react-router'
-import { useAuth } from '../../auth/useAuth'
-import { useCampaignMembership } from '../../campaigns/useCampaignMembership'
-import { formatDate } from '../../lib/format'
-import { Alert } from '../../components/ui/Alert'
-import { ButtonLink } from '../../components/ui/Button'
-import { Card } from '../../components/ui/Card'
-import { Page, PageHeader } from '../../components/ui/Page'
-import './CampaignWorkspacePage.css'
+import { Link, NavLink, Outlet, useParams } from 'react-router'
+import { useAuth } from '../../../auth/useAuth'
+import { useCampaignMembership } from '../../../campaigns/hooks'
+import { formatDate } from '../../../lib/format'
+import { Alert } from '../../../components/ui/Alert'
+import { ButtonLink } from '../../../components/ui/Button'
+import { Page, PageHeader } from '../../../components/ui/Page'
+import type { CampaignOutletContext } from './useCampaignOutlet'
+import './CampaignWorkspaceLayout.css'
 
 /**
- * Everything campaign-scoped belongs beneath this route, so that future features
- * become nested routes such as /app/campaigns/:campaignId/sessions rather than
- * global application state.
+ * Sections that do not exist yet. Each becomes a NavLink to a child route as it
+ * is built, exactly like Members did.
  */
-const FUTURE_SECTIONS = [
-  'Sessions',
-  'Characters',
-  'Locations',
-  'Quests',
-  'Notes',
-  'Maps',
-  'Settings',
-]
+const FUTURE_SECTIONS = ['Sessions', 'Characters', 'Locations', 'Quests', 'Notes', 'Maps']
 
-const ROLE_LABELS = {
+const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
   gm: 'GM',
   player: 'Player',
 }
 
-export function CampaignWorkspacePage() {
+export function CampaignWorkspaceLayout() {
   const { campaignId } = useParams()
   const { user } = useAuth()
   const { membership, loading, error } = useCampaignMembership(campaignId, user?.id)
@@ -67,6 +58,7 @@ export function CampaignWorkspacePage() {
   }
 
   const { campaign, role } = membership
+  const context: CampaignOutletContext = { campaign, role }
 
   return (
     <Page>
@@ -82,9 +74,12 @@ export function CampaignWorkspacePage() {
 
       <div className="workspace">
         <nav className="workspace-nav" aria-label="Campaign sections">
-          <span className="workspace-nav__item workspace-nav__item--current" aria-current="page">
+          <NavLink className="workspace-nav__item" to="." end>
             Overview
-          </span>
+          </NavLink>
+          <NavLink className="workspace-nav__item" to="members">
+            Members
+          </NavLink>
           {FUTURE_SECTIONS.map((section) => (
             <span key={section} className="workspace-nav__item workspace-nav__item--future">
               {section}
@@ -92,10 +87,9 @@ export function CampaignWorkspacePage() {
           ))}
         </nav>
 
-        <Card>
-          <h2 className="workspace-section-title">Overview</h2>
-          <p>Campaign features will be added here incrementally.</p>
-        </Card>
+        <div>
+          <Outlet context={context} />
+        </div>
       </div>
     </Page>
   )

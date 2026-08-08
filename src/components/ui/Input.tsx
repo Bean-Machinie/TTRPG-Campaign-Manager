@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import type { InputHTMLAttributes } from 'react'
-import './Input.css'
+import './Field.css'
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string

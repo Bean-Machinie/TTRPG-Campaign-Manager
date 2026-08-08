@@ -8,7 +8,9 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { SignUpPage } from './pages/auth/SignUpPage'
 import { DashboardPage } from './pages/app/DashboardPage'
 import { NewCampaignPage } from './pages/app/NewCampaignPage'
-import { CampaignWorkspacePage } from './pages/app/CampaignWorkspacePage'
+import { CampaignWorkspaceLayout } from './pages/app/campaign/CampaignWorkspaceLayout'
+import { CampaignOverviewPage } from './pages/app/campaign/CampaignOverviewPage'
+import { CampaignMembersPage } from './pages/app/campaign/CampaignMembersPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -40,8 +42,11 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="campaigns" element={<Navigate to="/app" replace />} />
           <Route path="campaigns/new" element={<NewCampaignPage />} />
-          {/* Future campaign features become child routes of this one. */}
-          <Route path="campaigns/:campaignId" element={<CampaignWorkspacePage />} />
+          {/* Campaign features are child routes here; the layout loads the campaign. */}
+          <Route path="campaigns/:campaignId" element={<CampaignWorkspaceLayout />}>
+            <Route index element={<CampaignOverviewPage />} />
+            <Route path="members" element={<CampaignMembersPage />} />
+          </Route>
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

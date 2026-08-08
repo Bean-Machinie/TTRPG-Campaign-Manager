@@ -40,8 +40,13 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/signup`                    | public only   | Create account                 |
 | `/app`                       | authenticated | Campaign dashboard             |
 | `/app/campaigns/new`         | authenticated | Create a campaign              |
-| `/app/campaigns/:campaignId` | authenticated | Campaign workspace shell       |
+| `/app/campaigns/:campaignId` | authenticated | Campaign workspace (Overview)  |
+| `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
+
+Campaign sections are child routes of `:campaignId`. The layout loads the campaign
+once and passes it down through the router outlet context, so `Sessions`,
+`Characters` and the rest are added the same way `members` was.
 
 ## Database
 
@@ -51,12 +56,25 @@ linked). They must be run in filename order.
 
 ```
 auth.users  <->  campaign_memberships (role: owner | gm | player)  <->  campaigns
+     |                                                                    |
+  profiles (email)                              campaign_invitations (email, role)
 ```
 
 Row level security is the only access control: a user sees a campaign because a
-membership row connects them to it. Campaigns are created through the
-`create_campaign(p_name)` function so the campaign and its owner membership are
-written in one transaction.
+membership row connects them to it.
+
+Memberships are never inserted directly. Two `security definer` functions own
+that, so a campaign and its first member always appear together:
+
+- `create_campaign(p_name)` — creates the campaign and the caller's owner membership
+- `accept_invitation(p_invitation_id)` — creates the membership and consumes the invitation
+
+`profiles` exists because `auth.users` is not reachable through the API; a trigger
+keeps it in step. `campaign_invitations` is addressed to an email because the
+invited person may not have an account yet — a pending invitation is simply a row
+that still exists. Nothing sends email; the invitee sees it on their dashboard.
+
+The `owner` membership row cannot be deleted, so a campaign can never be orphaned.
 
 Everything campaign-scoped added later (sessions, characters, locations, quests,
 notes, maps) should reference `campaigns(id)`, reuse the `is_campaign_member()` /
@@ -70,10 +88,12 @@ src/
   App.tsx                 route table
   main.tsx                entry: BrowserRouter + AuthProvider
   auth/                   session state and route guards
-  campaigns/              campaign types, queries and data-loading hooks
+  campaigns/              types, queries (campaignsApi.ts) and hooks
   lib/supabase/client.ts  the only place Supabase is constructed
-  components/ui/          Alert, Button, Card, Input, Page primitives
+  lib/useAsyncData.ts     the app's entire data-loading strategy
+  components/ui/          Alert, Button, Card, Input, Select, Page primitives
   components/layout/      PublicLayout, AppLayout (application shell)
   pages/public|auth|app/  one file per page
+  pages/app/campaign/     the campaign workspace layout and its child routes
   styles/global.css       CSS custom properties and base styles
 ```

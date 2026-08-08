@@ -1,0 +1,80 @@
+.members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.members__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.members__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.members__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.members__email {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.members__you,
+.members__meta {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.members__meta {
+  display: block;
+}
+
+.members__role {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.members__status,
+.members__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.members__note {
+  margin-top: var(--space-3);
+}
+
+.members__invite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+@media (min-width: 34rem) {
+  .members__invite {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .members__invite .field:first-child {
+    flex: 1;
+  }
+}

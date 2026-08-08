@@ -1,13 +1,14 @@
-import { useCampaigns } from '../../campaigns/useCampaigns'
+import { useCampaigns } from '../../campaigns/hooks'
 import { formatDate } from '../../lib/format'
 import { Alert } from '../../components/ui/Alert'
 import { ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Page, PageHeader } from '../../components/ui/Page'
+import { PendingInvitations } from './PendingInvitations'
 import './DashboardPage.css'
 
 export function DashboardPage() {
-  const { campaigns, loading, error } = useCampaigns()
+  const { campaigns, loading, error, reload } = useCampaigns()
 
   return (
     <Page>
@@ -15,6 +16,9 @@ export function DashboardPage() {
         title="Your Campaigns"
         action={<ButtonLink to="/app/campaigns/new">+ Create campaign</ButtonLink>}
       />
+
+      {/* Accepting an invitation adds a campaign, so the list below reloads. */}
+      <PendingInvitations onAccepted={reload} />
 
       {error ? <Alert>{error}</Alert> : null}
 

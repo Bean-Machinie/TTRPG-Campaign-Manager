@@ -1,3 +1,5 @@
+/* Shared by Input and Select so a label + control always looks the same. */
+
 .field {
   display: flex;
   flex-direction: column;
@@ -26,4 +28,8 @@
 
 .field__input:focus-visible {
   border-color: var(--color-primary);
+}
+
+.field__select {
+  cursor: pointer;
 }

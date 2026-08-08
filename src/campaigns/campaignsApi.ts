@@ -1,20 +1,39 @@
 import { requireSupabase } from '../lib/supabase/client'
-import type { Campaign, CampaignMembership, CampaignRole } from './types'
+import type {
+  Campaign,
+  CampaignInvitation,
+  CampaignMember,
+  CampaignMembership,
+  CampaignRole,
+  InvitableRole,
+  PendingInvitation,
+} from './types'
 
-/** Shape returned by Postgres, before it is mapped to our camelCase types. */
-type CampaignRow = {
-  id: string
-  name: string
-  created_at: string
-}
+/**
+ * The only file that knows about table and column names. Everything here maps
+ * snake_case rows to the camelCase types the rest of the app uses.
+ */
 
 const CAMPAIGN_COLUMNS = 'id, name, created_at'
+
+type CampaignRow = { id: string; name: string; created_at: string }
+type MembershipRow = { id: string; user_id: string; role: CampaignRole }
+type ProfileRow = { id: string; email: string }
+type InvitationRow = {
+  id: string
+  campaign_id: string
+  email: string
+  role: InvitableRole
+  created_at: string
+}
 
 function toCampaign(row: CampaignRow): Campaign {
   return { id: row.id, name: row.name, createdAt: row.created_at }
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// ------------------------------------------------------------- campaigns --
 
 /** Campaigns the signed-in user is a member of. Row level security does the filtering. */
 export async function listCampaigns(): Promise<Campaign[]> {
@@ -31,7 +50,8 @@ export async function listCampaigns(): Promise<Campaign[]> {
 
 /**
  * One campaign plus the user's role in it, or null when the campaign does not
- * exist or the user is not a member (row level security makes those identical).
+ * exist, is not shared with them, or is only offered through a pending
+ * invitation they have not accepted yet.
  */
 export async function getCampaignMembership(
   campaignId: string,
@@ -54,8 +74,6 @@ export async function getCampaignMembership(
   if (campaignResult.error) throw campaignResult.error
   if (membershipResult.error) throw membershipResult.error
 
-  // Row level security hides campaigns the user is not a member of, so either
-  // result being empty means "not available to you".
   if (!campaignResult.data || !membershipResult.data) return null
 
   return {
@@ -69,6 +87,163 @@ export async function createCampaign(name: string): Promise<Campaign> {
   const supabase = requireSupabase()
 
   const { data, error } = await supabase.rpc('create_campaign', { p_name: name })
+
+  if (error) throw error
+  return toCampaign(data as CampaignRow)
+}
+
+// --------------------------------------------------------------- members --
+
+const ROLE_ORDER: Record<CampaignRole, number> = { owner: 0, gm: 1, player: 2 }
+
+/** Members of a campaign, owner first. Emails come from public.profiles. */
+export async function listCampaignMembers(campaignId: string): Promise<CampaignMember[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_memberships')
+    .select('id, user_id, role')
+    .eq('campaign_id', campaignId)
+
+  if (error) throw error
+
+  const memberships = data as MembershipRow[]
+  if (memberships.length === 0) return []
+
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, email')
+    .in(
+      'id',
+      memberships.map((membership) => membership.user_id),
+    )
+
+  if (profileError) throw profileError
+
+  const emailByUserId = new Map(
+    (profileData as ProfileRow[]).map((profile) => [profile.id, profile.email]),
+  )
+
+  return memberships
+    .map((membership) => ({
+      membershipId: membership.id,
+      userId: membership.user_id,
+      email: emailByUserId.get(membership.user_id) ?? 'Unknown user',
+      role: membership.role,
+    }))
+    .sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.email.localeCompare(b.email))
+}
+
+/** Removes a member, or leaves the campaign. Owners cannot be removed. */
+export async function removeMember(membershipId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_memberships').delete().eq('id', membershipId)
+  if (error) throw error
+}
+
+// ----------------------------------------------------------- invitations --
+
+/** Outgoing invitations for a campaign. Only its owner sees any. */
+export async function listCampaignInvitations(campaignId: string): Promise<CampaignInvitation[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_invitations')
+    .select('id, campaign_id, email, role, created_at')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return (data as InvitationRow[]).map((row) => ({
+    id: row.id,
+    email: row.email,
+    role: row.role,
+    createdAt: row.created_at,
+  }))
+}
+
+export async function inviteToCampaign(
+  campaignId: string,
+  email: string,
+  role: InvitableRole,
+): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_invitations').insert({
+    campaign_id: campaignId,
+    email: email.trim().toLowerCase(),
+    role,
+  })
+
+  if (error) {
+    // Unique violation on (campaign_id, email).
+    if (error.code === '23505') {
+      throw new Error('That address has already been invited to this campaign.')
+    }
+    throw error
+  }
+}
+
+/** Used both by an owner revoking an invitation and an invitee declining one. */
+export async function deleteInvitation(invitationId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_invitations').delete().eq('id', invitationId)
+  if (error) throw error
+}
+
+/**
+ * Invitations addressed to the signed-in user. Filtering by email matters:
+ * a campaign owner can also read the invitations they sent, and those are not
+ * invitations *to* them.
+ */
+export async function listPendingInvitations(email: string): Promise<PendingInvitation[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_invitations')
+    .select('id, campaign_id, email, role, created_at')
+    .eq('email', email.trim().toLowerCase())
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  const invitations = data as InvitationRow[]
+  if (invitations.length === 0) return []
+
+  // The campaigns policy lets invitees read the campaigns they were invited to.
+  const { data: campaignData, error: campaignError } = await supabase
+    .from('campaigns')
+    .select('id, name')
+    .in(
+      'id',
+      invitations.map((invitation) => invitation.campaign_id),
+    )
+
+  if (campaignError) throw campaignError
+
+  const nameByCampaignId = new Map(
+    (campaignData as { id: string; name: string }[]).map((campaign) => [campaign.id, campaign.name]),
+  )
+
+  return invitations.map((invitation) => ({
+    id: invitation.id,
+    campaignId: invitation.campaign_id,
+    campaignName: nameByCampaignId.get(invitation.campaign_id) ?? 'Unknown campaign',
+    role: invitation.role,
+    createdAt: invitation.created_at,
+  }))
+}
+
+/** Joins the campaign and consumes the invitation in one transaction. */
+export async function acceptInvitation(invitationId: string): Promise<Campaign> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase.rpc('accept_invitation', {
+    p_invitation_id: invitationId,
+  })
 
   if (error) throw error
   return toCampaign(data as CampaignRow)

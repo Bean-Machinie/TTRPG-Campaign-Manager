@@ -1,0 +1,39 @@
+.invitations {
+  margin-bottom: var(--space-5);
+}
+
+.invitations__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invitations__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.invitations__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.invitations__campaign {
+  font-weight: 500;
+}
+
+.invitations__role {
+  margin-left: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.invitations__actions {
+  display: flex;
+  gap: var(--space-2);
+}
