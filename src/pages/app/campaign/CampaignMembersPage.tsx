@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../../../auth/useAuth'
@@ -16,6 +16,8 @@ import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { Input } from '../../../components/ui/Input'
 import { Select } from '../../../components/ui/Select'
+import { UserPlusIcon } from '../../../components/shell/icons/UserPlusIcon'
+import type { AnimatedIconHandle } from '../../../components/shell/icons/types'
 import { useCampaignOutlet } from './useCampaignOutlet'
 import './CampaignMembersPage.css'
 
@@ -38,6 +40,9 @@ export function CampaignMembersPage() {
   const [inviteRole, setInviteRole] = useState<InvitableRole>('player')
   const [actionError, setActionError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Driven from the button rather than from the glyph, so the whole control is
+  // the hover target.
+  const inviteIcon = useRef<AnimatedIconHandle>(null)
 
   async function run(action: () => Promise<void>, fallback: string) {
     setActionError(null)
@@ -180,7 +185,15 @@ export function CampaignMembersPage() {
               <option value="gm">GM</option>
             </Select>
 
-            <Button type="submit" disabled={busy || email.trim().length === 0}>
+            <Button
+              type="submit"
+              disabled={busy || email.trim().length === 0}
+              onMouseEnter={() => inviteIcon.current?.startAnimation()}
+              onMouseLeave={() => inviteIcon.current?.stopAnimation()}
+              onFocus={() => inviteIcon.current?.startAnimation()}
+              onBlur={() => inviteIcon.current?.stopAnimation()}
+            >
+              <UserPlusIcon ref={inviteIcon} size={18} />
               {busy ? 'Sending…' : 'Send invitation'}
             </Button>
           </form>

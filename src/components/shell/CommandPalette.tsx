@@ -13,8 +13,7 @@ import {
   SearchField,
 } from 'react-aria-components'
 import { useNavigate } from 'react-router'
-import { CornerDownLeft, Search, Settings, Swords, Plus } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { CornerDownLeft, Settings, Plus } from 'lucide-react'
 import {
   listCampaignCharacters,
   listCampaignDocuments,
@@ -25,7 +24,16 @@ import {
   listCampaignSessions,
 } from '../../campaigns/campaignsApi'
 import { useCampaignList } from '../../campaigns/useCampaignList'
-import { CAMPAIGN_SECTIONS, initialsOf, sectionHref } from './navigation'
+import { NavIcon } from './NavIcon'
+import { SearchIcon } from './icons/SearchIcon'
+import {
+  ALL_CAMPAIGNS_ICON,
+  CAMPAIGN_SECTIONS,
+  cssIcon,
+  initialsOf,
+  sectionHref,
+} from './navigation'
+import type { SectionIcon } from './navigation'
 
 /**
  * Search, as the one thing that reaches everything.
@@ -55,7 +63,7 @@ type Command = {
   /** The line under the label. What kind of thing this is, mostly. */
   hint: string
   group: string
-  icon: LucideIcon
+  icon: SectionIcon
   to: string
   /** Shown instead of an icon, for campaigns. */
   initials?: string
@@ -93,7 +101,7 @@ export function CommandPalette({
         label: 'All campaigns',
         hint: 'Everything you play in',
         group: 'Go to',
-        icon: Swords,
+        icon: ALL_CAMPAIGNS_ICON,
         to: '/app',
       },
       {
@@ -101,7 +109,7 @@ export function CommandPalette({
         label: 'New campaign',
         hint: 'Start a new one',
         group: 'Go to',
-        icon: Plus,
+        icon: cssIcon(Plus, 'spin'),
         to: '/app/campaigns/new',
       },
       {
@@ -109,7 +117,7 @@ export function CommandPalette({
         label: 'Settings',
         hint: 'Your account',
         group: 'Go to',
-        icon: Settings,
+        icon: cssIcon(Settings, 'spin'),
         to: '/app/settings',
       },
     ]
@@ -132,7 +140,9 @@ export function CommandPalette({
       label: campaign.name,
       hint: 'Campaign',
       group: 'Campaigns',
-      icon: Swords,
+      // Never drawn — a campaign shows its initials instead — but every command
+      // carries one, so this is the one it carries.
+      icon: ALL_CAMPAIGNS_ICON,
       to: `/app/campaigns/${campaign.id}`,
       initials: initialsOf(campaign.name),
     }))
@@ -172,7 +182,7 @@ export function CommandPalette({
               autoFocus
               className="flex items-center gap-3 border-b border-gray-200 px-4"
             >
-              <Search className="size-5 shrink-0 text-gray-400" aria-hidden="true" />
+              <SearchIcon size={20} className="shrink-0 text-gray-400" />
               <Input
                 placeholder="Search sections, campaigns and entries…"
                 className="w-full bg-transparent py-4 text-sm text-gray-900 outline-hidden placeholder:text-gray-400 [&::-webkit-search-cancel-button]:hidden"
@@ -213,7 +223,7 @@ export function CommandPalette({
                           className="grid size-8 shrink-0 place-items-center rounded-md border border-gray-200 bg-white text-gray-500 group-focus:border-brand-200 group-focus:bg-brand-50 group-focus:text-brand-600"
                           aria-hidden="true"
                         >
-                          <command.icon className="size-4" />
+                          <NavIcon icon={command.icon} size={16} />
                         </span>
                       )}
 
@@ -426,7 +436,7 @@ async function loadCampaignContents(campaignId: string, campaignName: string): P
         label: described.label,
         hint: described.hint,
         group: groupName,
-        icon: section?.icon ?? Search,
+        icon: section?.icon ?? ALL_CAMPAIGNS_ICON,
         to: described.to ?? sectionHref(campaignId, path),
       }
     })

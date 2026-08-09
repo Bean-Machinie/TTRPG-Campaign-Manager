@@ -1,8 +1,11 @@
+import { useRef } from 'react'
 import { Breadcrumb, Breadcrumbs } from 'react-aria-components'
 import { Link, useLocation } from 'react-router'
-import { ChevronRight, Dices, Menu, Search } from 'lucide-react'
+import { ChevronRight, Dices, Menu } from 'lucide-react'
 import { APP_NAME } from '../../constants'
 import { useCampaignList } from '../../campaigns/useCampaignList'
+import { SearchIcon } from './icons/SearchIcon'
+import type { AnimatedIconHandle } from './icons/types'
 import { CAMPAIGN_SECTIONS, sectionHref } from './navigation'
 import './icons.css'
 
@@ -23,6 +26,8 @@ type TopBarProps = {
 }
 
 export function TopBar({ onMenu, onSearch }: TopBarProps) {
+  const searchIcon = useRef<AnimatedIconHandle>(null)
+
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:px-8">
       <button
@@ -47,9 +52,11 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
         type="button"
         onClick={onSearch}
         aria-label="Search"
-        className="icon-host ml-auto grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden"
+        onMouseEnter={() => searchIcon.current?.startAnimation()}
+        onMouseLeave={() => searchIcon.current?.stopAnimation()}
+        className="ml-auto grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden"
       >
-        <Search className="ui-icon size-5" data-motion="pulse" aria-hidden="true" />
+        <SearchIcon ref={searchIcon} size={20} />
       </button>
     </header>
   )

@@ -25,6 +25,7 @@
     "@tiptap/starter-kit": "^3.29.2",
     "@tiptap/suggestion": "^3.29.2",
     "lucide-react": "^1.31.0",
+    "motion": "^13.0.0",
     "react": "^19.2.8",
     "react-aria-components": "^1.20.0",
     "react-dom": "^19.2.8",

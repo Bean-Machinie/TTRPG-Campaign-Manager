@@ -1,15 +1,13 @@
-import {
-  CalendarDays,
-  FileText,
-  LayoutDashboard,
-  Map,
-  MapPin,
-  NotebookPen,
-  ScrollText,
-  UserRoundCog,
-  Users,
-} from 'lucide-react'
+import { FileText, MapPin, NotebookPen, ScrollText } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentType, Ref } from 'react'
+import { CalendarRangeIcon } from './icons/CalendarRangeIcon'
+import { CompassIcon } from './icons/CompassIcon'
+import { LayersIcon } from './icons/LayersIcon'
+import { TelescopeIcon } from './icons/TelescopeIcon'
+import { UserRoundPenIcon } from './icons/UserRoundPenIcon'
+import { UsersIcon } from './icons/UsersIcon'
+import type { AnimatedIconHandle } from './icons/types'
 
 /**
  * What a campaign is made of, as one list.
@@ -24,14 +22,48 @@ import type { LucideIcon } from 'lucide-react'
  * which is the index route.
  */
 
-/** Which hover animation the icon plays. Defined in icons.css. */
+/** Which CSS hover animation a plain Lucide glyph plays. Defined in icons.css. */
 export type IconMotion = 'lift' | 'drop' | 'spin' | 'flip' | 'wiggle' | 'slide' | 'pulse'
+
+/** A lucide-animated component: a drawing that plays a sequence on command. */
+export type AnimatedIcon = ComponentType<{
+  ref?: Ref<AnimatedIconHandle>
+  size?: number
+  className?: string
+  'aria-hidden'?: boolean | 'true' | 'false'
+}>
+
+/**
+ * Two kinds of icon, named apart rather than blurred together.
+ *
+ * The sections that carry a real gesture — a telescope that scans, a compass
+ * needle that swings, layers that fan out — are Motion components, and they are
+ * told when to play by the row they sit in. The rest are Lucide glyphs with a
+ * CSS keyframe. Keeping the distinction in the type is what lets one renderer
+ * handle both without guessing which it was handed.
+ */
+export type SectionIcon =
+  | { kind: 'motion'; component: AnimatedIcon }
+  | { kind: 'css'; component: LucideIcon; motion: IconMotion }
+
+export const motionIcon = (component: AnimatedIcon): SectionIcon => ({
+  kind: 'motion',
+  component,
+})
+
+export const cssIcon = (component: LucideIcon, motion: IconMotion): SectionIcon => ({
+  kind: 'css',
+  component,
+  motion,
+})
+
+/** Every campaign is reached through this one. */
+export const ALL_CAMPAIGNS_ICON = motionIcon(LayersIcon)
 
 export type CampaignSection = {
   label: string
   path: string
-  icon: LucideIcon
-  motion: IconMotion
+  icon: SectionIcon
   /** Shown under the label in the command palette, where there is room to explain. */
   hint: string
 }
@@ -40,64 +72,55 @@ export const CAMPAIGN_SECTIONS: CampaignSection[] = [
   {
     label: 'Overview',
     path: '',
-    icon: LayoutDashboard,
-    motion: 'pulse',
+    icon: motionIcon(TelescopeIcon),
     hint: 'The campaign at a glance',
   },
   {
     label: 'Sessions',
     path: 'sessions',
-    icon: CalendarDays,
-    motion: 'flip',
+    icon: motionIcon(CalendarRangeIcon),
     hint: 'What you played, and what is scheduled',
   },
   {
     label: 'Characters',
     path: 'characters',
-    icon: Users,
-    motion: 'lift',
+    icon: motionIcon(UserRoundPenIcon),
     hint: 'Player characters and NPCs',
   },
   {
     label: 'Locations',
     path: 'locations',
-    icon: MapPin,
-    motion: 'drop',
+    icon: cssIcon(MapPin, 'drop'),
     hint: 'Places in the world',
   },
   {
     label: 'Quests',
     path: 'quests',
-    icon: ScrollText,
-    motion: 'wiggle',
+    icon: cssIcon(ScrollText, 'wiggle'),
     hint: 'Active, completed and abandoned threads',
   },
   {
     label: 'Notes',
     path: 'notes',
-    icon: NotebookPen,
-    motion: 'wiggle',
+    icon: cssIcon(NotebookPen, 'wiggle'),
     hint: 'Shared and private notes',
   },
   {
     label: 'Documents',
     path: 'documents',
-    icon: FileText,
-    motion: 'flip',
+    icon: cssIcon(FileText, 'flip'),
     hint: 'Pages, session logs, handouts and lore',
   },
   {
     label: 'Maps',
     path: 'maps',
-    icon: Map,
-    motion: 'lift',
+    icon: motionIcon(CompassIcon),
     hint: 'Uploaded maps, by location',
   },
   {
     label: 'Members',
     path: 'members',
-    icon: UserRoundCog,
-    motion: 'spin',
+    icon: motionIcon(UsersIcon),
     hint: 'Who is in this campaign, and as what',
   },
 ]

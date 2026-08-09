@@ -9,24 +9,24 @@ import {
   Separator,
 } from 'react-aria-components'
 import { Link, NavLink, useNavigate } from 'react-router'
-import {
-  ChevronsUpDown,
-  Dices,
-  EllipsisVertical,
-  LogOut,
-  Plus,
-  Search,
-  Settings,
-  Swords,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { ChevronsUpDown, Dices, EllipsisVertical, LogOut, Plus, Settings } from 'lucide-react'
+import { useRef } from 'react'
 import type { Key, ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
 import { useAuth } from '../../auth/useAuth'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { useMyProfile } from '../../profile/hooks'
-import { CAMPAIGN_SECTIONS, initialsOf, sectionHref } from './navigation'
-import type { IconMotion } from './navigation'
+import { NavIcon } from './NavIcon'
+import { SearchIcon } from './icons/SearchIcon'
+import type { AnimatedIconHandle } from './icons/types'
+import {
+  ALL_CAMPAIGNS_ICON,
+  CAMPAIGN_SECTIONS,
+  cssIcon,
+  initialsOf,
+  sectionHref,
+} from './navigation'
+import type { SectionIcon } from './navigation'
 import { SEARCH_SHORTCUT_LABEL } from './shortcut'
 import { useActiveCampaignId } from './useActiveCampaignId'
 import './icons.css'
@@ -58,6 +58,9 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
   const { campaigns } = useCampaignList()
   const activeCampaignId = useActiveCampaignId()
   const activeCampaign = campaigns.find((campaign) => campaign.id === activeCampaignId)
+  // The lens should jump when the pointer reaches the field, not when it
+  // finally reaches the 16 pixels of magnifier inside it.
+  const searchIcon = useRef<AnimatedIconHandle>(null)
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
@@ -86,9 +89,13 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         <button
           type="button"
           onClick={onSearch}
-          className="icon-host flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 shadow-xs transition-colors hover:bg-gray-50"
+          onMouseEnter={() => searchIcon.current?.startAnimation()}
+          onMouseLeave={() => searchIcon.current?.stopAnimation()}
+          onFocus={() => searchIcon.current?.startAnimation()}
+          onBlur={() => searchIcon.current?.stopAnimation()}
+          className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 shadow-xs transition-colors hover:bg-gray-50"
         >
-          <Search className="ui-icon size-4 shrink-0 text-gray-400" data-motion="pulse" aria-hidden="true" />
+          <SearchIcon ref={searchIcon} size={16} className="shrink-0 text-gray-400" />
           <span className="flex-1 text-left">Search</span>
           <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-px font-sans text-xs text-gray-500">
             {SEARCH_SHORTCUT_LABEL}
@@ -101,15 +108,13 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           <NavItem
             to="/app"
             end
-            icon={Swords}
-            motion="wiggle"
+            icon={ALL_CAMPAIGNS_ICON}
             label="All campaigns"
             onNavigate={onNavigate}
           />
           <NavItem
             to="/app/campaigns/new"
-            icon={Plus}
-            motion="spin"
+            icon={cssIcon(Plus, 'spin')}
             label="New campaign"
             onNavigate={onNavigate}
           />
@@ -125,7 +130,6 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
                 // its subtree, so a document stays under Documents.
                 end={section.path === ''}
                 icon={section.icon}
-                motion={section.motion}
                 label={section.label}
                 onNavigate={onNavigate}
               />
@@ -139,8 +143,7 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
       <div className="mt-auto flex flex-col gap-1 border-t border-gray-200 px-4 py-4">
         <NavItem
           to="/app/settings"
-          icon={Settings}
-          motion="spin"
+          icon={cssIcon(Settings, 'spin')}
           label="Settings"
           onNavigate={onNavigate}
         />
@@ -166,18 +169,32 @@ function NavGroup({ label, children }: { label?: string; children: ReactNode }) 
 type NavItemProps = {
   to: string
   end?: boolean
-  icon: LucideIcon
-  motion: IconMotion
+  icon: SectionIcon
   label: string
   onNavigate?: () => void
 }
 
-function NavItem({ to, end, icon: Icon, motion, label, onNavigate }: NavItemProps) {
+/**
+ * A row in the sidebar, and the thing that decides when its icon moves.
+ *
+ * The row is the hover target, not the glyph. Aiming at a 20px picture to see
+ * it move is a game; crossing the row you were already reading is not. The
+ * Motion icons are told directly through the handle, and the CSS ones respond
+ * to `.icon-host:hover` on this same element — one gesture, two mechanisms.
+ */
+function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
+  const iconRef = useRef<AnimatedIconHandle>(null)
+
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onNavigate}
+      onMouseEnter={() => iconRef.current?.startAnimation()}
+      onMouseLeave={() => iconRef.current?.stopAnimation()}
+      // Keyboard users get the same thing, on the same element, for free.
+      onFocus={() => iconRef.current?.startAnimation()}
+      onBlur={() => iconRef.current?.stopAnimation()}
       className={({ isActive }) =>
         [
           'icon-host group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
@@ -187,10 +204,10 @@ function NavItem({ to, end, icon: Icon, motion, label, onNavigate }: NavItemProp
     >
       {({ isActive }) => (
         <>
-          <Icon
-            className={`ui-icon size-5 shrink-0 ${isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-500'}`}
-            data-motion={motion}
-            aria-hidden="true"
+          <NavIcon
+            icon={icon}
+            ref={iconRef}
+            className={isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-500'}
           />
           <span className="truncate">{label}</span>
         </>
@@ -320,7 +337,7 @@ function CampaignSwitcher({ onNavigate }: { onNavigate?: () => void }) {
             id="all"
             className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50"
           >
-            <Swords className="size-4 text-gray-400" aria-hidden="true" />
+            <NavIcon icon={ALL_CAMPAIGNS_ICON} size={16} className="text-gray-400" />
             All campaigns
           </MenuItem>
           <MenuItem

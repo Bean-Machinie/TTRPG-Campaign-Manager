@@ -55,6 +55,11 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
+      {/* TEMPORARY: shell preview for visual verification. Remove. */}
+      <Route path="/__shell" element={<AppShell />}>
+        <Route index element={<DashboardPage />} />
+      </Route>
+
       {/* Authenticated application */}
       <Route path="/app" element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
