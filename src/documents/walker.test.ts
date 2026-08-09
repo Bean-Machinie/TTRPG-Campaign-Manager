@@ -212,6 +212,101 @@ describe('walkDocument · anchors', () => {
   })
 })
 
+describe('walkDocument · campaign and toggle blocks', () => {
+  // Both node types were added to the editor without touching the walker. These
+  // tests are what says that was safe rather than lucky: the "all children are
+  // inline" rule has to classify them the way the index needs.
+
+  it('indexes read-aloud text as its own block', () => {
+    const { blocks } = walkDocument(
+      doc(
+        heading('h', 2, 'The Vault'),
+        {
+          type: 'readAloud',
+          attrs: { uid: 'ra' },
+          content: [{ type: 'text', text: 'Cold air spills from the open door.' }],
+        },
+        paragraph('p', 'The party hesitates.'),
+      ),
+    )
+
+    expect(blocks[1]).toMatchObject({
+      blockUid: 'ra',
+      nodeType: 'readAloud',
+      headingPath: 'The Vault',
+      text: 'Cold air spills from the open door.',
+      visibility: 'shared',
+    })
+  })
+
+  it('inherits gm_only into read-aloud text inside a secret', () => {
+    const { blocks } = walkDocument(
+      doc({
+        type: 'secret',
+        content: [
+          {
+            type: 'readAloud',
+            attrs: { uid: 'ra' },
+            content: [{ type: 'text', text: 'Only if they open the sarcophagus.' }],
+          },
+        ],
+      }),
+    )
+
+    expect(blocks[0].visibility).toBe('gm_only')
+  })
+
+  it('indexes a toggle summary and descends into its body', () => {
+    const { blocks } = walkDocument(
+      doc(heading('h', 1, 'Ravenhold'), {
+        type: 'details',
+        content: [
+          {
+            type: 'detailsSummary',
+            attrs: { uid: 'sum' },
+            content: [{ type: 'text', text: 'Rumours in the market' }],
+          },
+          {
+            type: 'detailsContent',
+            content: [paragraph('body', 'The miller says the well is cursed.')],
+          },
+        ],
+      }),
+    )
+
+    expect(blocks.map((block) => [block.nodeType, block.text])).toEqual([
+      ['heading', 'Ravenhold'],
+      ['detailsSummary', 'Rumours in the market'],
+      ['paragraph', 'The miller says the well is cursed.'],
+    ])
+
+    // Collapsed content is still findable, and still breadcrumbed.
+    expect(blocks[2].headingPath).toBe('Ravenhold')
+  })
+
+  it('indexes the paragraphs inside table cells rather than the cells', () => {
+    const { blocks } = walkDocument(
+      doc({
+        type: 'table',
+        content: [
+          {
+            type: 'tableRow',
+            content: [
+              { type: 'tableHeader', content: [paragraph('h1c', 'Name')] },
+              { type: 'tableCell', content: [paragraph('c1', 'Blackthorn')] },
+            ],
+          },
+        ],
+      }),
+    )
+
+    expect(blocks.map((block) => [block.nodeType, block.text])).toEqual([
+      ['paragraph', 'Name'],
+      ['paragraph', 'Blackthorn'],
+    ])
+  })
+})
+
 describe('walkDocument · degenerate input', () => {
   it('returns nothing for an empty document', () => {
     expect(walkDocument({ type: 'doc' }).blocks).toEqual([])

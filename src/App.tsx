@@ -1,5 +1,7 @@
+import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { ProtectedRoute } from './auth/ProtectedRoute'
+import { LoadingScreen } from './components/layout/LoadingScreen'
 import { PublicOnlyRoute } from './auth/PublicOnlyRoute'
 import { AppLayout } from './components/layout/AppLayout'
 import { PublicLayout } from './components/layout/PublicLayout'
@@ -17,10 +19,19 @@ import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPag
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
 import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
 import { CampaignDocumentsPage } from './pages/app/campaign/CampaignDocumentsPage'
-import { CampaignDocumentPage } from './pages/app/campaign/CampaignDocumentPage'
 import { CampaignMapsPage } from './pages/app/campaign/CampaignMapsPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+
+/**
+ * TipTap and ProseMirror are most of the application's JavaScript, and only one
+ * route uses them. Splitting this chunk out keeps them off every other page.
+ */
+const CampaignDocumentPage = lazy(() =>
+  import('./pages/app/campaign/CampaignDocumentPage').then((module) => ({
+    default: module.CampaignDocumentPage,
+  })),
+)
 
 /**
  * The whole route table lives here.
@@ -61,7 +72,14 @@ export default function App() {
             {/* A document is the only section with a page of its own, because
                 it is the only one you open rather than read from a list. */}
             <Route path="documents" element={<CampaignDocumentsPage />} />
-            <Route path="documents/:documentId" element={<CampaignDocumentPage />} />
+            <Route
+              path="documents/:documentId"
+              element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <CampaignDocumentPage />
+                </Suspense>
+              }
+            />
             <Route path="maps" element={<CampaignMapsPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>

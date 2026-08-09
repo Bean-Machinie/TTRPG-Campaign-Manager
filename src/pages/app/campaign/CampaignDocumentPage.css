@@ -1,15 +1,56 @@
-/* The few things a document page needs beyond entryList.css. */
+/*
+ * Chrome around the document — kept to the minimum that still lets a GM see
+ * what they are looking at and get back out.
+ *
+ * The editor's own measure is set in DocumentEditor.css; the header aligns to
+ * it so the title sits over the text column rather than over the page.
+ */
 
-.document-title {
-  margin-bottom: 0;
+.document-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.document-status {
+.document-page__header,
+.document-page__settings {
+  max-width: calc(var(--doc-measure) + var(--doc-gutter) * 2);
+  width: 100%;
+  margin: 0 auto;
+  padding-left: var(--doc-gutter);
+  padding-right: var(--doc-gutter);
+}
+
+.document-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.document-page__title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.document-page__meta {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.document-page__status {
   font-variant-numeric: tabular-nums;
 }
 
-.document-settings {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
+@media (max-width: 48rem) {
+  .document-page__header,
+  .document-page__settings {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
 }

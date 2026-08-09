@@ -1,102 +1,552 @@
 /*
- * The editor surface. Deliberately plain: this is a writing space, so the
- * chrome stays out of the way and the tokens come from styles/global.css like
- * everywhere else.
+ * The document surface.
+ *
+ * There is no container here — no border, no panel, no background. The text
+ * sits on the page. Everything below is either reading typography, or chrome
+ * that stays out of the way until it is wanted.
+ *
+ * Tokens come from styles/global.css. The document scale is separate from the
+ * app's 16px form scale because inheriting form-control typography is what made
+ * the first version of this feel like a textarea.
  */
 
 .document-editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.document-editor__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.document-editor__tool {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.9rem;
-}
-
-.document-editor__tool.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  position: relative;
+  max-width: calc(var(--doc-measure) + var(--doc-gutter) * 2);
+  margin: 0 auto;
 }
 
 .document-editor__surface {
-  min-height: 18rem;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
+  min-height: 60vh;
+  /* The gutter lives in this padding, outside the text column. The block
+     inset is subtracted so the text itself still measures --doc-measure. */
+  padding: var(--space-4) calc(var(--doc-gutter) - var(--doc-block-pad)) 30vh;
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-line-height);
+  color: var(--color-text);
 }
 
-.document-editor__surface:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+/*
+ * Blocks as cells.
+ *
+ * A faint ground under each top-level block, a little stronger under the one
+ * the pointer is on. Enough to see where a block starts and stops — and to see
+ * which one the gutter controls are about to act on — without the page turning
+ * into a grid of boxes. The tiered blocks are excluded: they bring their own.
+ */
+.document-editor__surface > *:not(.secret-block):not(.read-aloud-block):not(hr) {
+  padding: 0.15em var(--doc-block-pad);
+  border-radius: var(--radius-md);
+  background-color: var(--color-block-surface);
+  transition: background-color 100ms ease;
 }
+
+.document-editor__surface > *:not(.secret-block):not(.read-aloud-block):not(hr):hover {
+  background-color: var(--color-block-surface-hover);
+}
+
+/* The surface is the page. A focus ring around the whole document would be
+   noise; the caret is the focus indicator, as in any text editor. */
+.document-editor__surface:focus,
+.document-editor__surface:focus-visible {
+  outline: none;
+}
+
+/* ----------------------------------------------------------- typography -- */
 
 .document-editor__surface > :first-child {
   margin-top: 0;
 }
 
-.document-editor__surface > :last-child {
-  margin-bottom: 0;
+.document-editor__surface p {
+  margin: 0 0 0.6em;
+}
+
+/*
+ * More space above a heading than below it. A heading belongs to what follows
+ * it, and spacing is what says so — this one rule does more for the sense of
+ * structure than the size jumps do.
+ */
+.document-editor__surface h1,
+.document-editor__surface h2,
+.document-editor__surface h3 {
+  margin-bottom: 0.3em;
+  font-weight: 700;
+  letter-spacing: -0.011em;
+}
+
+.document-editor__surface h1 {
+  margin-top: 2.2em;
+  font-size: 1.95em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .document-editor__surface h2 {
-  font-size: 1.15rem;
+  margin-top: 1.9em;
+  font-size: 1.4em;
+  line-height: 1.3;
 }
 
 .document-editor__surface h3 {
-  font-size: 1rem;
+  margin-top: 1.6em;
+  font-size: 1.12em;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.document-editor__surface ul,
+.document-editor__surface ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.4em;
+}
+
+.document-editor__surface li {
+  margin: 0.15em 0;
+}
+
+.document-editor__surface li > p {
+  margin: 0;
 }
 
 .document-editor__surface blockquote {
-  margin: var(--space-3) 0;
-  padding-left: var(--space-3);
+  margin: 1em 0;
+  padding-left: 1em;
   border-left: 3px solid var(--color-border-strong);
   color: var(--color-text-muted);
 }
 
 .document-editor__surface pre {
+  margin: 1em 0;
   padding: var(--space-3);
   border-radius: var(--radius-md);
   background-color: var(--color-bg-muted);
+  font-size: 0.9em;
+  line-height: 1.5;
   overflow-x: auto;
 }
 
+.document-editor__surface :not(pre) > code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background-color: var(--color-bg-muted);
+  font-size: 0.88em;
+}
+
+.document-editor__surface hr {
+  margin: 1.6em 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.document-editor__surface a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* --------------------------------------------------------- placeholders -- */
+
+.document-editor__surface .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------- gutter --- */
+
 /*
- * A secret has to be unmistakable while writing. A GM who cannot tell at a
- * glance which paragraph the party can read will eventually put the wrong
- * thing in the wrong one, and no amount of correct SQL fixes that.
+ * The handle is rendered as a portal on document.body, not inside the editor,
+ * so it cannot be revealed with a `.document-editor:hover` descendant rule —
+ * that selector can never match. It does not need one: the DragHandle plugin
+ * already toggles `visibility` as the pointer enters and leaves a block, which
+ * is the behaviour we wanted from hover in the first place.
+ *
+ * It positions itself against the hovered block, and the surface's left padding
+ * is what keeps it out of the text column.
  */
-.secret-block {
-  margin: var(--space-3) 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px dashed var(--color-danger-border);
+.block-gutter {
+  display: flex;
+  align-items: center;
+  padding-right: var(--space-2);
+}
+
+.block-gutter__controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.block-gutter__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
   border-radius: var(--radius-md);
-  background-color: var(--color-danger-surface);
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+}
+
+.block-gutter__button:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-muted);
+}
+
+.block-gutter__grip {
+  cursor: grab;
+}
+
+.block-gutter__grip:active {
+  cursor: grabbing;
+}
+
+/* The drop indicator while dragging a block. */
+.document-editor .ProseMirror-dropcursor {
+  border-radius: 2px;
+}
+
+.document-editor__surface .ProseMirror-selectednode {
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 3px var(--color-surface-hover);
+}
+
+/* -------------------------------------------------------------- popups -- */
+
+.editor-popup {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-popup);
+}
+
+.slash-menu {
+  width: 19rem;
+  max-height: 20rem;
+  padding: var(--space-1);
+  overflow-y: auto;
+}
+
+.slash-menu__group + .slash-menu__group {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.slash-menu__group-name,
+.block-menu__group-name {
+  margin: var(--space-1) 0;
+  padding: 0 var(--space-2);
+  color: var(--color-text-subtle);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slash-menu__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.3rem var(--space-2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slash-menu__item[data-selected='true'] {
+  background-color: var(--color-surface-hover);
+}
+
+.slash-menu__title {
+  flex: none;
+}
+
+.slash-menu__description {
+  color: var(--color-text-subtle);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slash-menu__empty {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.slash-menu__hint {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-subtle);
+  font-size: 0.8rem;
+}
+
+/*
+ * Floated over the document, never in it.
+ *
+ * This is a portal on document.body, and `fixed` is what keeps it that way: as
+ * an ordinary block in the editor's flow it would be laid out between the
+ * paragraphs and push everything below it down the page as it opened.
+ *
+ * It grows from its top-left, which is where the button that opened it is, so
+ * it reads as coming out of that button rather than appearing from nowhere.
+ */
+.block-menu {
+  position: fixed;
+  z-index: 40;
+  width: 12rem;
+  padding: var(--space-1);
+  transform-origin: top left;
+  animation: block-menu-open 90ms ease-out;
+}
+
+@keyframes block-menu-open {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.block-menu__group + .block-menu__group {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.block-menu__item {
+  display: block;
+  width: 100%;
+  padding: 0.3rem var(--space-2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.block-menu__item:hover,
+.block-menu__item:focus-visible {
+  background-color: var(--color-surface-hover);
+}
+
+.selection-menu {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: var(--space-1);
+}
+
+.selection-menu__button {
+  min-width: 1.9rem;
+  height: 1.9rem;
+  padding: 0 0.4rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.selection-menu__button:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.selection-menu__button[data-active='true'] {
+  color: var(--color-primary);
+}
+
+.selection-menu__underline {
+  text-decoration: underline;
+}
+
+.selection-menu__divider {
+  width: 1px;
+  height: 1.2rem;
+  margin: 0 var(--space-1);
+  background-color: var(--color-border);
+}
+
+/* ------------------------------------------------------- content tiers -- */
+
+/*
+ * A secret is a comfortable place to write, not a validation error. Quiet
+ * tinted ground, a solid left rule, and a label that stays put. The tint is
+ * amber rather than red for the same reason.
+ */
+.secret-block,
+.read-aloud-block {
+  margin: 1em 0;
+  /* Same horizontal inset as an ordinary block, so every ground lines up. */
+  padding: 0.6em var(--doc-block-pad);
+  border-left: 3px solid;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.secret-block {
+  border-left-color: var(--color-secret-rule);
+  background-color: var(--color-secret-surface);
 }
 
 .secret-block::before {
   content: 'GM only';
   display: block;
-  margin-bottom: var(--space-1);
-  color: var(--color-danger-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  margin-bottom: 0.2em;
+  color: var(--color-secret-text);
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.secret-block > :first-of-type {
+.read-aloud-block {
+  border-left-color: var(--color-readaloud-rule);
+  background-color: var(--color-readaloud-surface);
+  color: var(--color-readaloud-text);
+  font-style: italic;
+}
+
+.secret-block > :first-child,
+.read-aloud-block > :first-child {
   margin-top: 0;
 }
 
-.secret-block > :last-child {
+.secret-block > :last-child,
+.read-aloud-block > :last-child {
   margin-bottom: 0;
+}
+
+/* Nesting has to survive: a secret inside a list or a quote is ordinary. */
+.document-editor__surface li > .secret-block,
+.document-editor__surface blockquote > .secret-block {
+  margin: 0.4em 0;
+}
+
+/*
+ * A document nobody else can read looks different from one the GMs share.
+ * Two secrecy tiers that looked alike would eventually cost somebody a plot.
+ */
+.document-editor--author_only .document-editor__surface {
+  border-left: 3px solid var(--color-private-rule);
+  padding-left: calc(var(--doc-gutter) - 3px);
+  background-color: var(--color-private-surface);
+}
+
+.document-editor--gm_only .document-editor__surface {
+  border-left: 3px solid var(--color-secret-rule);
+  padding-left: calc(var(--doc-gutter) - 3px);
+  background-color: var(--color-secret-surface);
+}
+
+/* ------------------------------------------------------ toggle & table -- */
+
+.toggle-block {
+  margin: 0.6em 0;
+}
+
+.toggle-block > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.toggle-block > summary::-webkit-details-marker {
+  display: none;
+}
+
+.toggle-block > summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 1em;
+  color: var(--color-text-subtle);
+  transition: transform 120ms ease;
+}
+
+.toggle-block[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.toggle-block > div {
+  padding-left: 1em;
+}
+
+.document-editor__surface table {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: 0.94em;
+  table-layout: fixed;
+  overflow: hidden;
+}
+
+.document-editor__surface th,
+.document-editor__surface td {
+  padding: 0.4em 0.6em;
+  border: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.document-editor__surface th {
+  background-color: var(--color-bg-muted);
+  font-weight: 600;
+  text-align: left;
+}
+
+.document-editor__surface .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgb(59 91 219 / 8%);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------- motion -- */
+
+/*
+ * Narrow screens have no room for a gutter, so the controls are dropped rather
+ * than allowed to overlap the text. Touch has no hover to reveal them with
+ * either; the slash menu and markdown shortcuts still work.
+ */
+@media (max-width: 48rem) {
+  .document-editor__surface {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  .document-editor--author_only .document-editor__surface,
+  .document-editor--gm_only .document-editor__surface {
+    padding-left: calc(var(--space-3) - 3px);
+  }
+
+  .block-gutter {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .document-editor__surface > *,
+  .toggle-block > summary::before {
+    transition: none;
+  }
+
+  .block-menu {
+    animation: none;
+  }
 }

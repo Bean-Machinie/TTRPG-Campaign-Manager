@@ -28,12 +28,24 @@ export const UID_ATTRIBUTE = 'uid'
  * The nodes that carry an anchor.
  *
  * These are the block types with inline content — the ones the walker turns
- * into index rows. Containers such as blockquote or `secret` are not anchored
- * because nothing links to them; their children are. Keep this in step with
- * what `walkDocument()` indexes, or a new node type quietly falls back to a
- * positional uid.
+ * into index rows. Containers such as blockquote, `secret` or `details` are not
+ * anchored because nothing links to them; their children are.
+ *
+ * This list is the one thing that has to be maintained by hand when a block
+ * node is added. `walkDocument()` decides what to index structurally, so it
+ * needs no such list — but a node it indexes that is missing from here quietly
+ * falls back to a positional uid, and positional anchors rot on edit.
  */
-const ANCHORED_TYPES = ['paragraph', 'heading', 'codeBlock']
+const ANCHORED_TYPES = [
+  'paragraph',
+  'heading',
+  'codeBlock',
+  'readAloud',
+  // The clickable line of a toggle. Its body is made of ordinary blocks, which
+  // are anchored in their own right — as are the paragraphs inside a table
+  // cell, which is why the cells themselves are absent.
+  'detailsSummary',
+]
 
 /**
  * Builds a transaction giving every anchored node a unique uid, or returns null

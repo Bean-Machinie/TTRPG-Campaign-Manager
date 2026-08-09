@@ -1,24 +1,28 @@
 import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import { Placeholder } from '@tiptap/extension-placeholder'
 import type { JSONContent } from '@tiptap/core'
-import { Button } from '../components/ui/Button'
-import { BlockUid } from './blockUid'
-import { Secret } from './secretBlock'
+import type { DocumentVisibility } from '../documents/visibility'
+import { BlockGutter } from './BlockGutter'
+import { SelectionMenu } from './SelectionMenu'
+import { SCHEMA_EXTENSIONS } from './extensions'
+import { SlashCommand } from './slashCommand'
 import './DocumentEditor.css'
 
 /**
  * The document editor.
  *
+ * There is no container and no toolbar. The document sits on the page, the
+ * controls appear where they are relevant — in the left margin on hover, in a
+ * bubble on selection, behind `/` while typing — and nothing else is on screen.
+ *
  * Content is held as ProseMirror JSON rather than HTML, because everything
  * downstream reads the tree: the walker splits it into indexable blocks, and
- * the in-document search will overlay matches as decorations. HTML would mean
- * parsing it back before either could happen.
+ * the in-document search will overlay matches as decorations.
  *
  * The component is deliberately uncontrolled. `content` seeds the editor once;
  * afterwards ProseMirror owns the document and reports changes upward. Feeding
  * saved content back in on every render would fight the cursor. The page
- * remounts this component when the document id changes, which is what switches
- * documents.
+ * remounts this component when the document id changes.
  */
 
 type DocumentEditorProps = {
@@ -30,92 +34,69 @@ type DocumentEditorProps = {
    * longer read.
    */
   canWriteSecrets: boolean
+  /** The document's own tier, which tints the surface. Not an access check. */
+  visibility: DocumentVisibility
   onChange: (content: JSONContent) => void
 }
+
+const EMPTY_DOCUMENT_PROMPT = 'Describe the place, the person, or what happened. Press / for blocks.'
+
+const placeholder = Placeholder.configure({
+  // False so that an empty document still prompts when it has not been clicked
+  // into. Which *block* gets a placeholder is decided below, by hasAnchor.
+  showOnlyCurrent: false,
+  includeChildren: true,
+
+  placeholder: ({ editor, node, hasAnchor }) => {
+    if (editor.isEmpty) return EMPTY_DOCUMENT_PROMPT
+
+    // An empty block the writer is not in stays blank. A column of "Type / for
+    // commands" down an unfinished document is noise.
+    if (!hasAnchor) return ''
+
+    if (node.type.name === 'heading') return 'Heading'
+    if (node.type.name === 'detailsSummary') return 'Toggle title'
+    if (node.type.name === 'readAloud') return 'Text to read aloud'
+
+    return 'Type / for commands'
+  },
+})
 
 export function DocumentEditor({
   content,
   editable,
   canWriteSecrets,
+  visibility,
   onChange,
 }: DocumentEditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit, BlockUid, Secret],
+    extensions: [...SCHEMA_EXTENSIONS, placeholder, SlashCommand],
     content,
     editable,
     onUpdate: ({ editor: updated }) => onChange(updated.getJSON()),
     editorProps: {
-      attributes: { class: 'document-editor__surface' },
+      attributes: {
+        class: 'document-editor__surface',
+        // The surface is the document, so it should read as one.
+        role: 'textbox',
+        'aria-multiline': 'true',
+        'aria-label': 'Document body',
+      },
     },
   })
 
   if (!editor) return null
 
   return (
-    <div className="document-editor">
+    <div className={`document-editor document-editor--${visibility}`}>
       {editable ? (
-        <div className="document-editor__toolbar" role="toolbar" aria-label="Formatting">
-          <ToolbarButton
-            label="Bold"
-            active={editor.isActive('bold')}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          />
-          <ToolbarButton
-            label="Italic"
-            active={editor.isActive('italic')}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          />
-          <ToolbarButton
-            label="Heading"
-            active={editor.isActive('heading', { level: 2 })}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          />
-          <ToolbarButton
-            label="Subheading"
-            active={editor.isActive('heading', { level: 3 })}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          />
-          <ToolbarButton
-            label="List"
-            active={editor.isActive('bulletList')}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          />
-          <ToolbarButton
-            label="Quote"
-            active={editor.isActive('blockquote')}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          />
-
-          {canWriteSecrets ? (
-            <ToolbarButton
-              label="GM only"
-              active={editor.isActive('secret')}
-              onClick={() => editor.chain().focus().toggleSecret().run()}
-            />
-          ) : null}
-        </div>
+        <>
+          <BlockGutter editor={editor} canWriteSecrets={canWriteSecrets} />
+          <SelectionMenu editor={editor} />
+        </>
       ) : null}
 
       <EditorContent editor={editor} />
     </div>
-  )
-}
-
-type ToolbarButtonProps = {
-  label: string
-  active: boolean
-  onClick: () => void
-}
-
-function ToolbarButton({ label, active, onClick }: ToolbarButtonProps) {
-  return (
-    <Button
-      variant="secondary"
-      className={active ? 'document-editor__tool is-active' : 'document-editor__tool'}
-      aria-pressed={active}
-      onClick={onClick}
-    >
-      {label}
-    </Button>
   )
 }

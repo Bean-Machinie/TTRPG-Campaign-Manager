@@ -127,71 +127,69 @@ function LoadedDocument({ document, role, onChanged }: LoadedDocumentProps) {
   }
 
   return (
-    <div className="entry-section">
+    // No card, no panel. The document is the page — the app shell is the only
+    // frame it gets.
+    <div className="document-page">
       {actionError ? <Alert>{actionError}</Alert> : null}
       {saveError ? <Alert>{saveError}</Alert> : null}
 
-      <Card>
-        <div className="entry__heading">
-          <div>
-            <h2 className="section-title document-title">
-              {document.title}
-              {badge ? <span className="entry__badge">{badge}</span> : null}
-            </h2>
-            <p className="entry__meta">
-              {DOCUMENT_TYPE_LABELS[document.docType]} ·{' '}
-              {VISIBILITY_LABELS[document.visibility]}
-              {editable ? (
-                <>
-                  {' '}
-                  · <span className="document-status">{SAVE_STATUS_LABELS[status]}</span>
-                </>
-              ) : null}
-            </p>
-          </div>
-
-          {editable ? (
-            <div className="entry__actions">
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => setSettingsOpen((open) => !open)}
-              >
-                {settingsOpen ? 'Close' : 'Settings'}
-              </Button>
-              <Button variant="secondary" disabled={busy} onClick={handleDelete}>
-                Delete
-              </Button>
-            </div>
-          ) : null}
+      <header className="document-page__header">
+        <div>
+          <h1 className="document-page__title">
+            {document.title}
+            {badge ? <span className="entry__badge">{badge}</span> : null}
+          </h1>
+          <p className="document-page__meta">
+            {DOCUMENT_TYPE_LABELS[document.docType]} · {VISIBILITY_LABELS[document.visibility]}
+            {editable ? (
+              <>
+                {' '}
+                · <span className="document-page__status">{SAVE_STATUS_LABELS[status]}</span>
+              </>
+            ) : null}
+          </p>
         </div>
 
-        {settingsOpen ? (
-          <div className="document-settings">
-            <DocumentForm
-              initialValue={{
-                title: document.title,
-                docType: document.docType,
-                visibility: document.visibility,
-              }}
-              submitLabel="Save settings"
-              busy={busy}
-              canWriteSecrets={canWriteSecrets}
-              onSubmit={handleSettings}
-              onCancel={() => setSettingsOpen(false)}
-            />
+        {editable ? (
+          <div className="entry__actions">
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => setSettingsOpen((open) => !open)}
+            >
+              {settingsOpen ? 'Close' : 'Settings'}
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={handleDelete}>
+              Delete
+            </Button>
           </div>
         ) : null}
-      </Card>
+      </header>
 
-      <Card>
-        <DocumentEditor
-          content={document.content}
-          editable={editable}
-          canWriteSecrets={canWriteSecrets}
-          onChange={schedule}
-        />
-      </Card>
+      {settingsOpen ? (
+        <Card className="document-page__settings">
+          <DocumentForm
+            initialValue={{
+              title: document.title,
+              docType: document.docType,
+              visibility: document.visibility,
+            }}
+            submitLabel="Save settings"
+            busy={busy}
+            canWriteSecrets={canWriteSecrets}
+            onSubmit={handleSettings}
+            onCancel={() => setSettingsOpen(false)}
+          />
+        </Card>
+      ) : null}
+
+      <DocumentEditor
+        content={document.content}
+        editable={editable}
+        canWriteSecrets={canWriteSecrets}
+        visibility={document.visibility}
+        onChange={schedule}
+      />
     </div>
   )
 }

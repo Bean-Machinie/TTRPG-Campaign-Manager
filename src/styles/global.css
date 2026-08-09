@@ -19,6 +19,29 @@
   --color-danger-border: #f0c2c2;
   --color-danger-surface: #fdf2f2;
 
+  /*
+   * Content tiers inside a document. Deliberately not the danger colours: a
+   * secret is a normal state a GM writes in for most of a session, not a
+   * mistake to be corrected. Amber and violet are far enough apart that the two
+   * secrecy tiers can never be mistaken for one another at a glance.
+   */
+  /* Each block sits on its own faint ground, so where one ends and the next
+     begins is visible without drawing a box around anything. */
+  --color-block-surface: #fafbfc;
+  --color-block-surface-hover: #f1f3f6;
+
+  --color-secret-surface: #fdf7ea;
+  --color-secret-rule: #b07d1a;
+  --color-secret-text: #7a5610;
+
+  --color-private-surface: #f6f4fc;
+  --color-private-rule: #6b5bb0;
+  --color-private-text: #4c3f86;
+
+  --color-readaloud-surface: #f1f5fa;
+  --color-readaloud-rule: #6d87a8;
+  --color-readaloud-text: #3f556f;
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -29,8 +52,26 @@
   --radius-md: 6px;
   --radius-lg: 10px;
 
+  --shadow-popup: 0 8px 28px rgb(15 20 30 / 14%), 0 1px 3px rgb(15 20 30 / 10%);
+
   --width-content: 64rem;
   --width-narrow: 26rem;
+
+  /*
+   * Reading typography, used only by the document editor. Separate from the
+   * 16px form-control scale on purpose — inheriting that scale is exactly what
+   * made the first editor read as a textarea.
+   *
+   * The measure is the text column; the gutter that holds the drag handle sits
+   * in the padding outside it, so hover controls never shift a word.
+   */
+  --doc-measure: 43.75rem;
+  --doc-gutter: 3.5rem;
+  /* Inset of a block's ground from its text. Subtracted from the surface
+     padding so the text column stays exactly --doc-measure wide. */
+  --doc-block-pad: 0.7rem;
+  --doc-font-size: 17px;
+  --doc-line-height: 1.65;
 
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }

@@ -13,9 +13,14 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",
+    "@tiptap/extension-details": "^3.29.2",
+    "@tiptap/extension-drag-handle-react": "^3.29.2",
+    "@tiptap/extension-placeholder": "^3.29.2",
+    "@tiptap/extension-table": "^3.29.2",
     "@tiptap/pm": "^3.29.2",
     "@tiptap/react": "^3.29.2",
     "@tiptap/starter-kit": "^3.29.2",
+    "@tiptap/suggestion": "^3.29.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0"
