@@ -1,6 +1,7 @@
 import { Extension } from '@tiptap/core'
 import type { Editor } from '@tiptap/core'
 import { Plugin, TextSelection } from '@tiptap/pm/state'
+import { cellDragTarget, finishCellDrag } from './cellDragMotion'
 
 function topLevelRangeAt(
   editor: Editor,
@@ -104,25 +105,45 @@ export const CellBehavior = Extension.create({
           handleDrop: (view, event, _slice, moved) => {
             if (!moved) return false
 
-            const source = topLevelRangeAt(this.editor, view.state.selection.from)
-            const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
-            if (!source || !coordinates) return false
+            const liveTarget = cellDragTarget(view)
+            const sourcePosition = liveTarget?.sourcePos ?? view.state.selection.from
+            const source = topLevelRangeAt(this.editor, sourcePosition)
+            if (!source) return false
 
-            const target = topLevelRangeAt(this.editor, coordinates.pos)
-            if (!target || (target.from === source.from && target.to === source.to)) return true
+            const ranges: Array<{ from: number; to: number }> = []
+            view.state.doc.forEach((node, from) => ranges.push({ from, to: from + node.nodeSize }))
 
-            const targetDom = view.nodeDOM(target.from)
-            const targetRect = targetDom instanceof Element ? targetDom.getBoundingClientRect() : null
-            const boundary = targetRect && event.clientY > targetRect.top + targetRect.height / 2
-              ? target.to
-              : target.from
+            let boundary: number
+            if (liveTarget) {
+              const sourceIndex = ranges.findIndex((range) => range.from === source.from)
+              const targetIndex = liveTarget.targetIndex
+              if (targetIndex === sourceIndex) {
+                finishCellDrag(view)
+                return true
+              }
+              boundary = targetIndex < sourceIndex ? ranges[targetIndex].from : ranges[targetIndex].to
+            } else {
+              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
+              if (!coordinates) return false
+              const target = topLevelRangeAt(this.editor, coordinates.pos)
+              if (!target) return false
+              const targetDom = view.nodeDOM(target.from)
+              const targetRect = targetDom instanceof Element ? targetDom.getBoundingClientRect() : null
+              boundary = targetRect && event.clientY > targetRect.top + targetRect.height / 2
+                ? target.to
+                : target.from
+            }
 
-            if (boundary === source.from || boundary === source.to) return true
+            if (boundary === source.from || boundary === source.to) {
+              finishCellDrag(view)
+              return true
+            }
 
             event.preventDefault()
             const movingNode = view.state.doc.nodeAt(source.from)
             if (!movingNode) return false
 
+            finishCellDrag(view)
             const transaction = view.state.tr.delete(source.from, source.to)
             const insertion = transaction.mapping.map(boundary)
             transaction.insert(insertion, movingNode).scrollIntoView()

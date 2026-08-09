@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/react'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Fragment } from '@tiptap/pm/model'
 import { positionPopup } from './popup'
+import { beginCellDrag, finishCellDrag } from './cellDragMotion'
 
 /**
  * The controls that live in the left margin.
@@ -37,11 +38,26 @@ type HoveredBlock = { node: ProseMirrorNode; pos: number }
 // while the pointer is travelling toward a button, causing flicker and lost
 // clicks.
 const GUTTER_POSITION = { placement: 'left' as const }
+const DRAG_IMAGE_STYLES = [
+  'color',
+  'background-color',
+  'border',
+  'border-radius',
+  'box-shadow',
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-weight',
+  'line-height',
+  'padding',
+  'width',
+]
 
 export function BlockGutter({ editor, canWriteSecrets }: BlockGutterProps) {
   const [block, setBlock] = useState<HoveredBlock | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const blockRef = useRef<HoveredBlock | null>(null)
 
   /*
    * While the menu is open it owns the block, and hover stops mattering.
@@ -61,10 +77,21 @@ export function BlockGutter({ editor, canWriteSecrets }: BlockGutterProps) {
   const handleNodeChange = useCallback(
     (data: { node: ProseMirrorNode | null; pos: number }) => {
       if (menuOpenRef.current) return
-      setBlock(data.node ? { node: data.node, pos: data.pos } : null)
+      const nextBlock = data.node ? { node: data.node, pos: data.pos } : null
+      blockRef.current = nextBlock
+      setBlock(nextBlock)
     },
     [],
   )
+
+  const handleDragStart = useCallback(() => {
+    const currentBlock = blockRef.current
+    if (currentBlock) beginCellDrag(editor, currentBlock.pos)
+  }, [editor])
+
+  const handleDragEnd = useCallback(() => {
+    finishCellDrag(editor.view)
+  }, [editor])
 
   /** Adds an empty block below and opens the slash menu inside it. */
   function insertBelow() {
@@ -91,6 +118,9 @@ export function BlockGutter({ editor, canWriteSecrets }: BlockGutterProps) {
         onNodeChange={handleNodeChange}
         className="block-gutter"
         computePositionConfig={GUTTER_POSITION}
+        dragImageProperties={DRAG_IMAGE_STYLES}
+        onElementDragStart={handleDragStart}
+        onElementDragEnd={handleDragEnd}
       >
         <div className="block-gutter__controls">
           <button

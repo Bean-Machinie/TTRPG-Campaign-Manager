@@ -214,6 +214,22 @@
   box-shadow: 0 0 0 3px var(--color-surface-hover);
 }
 
+/* Live vertical sorting. The ProseMirror document is committed only on drop;
+   during the gesture neighbouring cells move into their prospective positions. */
+.document-editor__surface--sorting > * {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 140ms ease,
+    box-shadow 140ms ease;
+  will-change: transform;
+}
+
+.document-editor__surface--sorting > .document-cell--drag-source {
+  opacity: 0;
+  transform: scale(0.985);
+  box-shadow: 0 8px 24px rgb(15 20 30 / 12%);
+}
+
 /* -------------------------------------------------------------- popups -- */
 
 .editor-popup {
@@ -510,5 +526,9 @@
 
   .block-menu {
     animation: none;
+  }
+
+  .document-editor__surface--sorting > * {
+    transition-duration: 1ms;
   }
 }
