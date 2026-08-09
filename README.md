@@ -6,7 +6,8 @@ No campaign data is persisted yet.
 
 ## Stack
 
-React 19 · TypeScript · Vite · React Router 7/8 · plain CSS · Supabase Auth
+React 19 · TypeScript · Vite · React Router 7/8 · plain CSS · Supabase Auth ·
+TipTap (ProseMirror) · Vitest
 
 ## Getting started
 
@@ -17,7 +18,7 @@ npm run dev
 ```
 
 Other scripts: `npm run build` (type check + production build), `npm run preview`,
-`npm run lint`.
+`npm run lint`, `npm test` (`npm run test:watch` while working).
 
 The app runs without Supabase configured — the public site works and the auth pages
 explain what is missing instead of failing with an obscure error.
@@ -46,6 +47,8 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/:campaignId/locations` | authenticated | Locations              |
 | `/app/campaigns/:campaignId/quests` | authenticated | Quests                    |
 | `/app/campaigns/:campaignId/notes` | authenticated | Notes, shared or private   |
+| `/app/campaigns/:campaignId/documents` | authenticated | Rich-text documents    |
+| `/app/campaigns/:campaignId/documents/:documentId` | authenticated | One document, in the editor |
 | `/app/campaigns/:campaignId/maps` | authenticated | Uploaded map images         |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
 | `/app/settings`              | authenticated | Account settings (placeholder) |
@@ -73,15 +76,17 @@ to read, `can_manage_campaign()` (owner or GM) to write. Rows are inserted
 directly by the client, because unlike memberships there is no companion row to
 keep in step.
 
-There are three variants to copy from:
+There are four variants to copy from:
 
 - **`campaign_sessions`** — only owners and GMs write. The simpler case, and what
   locations and quests copy verbatim.
 - **`campaign_characters`** — adds per-row ownership through `player_user_id`, so
   a player may write their own character and nothing else.
 - **`campaign_notes`** — every member writes, only the author edits or deletes,
-  and `is_private` narrows the read policy to the author alone. Copy this one for
-  anything with a visibility flag.
+  and `is_private` narrows the read policy to the author alone.
+- **`campaign_documents`** — the same idea as notes, but with three tiers
+  instead of a boolean, and the rule factored out of the policies. Copy this one
+  for anything with a visibility flag.
 
 Maps are the exception to "everything is a row": the image lives in the private
 `campaign-maps` storage bucket and `campaign_maps` records it, optionally tied to
@@ -90,6 +95,45 @@ whole campaign). Object paths are always `<campaign_id>/<uuid>.<ext>`; the
 policies on `storage.objects` parse the campaign id out of the path and call the
 same membership helpers, so storage access mirrors table access. Size and MIME
 limits live on the bucket. Images are displayed through hour-long signed URLs.
+
+### Documents
+
+`campaign_documents` holds a TipTap (ProseMirror) tree in a `jsonb` column
+rather than a `text` body. It is the groundwork for search: a document is later
+split into per-block index rows, and every result anchors to a block rather than
+to the document.
+
+Visibility is a three-value enum, not a boolean:
+
+| tier          | who reads it                                            |
+| ------------- | ------------------------------------------------------- |
+| `shared`      | every member                                            |
+| `gm_only`     | owners and GMs                                          |
+| `author_only` | the author, and nobody else — not the GM, not the owner |
+
+`author_only` is `campaign_notes.is_private` under a new name, with its meaning
+unchanged. **A GM does not get to read it.** That is the point of the tier, and
+it is the clause most likely to be "fixed" later by someone who assumes an owner
+should see everything.
+
+Two rules carry all of it, and both live in SQL:
+
+- `can_read_visibility(campaign_id, visibility, author_id)` — the only read rule.
+  Unknown tiers fall through to false, so extending the check constraint without
+  teaching this function denies access rather than granting it.
+- `can_write_visibility(...)` — you may write what you may read, and only if it
+  is yours or you manage the campaign. Building on the read rule is what stops a
+  player creating a `gm_only` document they could not then open.
+
+Every policy on the table is one of those two calls. Anything added later that
+reads documents or their blocks should call them rather than writing its own
+comparison — the search index will filter on exactly this rule, and a second
+copy of it would drift.
+
+A `secret` node inside a document narrows its subtree to `gm_only`. Nesting only
+ever narrows: `mostRestrictive()` in `src/documents/visibility.ts` combines a
+block's inherited visibility with its document's tier, so a secret inside an
+`author_only` document stays `author_only`.
 
 On the UI side the matching pages share one stylesheet,
 `pages/app/campaign/entryList.css`. The pages themselves stay separate and
@@ -127,6 +171,8 @@ src/
   main.tsx                entry: BrowserRouter + AuthProvider
   auth/                   session state and route guards
   campaigns/              types, queries (campaignsApi.ts) and hooks
+  documents/              visibility rules, the block walker, autosave
+  editor/                 TipTap: the editor, block uids, the secret node
   profile/                the signed-in user's own profile
   lib/supabase/client.ts  the only place Supabase is constructed
   lib/useAsyncData.ts     the app's entire data-loading strategy
@@ -136,3 +182,18 @@ src/
   pages/app/campaign/     the campaign workspace layout and its child routes
   styles/global.css       CSS custom properties and base styles
 ```
+
+## Tests
+
+`npm test` runs Vitest over `src/**/*.test.ts`. Tests sit next to what they test.
+
+What is covered today is the pure logic the document feature rests on: the
+visibility resolver, the block walker, and block uid assignment. The walker is
+deliberately a pure function — `(pmDoc, visibility) => blocks`, no database, no
+clock — because anchors, snippets and secret isolation are all decided in it.
+Block uids are tested against a headless ProseMirror state; a real browser would
+only be testing the browser.
+
+Access control is not covered by these. Policies can only be tested against a
+database that is enforcing them, which needs two signed-in accounts with
+different roles, and arrives with the search feature.

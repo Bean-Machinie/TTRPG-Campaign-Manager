@@ -1,3 +1,6 @@
+import type { JSONContent } from '@tiptap/core'
+import type { DocumentVisibility } from '../documents/visibility'
+
 /** Mirrors the `role` check constraint on public.campaign_memberships. */
 export type CampaignRole = 'owner' | 'gm' | 'player'
 
@@ -146,4 +149,44 @@ export type CampaignMap = {
 export type MapInput = {
   name: string
   locationId: string | null
+}
+
+// ------------------------------------------------------------- documents --
+
+/** Mirrors the `doc_type` check constraint on public.campaign_documents. */
+export type DocumentType = 'page' | 'session_log' | 'handout' | 'lore'
+
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  page: 'Page',
+  session_log: 'Session log',
+  handout: 'Handout',
+  lore: 'Lore',
+}
+
+/**
+ * A document without its body. What the list page needs, and no more: a
+ * campaign's worth of ProseMirror trees is a lot to fetch in order to render
+ * titles.
+ */
+export type CampaignDocumentSummary = {
+  id: string
+  title: string
+  docType: DocumentType
+  visibility: DocumentVisibility
+  authorId: string
+  updatedAt: string
+}
+
+/** One document, body included. */
+export type CampaignDocument = CampaignDocumentSummary & {
+  /** ProseMirror JSON, exactly as TipTap produced it. */
+  content: JSONContent
+  createdAt: string
+}
+
+/** The fields of a document that are edited apart from its body. */
+export type DocumentInput = {
+  title: string
+  docType: DocumentType
+  visibility: DocumentVisibility
 }

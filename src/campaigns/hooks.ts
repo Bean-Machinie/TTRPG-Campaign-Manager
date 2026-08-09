@@ -1,7 +1,9 @@
 import { useAsyncData } from '../lib/useAsyncData'
 import {
+  getCampaignDocument,
   getCampaignMembership,
   listCampaignCharacters,
+  listCampaignDocuments,
   listCampaignInvitations,
   listCampaignLocations,
   listCampaignMaps,
@@ -104,6 +106,25 @@ export function useCampaignMaps(campaignId: string) {
     'Could not load the maps of this campaign.',
   )
   return { maps: data ?? [], loading, error, reload }
+}
+
+export function useCampaignDocuments(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listCampaignDocuments(campaignId),
+    `documents:${campaignId}`,
+    'Could not load the documents of this campaign.',
+  )
+  return { documents: data ?? [], loading, error, reload }
+}
+
+/** One document with its body. Null means "not yours to read", as elsewhere. */
+export function useCampaignDocument(documentId: string | undefined) {
+  const { data, loading, error, reload } = useAsyncData(
+    async () => (documentId ? getCampaignDocument(documentId) : null),
+    `document:${documentId}`,
+    'Could not load this document.',
+  )
+  return { document: data, loading, error, reload }
 }
 
 /** Invitations addressed to the signed-in user. */

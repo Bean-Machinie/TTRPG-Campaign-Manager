@@ -1,12 +1,16 @@
+import type { JSONContent } from '@tiptap/core'
 import { requireSupabase } from '../lib/supabase/client'
 import { todayIsoDate } from '../lib/format'
 import { PROFILE_COLUMNS, personLabel } from '../profile/profileApi'
+import type { DocumentVisibility } from '../documents/visibility'
 import type {
   Campaign,
   CampaignInvitation,
   CampaignMember,
   CampaignMembership,
   CampaignCharacter,
+  CampaignDocument,
+  CampaignDocumentSummary,
   CampaignLocation,
   CampaignMap,
   CampaignNote,
@@ -16,6 +20,8 @@ import type {
   CampaignSummary,
   CharacterInput,
   CharacterKind,
+  DocumentInput,
+  DocumentType,
   InvitableRole,
   LocationInput,
   MapInput,
@@ -783,4 +789,149 @@ export async function deleteMap(mapId: string, storagePath: string): Promise<voi
   if (error) throw error
 
   await supabase.storage.from(MAPS_BUCKET).remove([storagePath])
+}
+
+// ------------------------------------------------------------- documents --
+
+/** What a new document starts as: one empty paragraph for the cursor to sit in. */
+export const EMPTY_DOCUMENT: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+}
+
+const DOCUMENT_SUMMARY_COLUMNS = 'id, title, doc_type, visibility, author_id, updated_at'
+
+const DOCUMENT_COLUMNS = `${DOCUMENT_SUMMARY_COLUMNS}, content, created_at`
+
+type DocumentSummaryRow = {
+  id: string
+  title: string
+  doc_type: DocumentType
+  visibility: DocumentVisibility
+  author_id: string
+  updated_at: string
+}
+
+type DocumentRow = DocumentSummaryRow & {
+  content: JSONContent
+  created_at: string
+}
+
+function toDocumentSummary(row: DocumentSummaryRow): CampaignDocumentSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    docType: row.doc_type,
+    visibility: row.visibility,
+    authorId: row.author_id,
+    updatedAt: row.updated_at,
+  }
+}
+
+function toDocumentRow(input: DocumentInput) {
+  return {
+    title: input.title.trim(),
+    doc_type: input.docType,
+    visibility: input.visibility,
+  }
+}
+
+/**
+ * Documents of a campaign, most recently edited first.
+ *
+ * The bodies are left behind — see CampaignDocumentSummary. Which rows come
+ * back is decided by public.can_read_visibility() in the select policy, so a
+ * player asking this question is never sent a GM-only document to discard.
+ * That is the whole design: nothing filters here, because nothing arrives that
+ * would need filtering.
+ */
+export async function listCampaignDocuments(
+  campaignId: string,
+): Promise<CampaignDocumentSummary[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_documents')
+    .select(DOCUMENT_SUMMARY_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+  return (data as DocumentSummaryRow[]).map(toDocumentSummary)
+}
+
+/** One document with its body, or null when it is not readable by this user. */
+export async function getCampaignDocument(documentId: string): Promise<CampaignDocument | null> {
+  if (!UUID_PATTERN.test(documentId)) return null
+
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_documents')
+    .select(DOCUMENT_COLUMNS)
+    .eq('id', documentId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const row = data as DocumentRow
+
+  return {
+    ...toDocumentSummary(row),
+    content: row.content,
+    createdAt: row.created_at,
+  }
+}
+
+/** Returns the new id, because creating a document means opening it. */
+export async function createDocument(campaignId: string, input: DocumentInput): Promise<string> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_documents')
+    .insert({ campaign_id: campaignId, ...toDocumentRow(input), content: EMPTY_DOCUMENT })
+    .select('id')
+    .single()
+
+  if (error) throw error
+  return (data as { id: string }).id
+}
+
+/** Title, type and visibility. The body has its own call. */
+export async function updateDocument(documentId: string, input: DocumentInput): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_documents')
+    .update(toDocumentRow(input))
+    .eq('id', documentId)
+
+  if (error) throw error
+}
+
+/**
+ * The autosave path. Separate from updateDocument() so that a save landing
+ * mid-keystroke cannot write back a stale title, and so the block index — which
+ * only ever needs rebuilding when the body changes — has one call to hang off.
+ */
+export async function saveDocumentContent(
+  documentId: string,
+  content: JSONContent,
+): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_documents')
+    .update({ content })
+    .eq('id', documentId)
+
+  if (error) throw error
+}
+
+export async function deleteDocument(documentId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase.from('campaign_documents').delete().eq('id', documentId)
+  if (error) throw error
 }

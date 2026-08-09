@@ -1,0 +1,102 @@
+/*
+ * The editor surface. Deliberately plain: this is a writing space, so the
+ * chrome stays out of the way and the tokens come from styles/global.css like
+ * everywhere else.
+ */
+
+.document-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.document-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.document-editor__tool {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.document-editor__tool.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.document-editor__surface {
+  min-height: 18rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.document-editor__surface:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.document-editor__surface > :first-child {
+  margin-top: 0;
+}
+
+.document-editor__surface > :last-child {
+  margin-bottom: 0;
+}
+
+.document-editor__surface h2 {
+  font-size: 1.15rem;
+}
+
+.document-editor__surface h3 {
+  font-size: 1rem;
+}
+
+.document-editor__surface blockquote {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+
+.document-editor__surface pre {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-muted);
+  overflow-x: auto;
+}
+
+/*
+ * A secret has to be unmistakable while writing. A GM who cannot tell at a
+ * glance which paragraph the party can read will eventually put the wrong
+ * thing in the wrong one, and no amount of correct SQL fixes that.
+ */
+.secret-block {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-danger-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-danger-surface);
+}
+
+.secret-block::before {
+  content: 'GM only';
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-danger-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.secret-block > :first-of-type {
+  margin-top: 0;
+}
+
+.secret-block > :last-child {
+  margin-bottom: 0;
+}

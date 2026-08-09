@@ -16,6 +16,8 @@ import { CampaignCharactersPage } from './pages/app/campaign/CampaignCharactersP
 import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPage'
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
 import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
+import { CampaignDocumentsPage } from './pages/app/campaign/CampaignDocumentsPage'
+import { CampaignDocumentPage } from './pages/app/campaign/CampaignDocumentPage'
 import { CampaignMapsPage } from './pages/app/campaign/CampaignMapsPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -56,6 +58,10 @@ export default function App() {
             <Route path="locations" element={<CampaignLocationsPage />} />
             <Route path="quests" element={<CampaignQuestsPage />} />
             <Route path="notes" element={<CampaignNotesPage />} />
+            {/* A document is the only section with a page of its own, because
+                it is the only one you open rather than read from a list. */}
+            <Route path="documents" element={<CampaignDocumentsPage />} />
+            <Route path="documents/:documentId" element={<CampaignDocumentPage />} />
             <Route path="maps" element={<CampaignMapsPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>

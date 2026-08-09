@@ -88,6 +88,9 @@ export function CampaignWorkspaceLayout() {
           <NavLink className="workspace-nav__item" to="notes">
             Notes
           </NavLink>
+          <NavLink className="workspace-nav__item" to="documents">
+            Documents
+          </NavLink>
           <NavLink className="workspace-nav__item" to="maps">
             Maps
           </NavLink>
