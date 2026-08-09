@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import type { JSONContent } from '@tiptap/core'
 import type { DocumentVisibility } from '../documents/visibility'
-import { BlockGutter } from './BlockGutter'
+import { CellDecorations } from './cellDecorations'
+import { CellSorter } from './CellSorter'
 import { SelectionMenu } from './SelectionMenu'
 import { SCHEMA_EXTENSIONS } from './extensions'
 import { SlashCommand } from './slashCommand'
@@ -69,10 +71,17 @@ export function DocumentEditor({
   visibility,
   onChange,
 }: DocumentEditorProps) {
+  // The cell handles are positioned against this element rather than against
+  // the viewport, so they stay put while the page scrolls under them.
+  const [container, setContainer] = useState<HTMLDivElement | null>(null)
+
   const editor = useEditor({
     extensions: [
       ...SCHEMA_EXTENSIONS,
       placeholder,
+      // Presentation, not shape: it decorates cells and never touches content,
+      // which is why it is here rather than in the schema list.
+      CellDecorations,
       SlashCommand.configure({ canWriteSecrets }),
     ],
     content: normalizeDocumentContent(content),
@@ -92,15 +101,16 @@ export function DocumentEditor({
   if (!editor) return null
 
   return (
-    <div className={`document-editor document-editor--${visibility}`}>
-      {editable ? (
-        <>
-          <BlockGutter editor={editor} canWriteSecrets={canWriteSecrets} />
-          <SelectionMenu editor={editor} />
-        </>
-      ) : null}
+    <div className={`document-editor document-editor--${visibility}`} ref={setContainer}>
+      {editable ? <SelectionMenu editor={editor} /> : null}
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="document-editor__content" />
+
+      {/* After the content on purpose: the sorter reads the DOM ProseMirror has
+          rendered, so it has to mount once that DOM exists. */}
+      {editable ? (
+        <CellSorter editor={editor} container={container} canWriteSecrets={canWriteSecrets} />
+      ) : null}
     </div>
   )
 }

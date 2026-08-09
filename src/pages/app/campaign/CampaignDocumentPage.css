@@ -48,7 +48,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 48rem) {
+/* Matches the editor's own gutter breakpoint, so the title never sits over a
+   text column that has moved out from under it. */
+@media (max-width: 56rem) {
   .document-page__header,
   .document-page__settings {
     padding-left: var(--space-3);

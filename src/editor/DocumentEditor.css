@@ -18,7 +18,10 @@
   margin: 0 auto;
 }
 
-.document-editor > div,
+/* The wrapper Tiptap renders around the surface, named rather than matched as
+   `> div`: the handles are also direct children, and they have to shrink to
+   their buttons rather than stretch across the page. */
+.document-editor__content,
 .document-editor__surface {
   width: 100%;
   min-width: 0;
@@ -34,16 +37,79 @@
   color: var(--color-text);
 }
 
+/* -------------------------------------------------------------- cells -- */
+
 /*
- * Blocks as cells.
+ * A cell is a top-level node, and it is the unit this whole editor is built
+ * around: the thing a handle points at, the thing that moves, the thing a menu
+ * turns into something else. Making that unit visible is most of the work — a
+ * faint ground under each one reads as a boundary without ruling the page into
+ * a grid. Tiered cells replace the ground with their own further down.
  *
- * A faint ground under each top-level block makes cell boundaries readable
- * without turning the page into a grid. Tiered blocks bring their own ground.
+ * `position: relative` is not decoration. It gives the caret marker something
+ * to sit against and lets a lifted cell rise over its neighbours; without it
+ * the z-index below would do nothing at all.
  */
-.document-editor__surface > *:not(.secret-block):not(.read-aloud-block):not(hr) {
+.document-editor__surface > * {
+  position: relative;
   padding: 0.15em var(--doc-block-pad);
   border-radius: var(--radius-md);
   background-color: var(--color-block-surface);
+  transition:
+    background-color 120ms ease,
+    box-shadow 160ms ease;
+}
+
+/* A rule divides cells; it is not a cell with a face of its own. */
+.document-editor__surface > hr {
+  background-color: transparent;
+}
+
+/*
+ * Hover is a class, not `:hover`.
+ *
+ * The handle sits in the margin outside the cell, so the pointer is off the
+ * cell exactly when the writer is reaching for its controls — the one moment
+ * the cell most needs to look picked out. The sorter decides which cell is
+ * under the pointer by height alone and says so here.
+ */
+.document-editor__surface > .document-cell--hovered {
+  background-color: var(--color-block-surface-hover);
+}
+
+/*
+ * The cell holding the caret. A hairline down its inside edge, not a ring or a
+ * border: findable at a glance while skimming, invisible while reading, and it
+ * does not borrow the vocabulary of selection — this is where you are, not
+ * something you picked.
+ */
+.document-editor__surface > .document-cell--current::after {
+  content: '';
+  position: absolute;
+  top: 0.15em;
+  bottom: 0.15em;
+  left: 0;
+  width: 2px;
+  border-radius: 2px;
+  background-color: var(--color-border-strong);
+}
+
+/*
+ * A cell in flight leaves the page: brighter ground than anything beneath it, a
+ * hairline to hold its edge, and a real shadow. At any moment during a drag it
+ * should be obvious which single cell is moving and which ones are getting out
+ * of its way.
+ *
+ * Its transform is dnd-kit's and arrives inline, which is why there is none
+ * here — this rule only says what a lifted cell looks like, never where it is.
+ */
+.document-editor__surface > .document-cell--lifted {
+  z-index: 3;
+  background-color: var(--color-surface);
+  box-shadow:
+    0 0 0 1px var(--color-border),
+    0 14px 34px rgb(15 20 30 / 18%);
+  cursor: grabbing;
 }
 
 /* The surface is the page. A focus ring around the whole document would be
@@ -156,28 +222,39 @@
 /* ------------------------------------------------------------- gutter --- */
 
 /*
- * The handle is rendered as a portal on document.body, not inside the editor,
- * so it cannot be revealed with a `.document-editor:hover` descendant rule —
- * that selector can never match. It does not need one: the DragHandle plugin
- * already toggles `visibility` as the pointer enters and leaves a block, which
- * is the behaviour we wanted from hover in the first place.
+ * The cell's controls, in the margin.
  *
- * It positions itself against the hovered block, and the surface's left padding
- * is what keeps it out of the text column.
+ * Only one exists at a time — the sorter mounts it on the cell under the
+ * pointer — and it lives in the editor's own stacking context rather than in a
+ * portal, because it has to travel with its cell when that cell is picked up.
+ *
+ * Two of its three coordinates are written inline by the sorter and so do not
+ * appear here: `top`, from the cell's offset within this container, and the
+ * vertical half of `transform`, from dnd-kit. The `left` below, with the -100%
+ * the sorter pairs it with, puts the row's right edge just clear of the cell's
+ * left edge — out of the text column, where appearing can never nudge a word.
+ *
+ * Three buttons are wider than the surface's own left padding, so the row
+ * reaches about 1.8rem past this container and lives on the page's margin. That
+ * is what sets the breakpoint at the bottom of this file: below it there is no
+ * margin left to reach into, and the row would be cut off by the window edge
+ * rather than merely cramped.
  */
-.block-gutter {
-  display: flex;
-  align-items: center;
-  padding-right: var(--space-2);
-}
-
-.block-gutter__controls {
+.cell-gutter {
+  position: absolute;
+  left: calc(var(--doc-gutter) - var(--doc-block-pad) - 4px);
+  z-index: 4;
   display: flex;
   align-items: center;
   gap: 1px;
 }
 
-.block-gutter__button {
+/* Above the cell it is riding on, which has risen over everything else. */
+.cell-gutter--dragging {
+  z-index: 5;
+}
+
+.cell-gutter__button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,20 +268,30 @@
   cursor: pointer;
 }
 
-.block-gutter__button:hover {
+.cell-gutter__button:hover,
+.cell-gutter__button:focus-visible {
   background-color: var(--color-surface-hover);
   color: var(--color-text-muted);
 }
 
-.block-gutter__grip {
+/*
+ * The grip, and only the grip, starts a move. Everything inside the cell stays
+ * ordinary editable text, which is the point of putting the handle out here.
+ *
+ * `touch-action: none` hands the gesture to the pointer sensor; without it a
+ * drag on a touch screen scrolls the page instead.
+ */
+.cell-gutter__grip {
   cursor: grab;
+  touch-action: none;
 }
 
-.block-gutter__grip:active {
+.cell-gutter__grip:active,
+.cell-gutter--dragging .cell-gutter__grip {
   cursor: grabbing;
 }
 
-/* The drop indicator while dragging a block. */
+/* The drop indicator while dragging text — cells no longer use it. */
 .document-editor .ProseMirror-dropcursor {
   border-radius: 2px;
 }
@@ -212,22 +299,6 @@
 .document-editor__surface .ProseMirror-selectednode {
   border-radius: var(--radius-md);
   box-shadow: 0 0 0 3px var(--color-surface-hover);
-}
-
-/* Live vertical sorting. The ProseMirror document is committed only on drop;
-   during the gesture neighbouring cells move into their prospective positions. */
-.document-editor__surface--sorting > * {
-  transition:
-    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 140ms ease,
-    box-shadow 140ms ease;
-  will-change: transform;
-}
-
-.document-editor__surface--sorting > .document-cell--drag-source {
-  opacity: 0;
-  transform: scale(0.985);
-  box-shadow: 0 8px 24px rgb(15 20 30 / 12%);
 }
 
 /* -------------------------------------------------------------- popups -- */
@@ -253,7 +324,7 @@
 }
 
 .slash-menu__group-name,
-.block-menu__group-name {
+.cell-menu__group-name {
   margin: var(--space-1) 0;
   padding: 0 var(--space-2);
   color: var(--color-text-subtle);
@@ -319,29 +390,29 @@
  * It grows from its top-left, which is where the button that opened it is, so
  * it reads as coming out of that button rather than appearing from nowhere.
  */
-.block-menu {
+.cell-menu {
   position: fixed;
   z-index: 40;
   width: 12rem;
   padding: var(--space-1);
   transform-origin: top left;
-  animation: block-menu-open 90ms ease-out;
+  animation: cell-menu-open 90ms ease-out;
 }
 
-@keyframes block-menu-open {
+@keyframes cell-menu-open {
   from {
     opacity: 0;
     transform: scale(0.96);
   }
 }
 
-.block-menu__group + .block-menu__group {
+.cell-menu__group + .cell-menu__group {
   margin-top: var(--space-1);
   padding-top: var(--space-1);
   border-top: 1px solid var(--color-border);
 }
 
-.block-menu__item {
+.cell-menu__item {
   display: block;
   width: 100%;
   padding: 0.3rem var(--space-2);
@@ -355,8 +426,8 @@
   cursor: pointer;
 }
 
-.block-menu__item:hover,
-.block-menu__item:focus-visible {
+.cell-menu__item:hover,
+.cell-menu__item:focus-visible {
   background-color: var(--color-surface-hover);
 }
 
@@ -499,11 +570,16 @@
 /* --------------------------------------------------------------- motion -- */
 
 /*
- * Narrow screens have no room for a gutter, so the controls are dropped rather
- * than allowed to overlap the text. Touch has no hover to reveal them with
- * either; the slash menu and markdown shortcuts still work.
+ * Narrow windows have no margin for the gutter to sit in, so the controls are
+ * dropped rather than allowed to overlap the text or run off the left edge.
+ * Touch has no hover to reveal them with either; the slash menu, the selection
+ * menu and the markdown shortcuts all still work, and so does reading.
+ *
+ * 56rem rather than a phone-sized breakpoint because this is about the page's
+ * margins, not about the device: the text column plus its two gutters is
+ * 50.75rem, and below roughly this width the shell has no room left over.
  */
-@media (max-width: 48rem) {
+@media (max-width: 56rem) {
   .document-editor__surface {
     padding-left: var(--space-3);
     padding-right: var(--space-3);
@@ -514,21 +590,22 @@
     padding-left: calc(var(--space-3) - 3px);
   }
 
-  .block-gutter {
+  .cell-gutter {
     display: none;
   }
 }
 
+/*
+ * Sorting's own transitions are dnd-kit's and arrive inline, so they cannot be
+ * turned off from here — the sorter checks this same query and declines to
+ * write them. What is left below is the chrome this file owns.
+ */
 @media (prefers-reduced-motion: reduce) {
   .document-editor__surface > * {
     transition: none;
   }
 
-  .block-menu {
+  .cell-menu {
     animation: none;
-  }
-
-  .document-editor__surface--sorting > * {
-    transition-duration: 1ms;
   }
 }
