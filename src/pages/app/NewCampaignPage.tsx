@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { createCampaign } from '../../campaigns/campaignsApi'
+import { useCampaignList } from '../../campaigns/useCampaignList'
 import { errorMessage } from '../../lib/errors'
 import { Alert } from '../../components/ui/Alert'
 import { Button, ButtonLink } from '../../components/ui/Button'
@@ -12,6 +13,7 @@ import './NewCampaignPage.css'
 
 export function NewCampaignPage() {
   const navigate = useNavigate()
+  const { reload } = useCampaignList()
 
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +26,10 @@ export function NewCampaignPage() {
 
     try {
       const campaign = await createCampaign(name)
+      // The sidebar is about to show this campaign's sections under its name,
+      // and the switcher is about to list it. Both read the shell's copy of the
+      // list, so it has to know about the campaign before we navigate into it.
+      reload()
       navigate(`/app/campaigns/${campaign.id}`, { replace: true })
     } catch (caught) {
       setError(errorMessage(caught, 'Could not create the campaign.'))

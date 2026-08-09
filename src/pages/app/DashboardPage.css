@@ -1,36 +1,92 @@
 .campaign-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/*
+ * A campaign, as a row you can hit anywhere.
+ *
+ * The lift on hover is a border and a shadow rather than a movement: a grid of
+ * cards that jump as the pointer crosses them is a grid that is hard to read
+ * while choosing.
+ */
 .campaign-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
   height: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: 0 1px 2px 0 rgb(16 24 40 / 5%);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+a.campaign-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 4px 8px -2px rgb(16 24 40 / 10%), 0 2px 4px -2px rgb(16 24 40 / 6%);
+  color: var(--color-text);
+}
+
+.campaign-card__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background-color: #eef4ff;
+  color: #3538cd;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.campaign-card__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 
 .campaign-card__name {
-  margin: 0;
-  font-size: 1.1rem;
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .campaign-card__meta {
-  margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-.campaigns-status {
-  margin: 0;
-  color: var(--color-text-muted);
+.campaign-card__go {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-text-subtle);
 }
 
+/* Holds the grid's shape while the campaigns arrive, so the page does not
+   reflow under the reader's eye. */
+.campaign-card--loading {
+  height: 5.25rem;
+  border-style: dashed;
+  background-color: var(--color-bg-muted);
+  box-shadow: none;
+}
+
+.campaigns-status,
 .campaigns-empty {
   margin: 0;
   color: var(--color-text-muted);

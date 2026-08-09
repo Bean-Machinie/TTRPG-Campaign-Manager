@@ -1,7 +1,14 @@
+/*
+ * The content column inside the shell.
+ *
+ * Left-aligned padding that grows with the window rather than a fixed inset:
+ * the sidebar already takes 17.5rem out of the width, and a page that keeps a
+ * 1rem gutter on a wide screen looks pinned to the navigation.
+ */
 .page {
   width: 100%;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-6) clamp(var(--space-4), 3vw, 2rem) var(--space-6);
 }
 
 .page--default {
@@ -23,7 +30,9 @@
 
 .page-header__title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .page-header__description {

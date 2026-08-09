@@ -1,0 +1,101 @@
+/*
+ * The Untitled UI design language, expressed as Tailwind v4 theme tokens.
+ *
+ * This file is the application shell's vocabulary. The shell — sidebar, command
+ * palette, top bar — is written in Tailwind utilities and React Aria Components,
+ * which is the stack Untitled UI's own dashboards are built on; the pages inside
+ * it are still the hand-written CSS in global.css and the component stylesheets.
+ * The two coexist on purpose, and the three rules below are what makes that
+ * safe.
+ *
+ * 1. No Preflight. Tailwind's global reset is deliberately not imported. It
+ *    would strip the margins, list styles and heading sizes that twenty-odd
+ *    existing stylesheets are written against, and every page in the product
+ *    would have to be re-checked. `theme.css` and `utilities.css` are imported
+ *    on their own instead.
+ *
+ * 2. Utilities are unlayered. The obvious import — `layer(utilities)` — loses
+ *    to *any* unlayered rule, and global.css styles `a`, `h1` and `body` at the
+ *    top level. Layer order beats specificity, so a layered `text-gray-700`
+ *    would be overruled by a bare `a { color: … }`. Left unlayered, ordinary
+ *    specificity applies and a utility class wins, as it should.
+ *
+ * 3. Tokens are shared, not duplicated. Anything both systems name — the radius
+ *    scale, the sans stack — is defined once in global.css, which is unlayered
+ *    and therefore the winner anyway. What lives here is what Tailwind alone
+ *    knows about: the colour ramps, shadows and the brand.
+ */
+
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css';
+
+@theme {
+  /*
+   * Untitled UI's neutral ramp. Cooler and darker at the top end than
+   * Tailwind's own gray, which is what gives the chrome its quiet, slightly
+   * blue cast rather than a flat charcoal.
+   */
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f2f4f7;
+  --color-gray-200: #eaecf0;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-800: #182230;
+  --color-gray-900: #101828;
+  --color-gray-950: #0c111d;
+
+  /*
+   * Untitled UI's Indigo, chosen over its default violet because the product's
+   * accent was already #3b5bdb. This is the same hue arranged as a real ramp,
+   * so the shell can tint a hover state or an active rail without inventing
+   * colours, and nothing in the existing pages shifts.
+   */
+  --color-brand-25: #f5f8ff;
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #e0eaff;
+  --color-brand-200: #c7d7fe;
+  --color-brand-300: #a4bcfd;
+  --color-brand-400: #8098f9;
+  --color-brand-500: #6172f3;
+  --color-brand-600: #444ce7;
+  --color-brand-700: #3538cd;
+  --color-brand-800: #2d31a6;
+  --color-brand-900: #2d3282;
+  --color-brand-950: #1f235b;
+
+  --color-success-50: #ecfdf3;
+  --color-success-200: #abefc6;
+  --color-success-500: #17b26a;
+  --color-success-700: #067647;
+
+  --color-warning-50: #fffaeb;
+  --color-warning-200: #fedf89;
+  --color-warning-500: #f79009;
+  --color-warning-700: #b54708;
+
+  --color-error-50: #fef3f2;
+  --color-error-200: #fecdca;
+  --color-error-500: #f04438;
+  --color-error-700: #b42318;
+
+  /*
+   * Shadows in this system are cast by a light source directly above and are
+   * almost colourless — a hairline of contact shadow plus a wide, very faint
+   * ambient one. A card that reads as "raised" from three feet away is too
+   * strong for this design.
+   */
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 5%);
+  --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 10%), 0 1px 2px -1px rgb(16 24 40 / 10%);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 10%), 0 2px 4px -2px rgb(16 24 40 / 6%);
+  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 8%), 0 4px 6px -2px rgb(16 24 40 / 3%);
+  --shadow-xl: 0 20px 24px -4px rgb(16 24 40 / 8%), 0 8px 8px -4px rgb(16 24 40 / 3%);
+
+  /* The sidebar's width. A token because the mobile drawer has to match it. */
+  --spacing-sidebar: 17.5rem;
+}

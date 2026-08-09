@@ -7,11 +7,14 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.925rem;
+  font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
+  /* The contact shadow every control in this design system sits on. It is what
+     makes a button read as a surface rather than as a coloured rectangle. */
+  box-shadow: 0 1px 2px 0 rgb(16 24 40 / 5%);
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 

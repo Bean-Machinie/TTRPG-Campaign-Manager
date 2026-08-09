@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { LoadingScreen } from './components/layout/LoadingScreen'
 import { PublicOnlyRoute } from './auth/PublicOnlyRoute'
-import { AppLayout } from './components/layout/AppLayout'
+import { AppShell } from './components/shell/AppShell'
 import { PublicLayout } from './components/layout/PublicLayout'
 import { LandingPage } from './pages/public/LandingPage'
 import { LoginPage } from './pages/auth/LoginPage'
@@ -57,7 +57,7 @@ export default function App() {
 
       {/* Authenticated application */}
       <Route path="/app" element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
+        <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="campaigns" element={<Navigate to="/app" replace />} />
           <Route path="campaigns/new" element={<NewCampaignPage />} />

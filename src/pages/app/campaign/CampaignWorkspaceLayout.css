@@ -1,47 +1,18 @@
-.workspace {
-  display: grid;
-  gap: var(--space-4);
-  align-items: start;
-}
-
-@media (min-width: 48rem) {
-  .workspace {
-    grid-template-columns: 12rem 1fr;
-  }
-}
-
-.workspace-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-@media (min-width: 48rem) {
-  .workspace-nav {
-    flex-direction: column;
-    flex-wrap: nowrap;
-  }
-}
-
-.workspace-nav__item {
-  padding: 0.35rem 0.6rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-a.workspace-nav__item:hover {
-  background-color: var(--color-surface-hover);
-}
-
-a.workspace-nav__item.active {
-  background-color: var(--color-surface);
-  border-color: var(--color-border);
-}
+/*
+ * What is left of the workspace's own chrome once its section links moved into
+ * the application sidebar: one status line.
+ */
 
 .workspace-status {
   margin: 0;
   color: var(--color-text-muted);
+}
+
+/*
+ * A route that titles itself — the document editor — gets no page header and no
+ * measure from this layout, only the room it would have had. The editor centres
+ * itself inside this, against its own gutters.
+ */
+.workspace-detail {
+  padding: var(--space-5) var(--space-4) var(--space-6);
 }

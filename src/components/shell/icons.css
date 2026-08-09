@@ -1,0 +1,147 @@
+/*
+ * Icon motion.
+ *
+ * Lucide's icons, animated the way lucide-animated.com animates them: the
+ * gesture belongs to the *meaning* of the icon — a pin drops, a page turns, a
+ * cog turns, a scroll rustles — and it plays once, on hover, in under half a
+ * second. An icon that loops, or that moves without being asked, is decoration
+ * competing with the page for attention.
+ *
+ * Done in CSS rather than with lucide-animated's Motion components, which are
+ * copy-in-per-icon: that would have meant a runtime animation library and 466
+ * near-identical files for a set of nine sidebar icons that each move once.
+ * `data-motion` names the gesture, and the row the icon sits in triggers it, so
+ * the whole row is the hover target rather than the 20px glyph.
+ */
+
+.ui-icon {
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.icon-host:hover .ui-icon,
+.icon-host:focus-visible .ui-icon {
+  animation-duration: 500ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.icon-host:hover .ui-icon[data-motion='lift'],
+.icon-host:focus-visible .ui-icon[data-motion='lift'] {
+  animation-name: icon-lift;
+}
+
+.icon-host:hover .ui-icon[data-motion='drop'],
+.icon-host:focus-visible .ui-icon[data-motion='drop'] {
+  animation-name: icon-drop;
+}
+
+.icon-host:hover .ui-icon[data-motion='spin'],
+.icon-host:focus-visible .ui-icon[data-motion='spin'] {
+  animation-name: icon-spin;
+  animation-duration: 700ms;
+}
+
+.icon-host:hover .ui-icon[data-motion='flip'],
+.icon-host:focus-visible .ui-icon[data-motion='flip'] {
+  animation-name: icon-flip;
+}
+
+.icon-host:hover .ui-icon[data-motion='wiggle'],
+.icon-host:focus-visible .ui-icon[data-motion='wiggle'] {
+  animation-name: icon-wiggle;
+}
+
+.icon-host:hover .ui-icon[data-motion='slide'],
+.icon-host:focus-visible .ui-icon[data-motion='slide'] {
+  animation-name: icon-slide;
+}
+
+.icon-host:hover .ui-icon[data-motion='pulse'],
+.icon-host:focus-visible .ui-icon[data-motion='pulse'] {
+  animation-name: icon-pulse;
+}
+
+@keyframes icon-lift {
+  40% {
+    transform: translateY(-2.5px) scale(1.06);
+  }
+}
+
+/* Overshoot and settle, so the pin lands rather than slides. */
+@keyframes icon-drop {
+  0% {
+    transform: translateY(-4px) scale(0.9);
+  }
+
+  55% {
+    transform: translateY(1px) scale(1.04);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes icon-spin {
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+/* A page turning: rotation about the icon's left edge, not its middle. */
+@keyframes icon-flip {
+  0% {
+    transform: perspective(120px) rotateY(0);
+  }
+
+  50% {
+    transform: perspective(120px) rotateY(-38deg);
+  }
+
+  100% {
+    transform: perspective(120px) rotateY(0);
+  }
+}
+
+@keyframes icon-wiggle {
+  25% {
+    transform: rotate(-7deg);
+  }
+
+  60% {
+    transform: rotate(5deg);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes icon-slide {
+  45% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes icon-pulse {
+  45% {
+    transform: scale(1.13);
+  }
+}
+
+.ui-icon[data-motion='flip'] {
+  transform-origin: 20% 50%;
+}
+
+/*
+ * The whole point of this file is motion for its own sake, so with motion
+ * turned down there is nothing here worth keeping.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ui-icon,
+  .icon-host:hover .ui-icon,
+  .icon-host:focus-visible .ui-icon {
+    animation: none;
+    transition: none;
+  }
+}
