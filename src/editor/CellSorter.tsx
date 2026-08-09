@@ -109,6 +109,21 @@ function cellAtOffset(cells: Cell[], offsetY: number): string | null {
   return (found ?? cells[0])?.id ?? null
 }
 
+/**
+ * How far the button row reaches past the surface's left edge, in pixels.
+ *
+ * Three 1.5rem buttons are wider than the surface's left padding, so the row's
+ * outer third hangs over the page margin — outside the container element, where
+ * no pointer event of its own ever fires. Hover is therefore decided against the
+ * container's box widened by this much, so that the whole strip beside a cell
+ * counts as reaching for that cell's controls, not just the sliver of it the
+ * buttons happen to occupy.
+ *
+ * Rounded up from the CSS in DocumentEditor.css: a 74px row whose right edge
+ * sits 41px inside the container overhangs it by 33.
+ */
+const GUTTER_REACH = 40
+
 const prefersReducedMotion = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
@@ -130,35 +145,55 @@ export function CellSorter({ editor, container, canWriteSecrets }: CellSorterPro
 
   const ids = useMemo(() => cells.map((cell) => cell.id), [cells])
 
+  /*
+   * Hover, measured rather than delegated.
+   *
+   * The listener is on the window and the test is geometric, because the region
+   * a writer reaches into for the controls is not the container: it starts a
+   * button row's width outside its left edge. Bound to the container instead,
+   * the margin beside a tall cell reads as *away* — pointerleave fires, the
+   * gutter unmounts, and the buttons are only reachable along the one line they
+   * are drawn on.
+   */
   useEffect(() => {
     if (!container) return
 
+    const root = container
     let frame = 0
 
     function onPointerMove(event: PointerEvent) {
       // A cell in flight owns the gutter; hover has nothing to say until the
       // drag is over.
       if (activeRef.current || frame) return
-      const { clientY } = event
+      const { clientX, clientY } = event
 
       frame = window.requestAnimationFrame(() => {
         frame = 0
-        const top = container!.getBoundingClientRect().top
-        setHoveredId(cellAtOffset(cellsRef.current, clientY - top))
+        const box = root.getBoundingClientRect()
+        const within =
+          clientX >= box.left - GUTTER_REACH &&
+          clientX <= box.right &&
+          clientY >= box.top &&
+          clientY <= box.bottom
+
+        setHoveredId(within ? cellAtOffset(cellsRef.current, clientY - box.top) : null)
       })
     }
 
-    function onPointerLeave() {
-      if (!activeRef.current) setHoveredId(null)
+    function onPointerOut(event: PointerEvent) {
+      // A pointer that has left the window sends no further moves, so without
+      // this the last one it did send would leave a gutter hanging on whichever
+      // cell it was beside.
+      if (!event.relatedTarget && !activeRef.current) setHoveredId(null)
     }
 
-    container.addEventListener('pointermove', onPointerMove)
-    container.addEventListener('pointerleave', onPointerLeave)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerout', onPointerOut)
 
     return () => {
       window.cancelAnimationFrame(frame)
-      container.removeEventListener('pointermove', onPointerMove)
-      container.removeEventListener('pointerleave', onPointerLeave)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerout', onPointerOut)
     }
   }, [container])
 
