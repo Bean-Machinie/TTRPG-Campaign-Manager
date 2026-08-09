@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { DragHandle } from '@tiptap/extension-drag-handle-react'
 import type { Editor } from '@tiptap/react'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
+import { Fragment } from '@tiptap/pm/model'
 import { positionPopup } from './popup'
 
 /**
@@ -30,6 +31,12 @@ type BlockGutterProps = {
 }
 
 type HoveredBlock = { node: ProseMirrorNode; pos: number }
+
+// This object must remain stable. DragHandle registers a ProseMirror plugin
+// from it; recreating the object on every hover render tears that plugin down
+// while the pointer is travelling toward a button, causing flicker and lost
+// clicks.
+const GUTTER_POSITION = { placement: 'left' as const }
 
 export function BlockGutter({ editor, canWriteSecrets }: BlockGutterProps) {
   const [block, setBlock] = useState<HoveredBlock | null>(null)
@@ -79,7 +86,12 @@ export function BlockGutter({ editor, canWriteSecrets }: BlockGutterProps) {
 
   return (
     <>
-      <DragHandle editor={editor} onNodeChange={handleNodeChange} className="block-gutter">
+      <DragHandle
+        editor={editor}
+        onNodeChange={handleNodeChange}
+        className="block-gutter"
+        computePositionConfig={GUTTER_POSITION}
+      >
         <div className="block-gutter__controls">
           <button
             type="button"
@@ -134,6 +146,51 @@ type BlockMenuProps = {
 
 type MenuAction = { label: string; run: () => void }
 
+type CellType = 'paragraph' | 'heading1' | 'heading2' | 'heading3' | 'blockquote' | 'readAloud' | 'secret'
+
+function inlineContent(node: ProseMirrorNode): Fragment {
+  const inline: ProseMirrorNode[] = []
+
+  function collect(current: ProseMirrorNode) {
+    if (current.isInline) {
+      inline.push(current)
+      return
+    }
+
+    const before = inline.length
+    current.forEach(collect)
+    if (before < inline.length && inline.at(-1)?.type.name !== 'hardBreak') {
+      const hardBreak = current.type.schema.nodes.hardBreak
+      if (hardBreak) inline.push(hardBreak.create())
+    }
+  }
+
+  node.forEach(collect)
+  if (inline.at(-1)?.type.name === 'hardBreak') inline.pop()
+  return Fragment.fromArray(inline)
+}
+
+/** Replaces the hovered top-level cell itself; it never wraps its contents. */
+function turnCellInto(editor: Editor, block: HoveredBlock, cellType: CellType) {
+  const { schema, tr } = editor.state
+  const inline = inlineContent(block.node)
+  const uid = block.node.attrs.uid ?? null
+  let replacement: ProseMirrorNode
+
+  if (cellType === 'blockquote') {
+    const paragraph = schema.nodes.paragraph.create({ uid }, inline)
+    replacement = schema.nodes.blockquote.create(null, paragraph)
+  } else {
+    const nodeName = cellType.startsWith('heading') ? 'heading' : cellType
+    const attrs = nodeName === 'heading' ? { level: Number(cellType.at(-1)), uid } : { uid }
+    replacement = schema.nodes[nodeName].create(attrs, inline)
+  }
+
+  tr.replaceWith(block.pos, block.pos + block.node.nodeSize, replacement)
+  editor.view.dispatch(tr.scrollIntoView())
+  editor.commands.focus(block.pos + 1)
+}
+
 function BlockMenu({ editor, block, canWriteSecrets, anchor, onClose }: BlockMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -166,18 +223,18 @@ function BlockMenu({ editor, block, canWriteSecrets, anchor, onClose }: BlockMen
     }
   }, [editor, onClose])
 
-  /** Puts the cursor inside the block, which is what the node commands act on. */
-  const inside = () => editor.chain().focus().setTextSelection(block.pos + 1)
-
   const turnInto: MenuAction[] = [
-    { label: 'Text', run: () => inside().setNode('paragraph').run() },
-    { label: 'Heading 1', run: () => inside().setNode('heading', { level: 1 }).run() },
-    { label: 'Heading 2', run: () => inside().setNode('heading', { level: 2 }).run() },
-    { label: 'Heading 3', run: () => inside().setNode('heading', { level: 3 }).run() },
-    { label: 'Bullet list', run: () => inside().toggleBulletList().run() },
-    { label: 'Quote', run: () => inside().toggleBlockquote().run() },
-    { label: 'Read-aloud', run: () => inside().toggleReadAloud().run() },
+    { label: 'Text', run: () => turnCellInto(editor, block, 'paragraph') },
+    { label: 'Heading 1', run: () => turnCellInto(editor, block, 'heading1') },
+    { label: 'Heading 2', run: () => turnCellInto(editor, block, 'heading2') },
+    { label: 'Heading 3', run: () => turnCellInto(editor, block, 'heading3') },
+    { label: 'Quote', run: () => turnCellInto(editor, block, 'blockquote') },
+    { label: 'Read-aloud', run: () => turnCellInto(editor, block, 'readAloud') },
   ]
+
+  if (canWriteSecrets) {
+    turnInto.push({ label: 'GM only', run: () => turnCellInto(editor, block, 'secret') })
+  }
 
   const actions: MenuAction[] = [
     {
@@ -199,13 +256,6 @@ function BlockMenu({ editor, block, canWriteSecrets, anchor, onClose }: BlockMen
           .run(),
     },
   ]
-
-  if (canWriteSecrets) {
-    actions.unshift({
-      label: editor.isActive('secret') ? 'Remove GM only' : 'Make GM only',
-      run: () => inside().toggleSecret().run(),
-    })
-  }
 
   function choose(action: MenuAction) {
     action.run()

@@ -9,6 +9,7 @@
 .document-page {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: var(--space-4);
 }
 

@@ -17,6 +17,7 @@ import { Alert } from '../../../components/ui/Alert'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { DocumentEditor } from '../../../editor/DocumentEditor'
+import { withoutGmOnlyCells } from '../../../editor/documentContent'
 import { DocumentForm } from './DocumentForm'
 import { useCampaignOutlet } from './useCampaignOutlet'
 import type { CampaignRole } from '../../../campaigns/types'
@@ -184,7 +185,7 @@ function LoadedDocument({ document, role, onChanged }: LoadedDocumentProps) {
       ) : null}
 
       <DocumentEditor
-        content={document.content}
+        content={role === 'player' ? withoutGmOnlyCells(document.content) : document.content}
         editable={editable}
         canWriteSecrets={canWriteSecrets}
         visibility={document.visibility}

@@ -15,7 +15,7 @@ import { SCHEMA_EXTENSIONS } from './extensions'
 
 const schema = getSchema(SCHEMA_EXTENSIONS)
 
-const ANCHORED = new Set(['paragraph', 'heading', 'codeBlock', 'readAloud', 'detailsSummary'])
+const ANCHORED = new Set(['paragraph', 'heading', 'codeBlock', 'readAloud', 'secret'])
 
 type Json = Parameters<typeof schema.nodeFromJSON>[0]
 
@@ -136,35 +136,29 @@ describe('assignUids', () => {
     expect(second).not.toBe('dupe12345678')
   })
 
-  it('anchors read-aloud text and toggle summaries', () => {
+  it('anchors read-aloud and GM-only cells', () => {
     const state = assigned(
       stateFrom({
         type: 'doc',
         content: [
           { type: 'readAloud', content: [{ type: 'text', text: 'Cold air.' }] },
-          {
-            type: 'details',
-            content: [
-              { type: 'detailsSummary', content: [{ type: 'text', text: 'Rumours' }] },
-              { type: 'detailsContent', content: [paragraph('The well is cursed.')] },
-            ],
-          },
+          { type: 'secret', content: [{ type: 'text', text: 'The well is cursed.' }] },
         ],
       }),
     )
 
     const found = uids(state)
-    expect(found).toHaveLength(3)
+    expect(found).toHaveLength(2)
     for (const uid of found) expect(uid).toMatch(/^[0-9a-z]{12}$/)
   })
 
-  it('anchors blocks inside a secret as well as outside it', () => {
+  it('anchors a secret cell as well as an ordinary cell', () => {
     const state = assigned(
       stateFrom({
         type: 'doc',
         content: [
           paragraph('Shared'),
-          { type: 'secret', content: [paragraph('Hidden')] },
+          { type: 'secret', content: [{ type: 'text', text: 'Hidden' }] },
         ],
       }),
     )

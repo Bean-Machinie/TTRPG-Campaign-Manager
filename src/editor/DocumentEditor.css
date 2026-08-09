@@ -12,8 +12,16 @@
 
 .document-editor {
   position: relative;
+  width: 100%;
+  min-width: 0;
   max-width: calc(var(--doc-measure) + var(--doc-gutter) * 2);
   margin: 0 auto;
+}
+
+.document-editor > div,
+.document-editor__surface {
+  width: 100%;
+  min-width: 0;
 }
 
 .document-editor__surface {
@@ -29,20 +37,13 @@
 /*
  * Blocks as cells.
  *
- * A faint ground under each top-level block, a little stronger under the one
- * the pointer is on. Enough to see where a block starts and stops — and to see
- * which one the gutter controls are about to act on — without the page turning
- * into a grid of boxes. The tiered blocks are excluded: they bring their own.
+ * A faint ground under each top-level block makes cell boundaries readable
+ * without turning the page into a grid. Tiered blocks bring their own ground.
  */
 .document-editor__surface > *:not(.secret-block):not(.read-aloud-block):not(hr) {
   padding: 0.15em var(--doc-block-pad);
   border-radius: var(--radius-md);
   background-color: var(--color-block-surface);
-  transition: background-color 100ms ease;
-}
-
-.document-editor__surface > *:not(.secret-block):not(.read-aloud-block):not(hr):hover {
-  background-color: var(--color-block-surface-hover);
 }
 
 /* The surface is the page. A focus ring around the whole document would be
@@ -59,7 +60,7 @@
 }
 
 .document-editor__surface p {
-  margin: 0 0 0.6em;
+  margin: 0 0 0.45rem;
 }
 
 /*
@@ -70,26 +71,24 @@
 .document-editor__surface h1,
 .document-editor__surface h2,
 .document-editor__surface h3 {
-  margin-bottom: 0.3em;
+  margin-top: 0;
+  margin-bottom: 0.45rem;
   font-weight: 700;
   letter-spacing: -0.011em;
 }
 
 .document-editor__surface h1 {
-  margin-top: 2.2em;
   font-size: 1.95em;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
 .document-editor__surface h2 {
-  margin-top: 1.9em;
   font-size: 1.4em;
   line-height: 1.3;
 }
 
 .document-editor__surface h3 {
-  margin-top: 1.6em;
   font-size: 1.12em;
   line-height: 1.4;
   font-weight: 600;
@@ -97,7 +96,7 @@
 
 .document-editor__surface ul,
 .document-editor__surface ol {
-  margin: 0 0 0.6em;
+  margin: 0 0 0.45rem;
   padding-left: 1.4em;
 }
 
@@ -110,7 +109,7 @@
 }
 
 .document-editor__surface blockquote {
-  margin: 1em 0;
+  margin: 0 0 0.45rem;
   padding-left: 1em;
   border-left: 3px solid var(--color-border-strong);
   color: var(--color-text-muted);
@@ -393,7 +392,7 @@
  */
 .secret-block,
 .read-aloud-block {
-  margin: 1em 0;
+  margin: 0 0 0.45rem;
   /* Same horizontal inset as an ordinary block, so every ground lines up. */
   padding: 0.6em var(--doc-block-pad);
   border-left: 3px solid;
@@ -433,12 +432,6 @@
   margin-bottom: 0;
 }
 
-/* Nesting has to survive: a secret inside a list or a quote is ordinary. */
-.document-editor__surface li > .secret-block,
-.document-editor__surface blockquote > .secret-block {
-  margin: 0.4em 0;
-}
-
 /*
  * A document nobody else can read looks different from one the GMs share.
  * Two secrecy tiers that looked alike would eventually cost somebody a plot.
@@ -455,37 +448,7 @@
   background-color: var(--color-secret-surface);
 }
 
-/* ------------------------------------------------------ toggle & table -- */
-
-.toggle-block {
-  margin: 0.6em 0;
-}
-
-.toggle-block > summary {
-  cursor: pointer;
-  font-weight: 600;
-  list-style: none;
-}
-
-.toggle-block > summary::-webkit-details-marker {
-  display: none;
-}
-
-.toggle-block > summary::before {
-  content: '▸';
-  display: inline-block;
-  width: 1em;
-  color: var(--color-text-subtle);
-  transition: transform 120ms ease;
-}
-
-.toggle-block[open] > summary::before {
-  transform: rotate(90deg);
-}
-
-.toggle-block > div {
-  padding-left: 1em;
-}
+/* -------------------------------------------------------------- table -- */
 
 .document-editor__surface table {
   width: 100%;
@@ -541,8 +504,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .document-editor__surface > *,
-  .toggle-block > summary::before {
+  .document-editor__surface > * {
     transition: none;
   }
 

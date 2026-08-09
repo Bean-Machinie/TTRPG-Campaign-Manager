@@ -866,11 +866,21 @@ export async function getCampaignDocument(documentId: string): Promise<CampaignD
 
   const supabase = requireSupabase()
 
-  const { data, error } = await supabase
-    .from('campaign_documents')
-    .select(DOCUMENT_COLUMNS)
-    .eq('id', documentId)
+  let { data, error } = await supabase
+    .rpc('get_campaign_document', { p_document_id: documentId })
     .maybeSingle()
+
+  // Allows the frontend and migration to be deployed in either order. Once
+  // the migration exists, direct reads of the content column are revoked.
+  if (error?.code === 'PGRST202') {
+    const legacy = await supabase
+      .from('campaign_documents')
+      .select(DOCUMENT_COLUMNS)
+      .eq('id', documentId)
+      .maybeSingle()
+    data = legacy.data
+    error = legacy.error
+  }
 
   if (error) throw error
   if (!data) return null

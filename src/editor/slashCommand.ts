@@ -16,8 +16,12 @@ import type { SlashItem } from './slashItems'
  * is unambiguous.
  */
 
-export const SlashCommand = Extension.create({
+export const SlashCommand = Extension.create<{ canWriteSecrets: boolean }>({
   name: 'slashCommand',
+
+  addOptions() {
+    return { canWriteSecrets: false }
+  },
 
   addProseMirrorPlugins() {
     return [
@@ -32,7 +36,8 @@ export const SlashCommand = Extension.create({
           return parent.type.isTextblock && parent.type.name !== 'codeBlock'
         },
 
-        items: ({ query }) => flattenGroups(filterSlashGroups(query)),
+        items: ({ query }) =>
+          flattenGroups(filterSlashGroups(query, this.options.canWriteSecrets)),
 
         command: ({ editor, range, props }) => props.run(editor, range),
 
@@ -47,7 +52,7 @@ export const SlashCommand = Extension.create({
               renderer = new ReactRenderer(SlashMenu, {
                 editor: props.editor,
                 props: {
-                  groups: filterSlashGroups(props.query),
+                  groups: filterSlashGroups(props.query, this.options.canWriteSecrets),
                   query: props.query,
                   onSelect: (item: SlashItem) => props.command(item),
                 },
@@ -59,7 +64,7 @@ export const SlashCommand = Extension.create({
 
             onUpdate: (props) => {
               renderer?.updateProps({
-                groups: filterSlashGroups(props.query),
+                groups: filterSlashGroups(props.query, this.options.canWriteSecrets),
                 query: props.query,
                 onSelect: (item: SlashItem) => props.command(item),
               })

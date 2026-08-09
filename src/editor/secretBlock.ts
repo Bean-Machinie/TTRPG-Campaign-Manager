@@ -10,15 +10,14 @@ import { SECRET_NODE_TYPE } from '../documents/visibility'
  * whole log would have to be one or the other, and GMs would keep their real
  * notes somewhere else.
  *
- * The node only marks the passage. Nothing here decides who may read it — the
- * walker resolves the visibility of the blocks inside, and SQL does the
- * filtering. See src/documents/visibility.ts.
+ * This is a single inline-content cell, not a wrapper. Changing a paragraph to
+ * GM-only replaces it rather than putting it inside a nesting container.
  */
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     secret: {
-      /** Wraps the selection in a secret block, or unwraps it. */
+      /** Turns the current cell into GM-only text, or back into a paragraph. */
       toggleSecret: () => ReturnType
     }
   }
@@ -28,7 +27,7 @@ export const Secret = Node.create({
   name: SECRET_NODE_TYPE,
 
   group: 'block',
-  content: 'block+',
+  content: 'inline*',
 
   // Keeps the wrapper intact when the writer edits inside it: backspacing at
   // the start of the first paragraph should not silently unwrap the secret and
@@ -52,7 +51,7 @@ export const Secret = Node.create({
       toggleSecret:
         () =>
         ({ commands }) =>
-          commands.toggleWrap(this.name),
+          commands.toggleNode(this.name, 'paragraph'),
     }
   },
 })

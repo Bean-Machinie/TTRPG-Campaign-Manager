@@ -51,18 +51,6 @@ const BASIC: SlashItem[] = [
     run: (editor, range) => at(editor, range).setNode('heading', { level: 3 }).run(),
   },
   {
-    title: 'Bullet list',
-    description: 'Unordered list',
-    keywords: ['ul', 'unordered', 'point'],
-    run: (editor, range) => at(editor, range).toggleBulletList().run(),
-  },
-  {
-    title: 'Numbered list',
-    description: 'Ordered list',
-    keywords: ['ol', 'ordered', 'number'],
-    run: (editor, range) => at(editor, range).toggleOrderedList().run(),
-  },
-  {
     title: 'Quote',
     description: 'Set a passage apart',
     keywords: ['blockquote', 'citation'],
@@ -86,12 +74,6 @@ const BASIC: SlashItem[] = [
     keywords: ['grid', 'rows', 'columns'],
     run: (editor, range) =>
       at(editor, range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
-  },
-  {
-    title: 'Toggle',
-    description: 'Collapsible section',
-    keywords: ['details', 'collapse', 'accordion', 'fold'],
-    run: (editor, range) => at(editor, range).setDetails().run(),
   },
 ]
 
@@ -127,10 +109,12 @@ function matches(item: SlashItem, query: string): boolean {
 }
 
 /** Filters the groups, dropping any that end up empty. */
-export function filterSlashGroups(query: string): SlashGroup[] {
+export function filterSlashGroups(query: string, canWriteSecrets = true): SlashGroup[] {
   return SLASH_GROUPS.map((group) => ({
     name: group.name,
-    items: group.items.filter((item) => matches(item, query)),
+    items: group.items.filter(
+      (item) => (canWriteSecrets || item.title !== 'GM secret') && matches(item, query),
+    ),
   })).filter((group) => group.items.length > 0)
 }
 

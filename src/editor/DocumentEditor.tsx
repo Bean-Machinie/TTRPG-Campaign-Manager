@@ -6,6 +6,7 @@ import { BlockGutter } from './BlockGutter'
 import { SelectionMenu } from './SelectionMenu'
 import { SCHEMA_EXTENSIONS } from './extensions'
 import { SlashCommand } from './slashCommand'
+import { normalizeDocumentContent } from './documentContent'
 import './DocumentEditor.css'
 
 /**
@@ -55,7 +56,6 @@ const placeholder = Placeholder.configure({
     if (!hasAnchor) return ''
 
     if (node.type.name === 'heading') return 'Heading'
-    if (node.type.name === 'detailsSummary') return 'Toggle title'
     if (node.type.name === 'readAloud') return 'Text to read aloud'
 
     return 'Type / for commands'
@@ -70,8 +70,12 @@ export function DocumentEditor({
   onChange,
 }: DocumentEditorProps) {
   const editor = useEditor({
-    extensions: [...SCHEMA_EXTENSIONS, placeholder, SlashCommand],
-    content,
+    extensions: [
+      ...SCHEMA_EXTENSIONS,
+      placeholder,
+      SlashCommand.configure({ canWriteSecrets }),
+    ],
+    content: normalizeDocumentContent(content),
     editable,
     onUpdate: ({ editor: updated }) => onChange(updated.getJSON()),
     editorProps: {

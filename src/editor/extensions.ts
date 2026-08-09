@@ -1,10 +1,10 @@
 import StarterKit from '@tiptap/starter-kit'
-import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details'
 import { TableKit } from '@tiptap/extension-table'
 import type { AnyExtension } from '@tiptap/core'
 import { BlockUid } from './blockUid'
 import { ReadAloud } from './readAloudBlock'
 import { Secret } from './secretBlock'
+import { CellBehavior } from './cellBehavior'
 
 /**
  * Everything that defines the document's shape.
@@ -18,14 +18,17 @@ import { Secret } from './secretBlock'
  * saved document contains, so tests do not need them.
  */
 export const SCHEMA_EXTENSIONS: AnyExtension[] = [
-  StarterKit,
+  StarterKit.configure({
+    // Lists are lines inside a cell in this editor, never container nodes that
+    // become a second kind of draggable cell.
+    bulletList: false,
+    orderedList: false,
+    listItem: false,
+    listKeymap: false,
+  }),
   BlockUid,
   Secret,
   ReadAloud,
-  // A toggle. `details` holds a `detailsSummary` and a `detailsContent`, so the
-  // walker sees the summary as a text block and descends into the body.
-  Details.configure({ persist: true, HTMLAttributes: { class: 'toggle-block' } }),
-  DetailsSummary,
-  DetailsContent,
+  CellBehavior,
   TableKit.configure({ table: { resizable: true } }),
 ]
