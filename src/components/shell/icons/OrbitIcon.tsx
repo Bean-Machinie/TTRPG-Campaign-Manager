@@ -10,20 +10,21 @@ import {
 } from 'react'
 
 /**
- * Three people, and the little bob they do when you look at them.
+ * A body with two satellites, turning for as long as you point at it.
  *
- * The gesture is animate-ui's `users` default: each figure dips and rebounds on
- * its own beat, so the group ripples rather than moving as one block. The
- * drawing is Lucide's `users`, so it sits at the same weight as every other
- * glyph in the sidebar.
+ * The gesture is animate-ui's `orbit` default: the whole drawing rotates at a
+ * constant rate, which is the one motion that reads as orbiting rather than as
+ * an icon being jostled. It loops instead of playing once because a single
+ * revolution ending in place would look like a stutter — the row stops the
+ * animation when the pointer leaves, and the turn unwinds from wherever it got to.
  */
 
-export interface UsersIconHandle {
+export interface OrbitIconHandle {
   startAnimation: () => void
   stopAnimation: () => void
 }
 
-interface UsersIconProps
+interface OrbitIconProps
   extends Omit<
     HTMLAttributes<HTMLDivElement>,
     | 'color'
@@ -35,19 +36,20 @@ interface UsersIconProps
     | 'onAnimationIteration'
   > {
   size?: number
+  /** Seconds per revolution. */
   duration?: number
   isAnimated?: boolean
   color?: string
 }
 
-const UsersIcon = forwardRef<UsersIconHandle, UsersIconProps>(
+const OrbitIcon = forwardRef<OrbitIconHandle, OrbitIconProps>(
   (
     {
       onMouseEnter,
       onMouseLeave,
       className,
       size = 24,
-      duration = 0.6,
+      duration = 2,
       isAnimated = true,
       color,
       ...props
@@ -84,29 +86,18 @@ const UsersIcon = forwardRef<UsersIconHandle, UsersIconProps>(
       [controls, onMouseLeave],
     )
 
-    /**
-     * One bob, offset per figure.
-     *
-     * `delay` is what makes it a ripple instead of a jump: the front figure and
-     * its head lead, the two behind follow a beat later. The keyframes end where
-     * they started, so leaving mid-bob settles rather than snaps.
-     */
-    const bob = (travel: number, delay = 0): Variants => ({
-      normal: { y: 0 },
+    const orbitVariants: Variants = {
+      normal: { rotate: 0 },
       animate: {
-        y: [0, travel, -2, 0],
+        rotate: 360,
         transition: {
           duration,
-          ease: 'easeInOut' as const,
-          delay,
+          ease: 'linear' as const,
+          repeat: Infinity,
+          repeatType: 'loop' as const,
         },
       },
-    })
-
-    const bodyVariants = bob(2, 0.1)
-    const headVariants = bob(4, 0.1)
-    const backBodyVariants = bob(4)
-    const backArcVariants = bob(2)
+    }
 
     return (
       <LazyMotion features={domAnimation} strict>
@@ -127,34 +118,16 @@ const UsersIcon = forwardRef<UsersIconHandle, UsersIconProps>(
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="lucide lucide-users-icon lucide-users"
+            className="lucide lucide-orbit-icon lucide-orbit"
+            variants={orbitVariants}
+            initial="normal"
+            animate={controls}
           >
-            <m.path
-              d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-              variants={bodyVariants}
-              initial="normal"
-              animate={controls}
-            />
-            <m.path
-              d="M16 3.128a4 4 0 0 1 0 7.744"
-              variants={backBodyVariants}
-              initial="normal"
-              animate={controls}
-            />
-            <m.path
-              d="M22 21v-2a4 4 0 0 0-3-3.87"
-              variants={backArcVariants}
-              initial="normal"
-              animate={controls}
-            />
-            <m.circle
-              cx="9"
-              cy="7"
-              r="4"
-              variants={headVariants}
-              initial="normal"
-              animate={controls}
-            />
+            <path d="M20.341 6.484A10 10 0 0 1 10.266 21.85" />
+            <path d="M3.659 17.516A10 10 0 0 1 13.74 2.152" />
+            <circle cx="12" cy="12" r="3" />
+            <circle cx="19" cy="5" r="2" />
+            <circle cx="5" cy="19" r="2" />
           </m.svg>
         </m.div>
       </LazyMotion>
@@ -162,5 +135,5 @@ const UsersIcon = forwardRef<UsersIconHandle, UsersIconProps>(
   },
 )
 
-UsersIcon.displayName = 'UsersIcon'
-export { UsersIcon }
+OrbitIcon.displayName = 'OrbitIcon'
+export { OrbitIcon }

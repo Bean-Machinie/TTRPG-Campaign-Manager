@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { ComponentType, Ref } from 'react'
 import { CalendarRangeIcon } from './icons/CalendarRangeIcon'
 import { CompassIcon } from './icons/CompassIcon'
-import { LayersIcon } from './icons/LayersIcon'
+import { OrbitIcon } from './icons/OrbitIcon'
 import { TelescopeIcon } from './icons/TelescopeIcon'
 import { UserRoundPenIcon } from './icons/UserRoundPenIcon'
 import { UsersIcon } from './icons/UsersIcon'
@@ -58,7 +58,7 @@ export const cssIcon = (component: LucideIcon, motion: IconMotion): SectionIcon 
 })
 
 /** Every campaign is reached through this one. */
-export const ALL_CAMPAIGNS_ICON = motionIcon(LayersIcon)
+export const ALL_CAMPAIGNS_ICON = motionIcon(OrbitIcon)
 
 export type CampaignSection = {
   label: string

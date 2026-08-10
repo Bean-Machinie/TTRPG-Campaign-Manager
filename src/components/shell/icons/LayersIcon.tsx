@@ -1,11 +1,12 @@
 import { cn } from '../../../lib/cn'
 import type { Variants } from 'motion/react'
-import { LazyMotion, domMin, m, useAnimation, useReducedMotion } from 'motion/react'
+import { LazyMotion, domAnimation, m, useAnimation, useReducedMotion } from 'motion/react'
 import {
   forwardRef,
   useCallback,
   useImperativeHandle,
   useRef,
+  useState,
   type HTMLAttributes,
 } from 'react'
 
@@ -45,23 +46,23 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
     },
     ref,
   ) => {
-    const controls = useAnimation()
+    const [state, setState] = useState<'normal' | 'animate'>('normal')
+    const controls = state
     const reduced = useReducedMotion()
     const isControlled = useRef(false)
 
     useImperativeHandle(ref, () => {
       isControlled.current = true
       return {
-        startAnimation: () =>
-          reduced ? controls.start('normal') : controls.start('animate'),
-        stopAnimation: () => controls.start('normal'),
+        startAnimation: () => setState(reduced ? 'normal' : 'animate'),
+        stopAnimation: () => setState('normal'),
       }
     })
 
     const handleEnter = useCallback(
       (e?: React.MouseEvent<HTMLDivElement>) => {
         if (!isAnimated || reduced) return
-        if (!isControlled.current) controls.start('animate')
+        if (!isControlled.current) setState('animate')
         else onMouseEnter?.(e as React.MouseEvent<HTMLDivElement>)
       },
       [controls, reduced, isAnimated, onMouseEnter],
@@ -69,7 +70,7 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
 
     const handleLeave = useCallback(
       (e?: React.MouseEvent<HTMLDivElement>) => {
-        if (!isControlled.current) controls.start('normal')
+        if (!isControlled.current) setState('normal')
         else onMouseLeave?.(e as React.MouseEvent<HTMLDivElement>)
       },
       [controls, onMouseLeave],
@@ -100,7 +101,7 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
     }
 
     return (
-      <LazyMotion features={domMin} strict>
+      <LazyMotion features={domAnimation} strict>
         <m.div
           className={cn('inline-flex items-center justify-center', className)}
           onMouseEnter={handleEnter}

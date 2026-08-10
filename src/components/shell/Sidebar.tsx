@@ -190,7 +190,10 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
       to={to}
       end={end}
       onClick={onNavigate}
-      onMouseEnter={() => iconRef.current?.startAnimation()}
+      onMouseEnter={(event) => {
+        ;(event.currentTarget as HTMLElement).dataset.probe = String(!!iconRef.current)
+        iconRef.current?.startAnimation()
+      }}
       onMouseLeave={() => iconRef.current?.stopAnimation()}
       // Keyboard users get the same thing, on the same element, for free.
       onFocus={() => iconRef.current?.startAnimation()}
