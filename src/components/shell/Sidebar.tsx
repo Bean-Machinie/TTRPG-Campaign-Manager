@@ -1,12 +1,11 @@
-import { Button, Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components'
-import { Link, NavLink, useNavigate } from 'react-router'
-import { Dices, EllipsisVertical, LogOut, Plus, Settings } from 'lucide-react'
+import { Link, NavLink } from 'react-router'
+import { Dices, Plus } from 'lucide-react'
 import { useRef } from 'react'
-import type { Key, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
-import { useAuth } from '../../auth/useAuth'
 import { useCampaignList } from '../../campaigns/useCampaignList'
-import { useMyProfile } from '../../profile/hooks'
+import { AccountMenu } from './AccountMenu'
+import { Avatar } from './Avatar'
 import { NavIcon } from './NavIcon'
 import { SearchIcon } from './icons/SearchIcon'
 import type { AnimatedIconHandle } from './icons/types'
@@ -30,7 +29,7 @@ import './icons.css'
  *
  *   brand ─── search
  *   the campaign you are in, section by section
- *   settings ─── who you are signed in as
+ *   who you are signed in as, opening onto profile, settings, theme and sign out
  *
  * What is deliberately *not* here: no notifications, no usage meter, no upgrade
  * card, no support link. Those are in the reference dashboards because those
@@ -54,7 +53,7 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
   const searchIcon = useRef<AnimatedIconHandle>(null)
 
   return (
-    <div className="flex h-full w-full flex-col bg-white">
+    <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
       <div className="flex flex-col gap-4 px-4 pt-5">
         <Link
           to="/app"
@@ -64,7 +63,7 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-xs">
             <Dices className="ui-icon size-5" data-motion="spin" aria-hidden="true" />
           </span>
-          <span className="truncate text-base font-semibold tracking-tight text-gray-900">
+          <span className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
             {APP_NAME}
           </span>
         </Link>
@@ -83,11 +82,11 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           onMouseLeave={() => searchIcon.current?.stopAnimation()}
           onFocus={() => searchIcon.current?.startAnimation()}
           onBlur={() => searchIcon.current?.stopAnimation()}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-gray-100"
         >
-          <SearchIcon ref={searchIcon} size={20} className="shrink-0 text-gray-400" />
+          <SearchIcon ref={searchIcon} size={20} className="shrink-0 text-gray-400 dark:text-gray-500" />
           <span className="flex-1 text-left">Search</span>
-          <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-px font-sans text-xs text-gray-500">
+          <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-px font-sans text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
             {SEARCH_SHORTCUT_LABEL}
           </kbd>
         </button>
@@ -130,14 +129,8 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         )}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-1 border-t border-gray-200 px-4 py-4">
-        <NavItem
-          to="/app/settings"
-          icon={cssIcon(Settings, 'spin')}
-          label="Settings"
-          onNavigate={onNavigate}
-        />
-        <AccountCard />
+      <div className="mt-auto border-t border-gray-200 px-4 py-4 dark:border-gray-800">
+        <AccountMenu onNavigate={onNavigate} />
       </div>
     </div>
   )
@@ -147,7 +140,7 @@ function NavGroup({ label, children }: { label?: string; children: ReactNode }) 
   return (
     <div className="flex flex-col gap-1">
       {label ? (
-        <p className="truncate px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <p className="truncate px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
           {label}
         </p>
       ) : null}
@@ -191,7 +184,9 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
       className={({ isActive }) =>
         [
           'icon-host group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
-          isActive ? 'bg-gray-50 text-gray-900' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+          isActive
+            ? 'bg-gray-50 text-gray-900 dark:bg-gray-800/60 dark:text-white'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white',
         ].join(' ')
       }
     >
@@ -200,7 +195,11 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
           <NavIcon
             icon={icon}
             ref={iconRef}
-            className={isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-500'}
+            className={
+              isActive
+                ? 'text-brand-600 dark:text-brand-400'
+                : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
+            }
           />
           <span className="truncate">{label}</span>
         </>
@@ -218,8 +217,8 @@ function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
       <NavGroup label="Campaigns">
         {[0, 1, 2].map((row) => (
           <div key={row} className="flex items-center gap-3 px-3 py-2">
-            <span className="size-6 animate-pulse rounded-md bg-gray-100" />
-            <span className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-100" />
+            <span className="size-6 animate-pulse rounded-md bg-gray-100 dark:bg-gray-800" />
+            <span className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
           </div>
         ))}
       </NavGroup>
@@ -235,88 +234,12 @@ function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
           key={campaign.id}
           to={`/app/campaigns/${campaign.id}`}
           onClick={onNavigate}
-          className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline transition-colors hover:bg-gray-50 hover:text-gray-900"
+          className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white"
         >
           <Avatar initials={initialsOf(campaign.name)} />
           <span className="truncate">{campaign.name}</span>
         </NavLink>
       ))}
     </NavGroup>
-  )
-}
-
-function Avatar({ initials, size = 'sm' }: { initials: string; size?: 'sm' | 'md' }) {
-  return (
-    <span
-      className={[
-        'grid shrink-0 place-items-center rounded-md bg-brand-50 font-semibold text-brand-700',
-        size === 'sm' ? 'size-6 text-[0.625rem]' : 'size-9 rounded-lg text-xs',
-      ].join(' ')}
-      aria-hidden="true"
-    >
-      {initials}
-    </span>
-  )
-}
-
-/** Who you are signed in as, and the way out. */
-function AccountCard() {
-  const { user, signOut } = useAuth()
-  const { profile } = useMyProfile(user?.id)
-  const navigate = useNavigate()
-
-  const email = user?.email ?? ''
-  const name = profile?.displayName?.trim() || email.split('@')[0] || 'Signed in'
-
-  async function handleAction(key: Key) {
-    if (key === 'settings') {
-      navigate('/app/settings')
-      return
-    }
-
-    await signOut()
-    navigate('/')
-  }
-
-  return (
-    <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-      <Avatar initials={initialsOf(name)} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-gray-900">{name}</span>
-        <span className="block truncate text-xs text-gray-500">{email}</span>
-      </span>
-
-      <MenuTrigger>
-        <Button
-          aria-label="Account menu"
-          className="icon-host grid size-8 shrink-0 place-items-center rounded-md text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
-        >
-          <EllipsisVertical className="ui-icon size-4" data-motion="pulse" aria-hidden="true" />
-        </Button>
-
-        <Popover
-          placement="top end"
-          offset={6}
-          className="w-52 rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
-        >
-          <Menu onAction={handleAction} className="outline-hidden">
-            <MenuItem
-              id="settings"
-              className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50"
-            >
-              <Settings className="size-4 text-gray-400" aria-hidden="true" />
-              Settings
-            </MenuItem>
-            <MenuItem
-              id="sign-out"
-              className="icon-host flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50"
-            >
-              <LogOut className="ui-icon size-4 text-gray-400" data-motion="slide" aria-hidden="true" />
-              Sign out
-            </MenuItem>
-          </Menu>
-        </Popover>
-      </MenuTrigger>
-    </div>
   )
 }

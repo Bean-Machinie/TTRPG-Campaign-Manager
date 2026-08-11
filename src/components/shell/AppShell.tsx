@@ -66,8 +66,8 @@ function Shell() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-gray-50">
-      <aside className="hidden w-sidebar shrink-0 border-r border-gray-200 lg:block">
+    <div className="flex h-dvh overflow-hidden bg-gray-50 dark:bg-gray-950">
+      <aside className="hidden w-sidebar shrink-0 border-r border-gray-200 lg:block dark:border-gray-800">
         <Sidebar onSearch={openSearch} />
       </aside>
 
@@ -85,7 +85,7 @@ function Shell() {
         isDismissable
         className="fixed inset-0 z-40 flex bg-gray-950/40 lg:hidden"
       >
-        <Modal className="h-full w-sidebar max-w-[85vw] border-r border-gray-200 bg-white shadow-xl">
+        <Modal className="h-full w-sidebar max-w-[85vw] border-r border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
           <Dialog aria-label="Navigation" className="h-full outline-hidden">
             <Sidebar onSearch={openSearch} onNavigate={() => setDrawerOpen(false)} />
           </Dialog>

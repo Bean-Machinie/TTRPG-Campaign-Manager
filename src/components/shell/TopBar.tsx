@@ -29,12 +29,12 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
   const searchIcon = useRef<AnimatedIconHandle>(null)
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:px-8 dark:border-gray-800 dark:bg-gray-900">
       <button
         type="button"
         onClick={onMenu}
         aria-label="Open navigation"
-        className="icon-host grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden"
+        className="icon-host grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
       >
         <Menu className="ui-icon size-5" data-motion="lift" aria-hidden="true" />
       </button>
@@ -43,7 +43,7 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
         <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
           <Dices className="size-4" aria-hidden="true" />
         </span>
-        <span className="text-sm font-semibold text-gray-900">{APP_NAME}</span>
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">{APP_NAME}</span>
       </Link>
 
       <Trail />
@@ -54,7 +54,7 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
         aria-label="Search"
         onMouseEnter={() => searchIcon.current?.startAnimation()}
         onMouseLeave={() => searchIcon.current?.stopAnimation()}
-        className="ml-auto grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden"
+        className="ml-auto grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
       >
         <SearchIcon ref={searchIcon} size={20} />
       </button>
@@ -70,18 +70,21 @@ function Trail() {
       {crumbs.map((crumb, index) => (
         <Breadcrumb key={crumb.to ?? crumb.label} className="flex min-w-0 items-center">
           {index > 0 ? (
-            <ChevronRight className="mx-1 size-4 shrink-0 text-gray-300" aria-hidden="true" />
+            <ChevronRight className="mx-1 size-4 shrink-0 text-gray-300 dark:text-gray-700" aria-hidden="true" />
           ) : null}
 
           {crumb.to && index < crumbs.length - 1 ? (
             <Link
               to={crumb.to}
-              className="truncate rounded px-1.5 py-1 text-sm font-medium text-gray-500 no-underline transition-colors hover:bg-gray-50 hover:text-gray-700"
+              className="truncate rounded px-1.5 py-1 text-sm font-medium text-gray-500 no-underline transition-colors hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
             >
               {crumb.label}
             </Link>
           ) : (
-            <span className="truncate px-1.5 py-1 text-sm font-semibold text-gray-700" aria-current="page">
+            <span
+              className="truncate px-1.5 py-1 text-sm font-semibold text-gray-700 dark:text-gray-200"
+              aria-current="page"
+            >
               {crumb.label}
             </span>
           )}

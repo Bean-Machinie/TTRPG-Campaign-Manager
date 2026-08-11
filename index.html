@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Campaign Manager</title>
+    <!--
+      Applied before React mounts, so the page never paints light and then
+      flips dark a beat later. Kept in sync by src/theme/useTheme.ts, which is
+      the only other place that reads or writes the "theme" key.
+    -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem('theme')
+        var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

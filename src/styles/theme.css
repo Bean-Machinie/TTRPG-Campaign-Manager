@@ -31,6 +31,14 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css';
 
+/*
+ * Dark mode is a toggle the user controls (see src/theme/useTheme.ts), not the
+ * OS preference alone — so `dark:` has to key off a class on <html>, not
+ * Tailwind's default `prefers-color-scheme` media query. This is the v4
+ * replacement for v3's `darkMode: 'class'` config.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /*
    * Untitled UI's neutral ramp. Cooler and darker at the top end than
