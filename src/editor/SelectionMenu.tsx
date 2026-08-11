@@ -1,5 +1,7 @@
 import { BubbleMenu } from '@tiptap/react/menus'
 import type { Editor } from '@tiptap/react'
+import { Bold, Code, Italic, Link, Strikethrough, Underline } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 /**
  * Formatting, on selection and nowhere else.
@@ -10,6 +12,13 @@ import type { Editor } from '@tiptap/react'
  *
  * Block-level actions are not here — they live in the gutter's block menu,
  * because they act on a block rather than on a run of characters.
+ *
+ * The buttons were letters — a bold B, an italic I, a struck-through S — which
+ * is a nice idea that does not survive contact with the rest of the product.
+ * Six differently-shaped glyphs at six different optical weights sitting in one
+ * 32px row never lined up, and none of them matched the icons in the two menus
+ * that open a centimetre away. These are the same 16px Lucide strokes as
+ * everything else.
  */
 
 type SelectionMenuProps = {
@@ -42,61 +51,54 @@ export function SelectionMenu({ editor }: SelectionMenuProps) {
     >
       <MarkButton
         label="Bold"
+        icon={Bold}
         active={editor.isActive('bold')}
         onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        <strong>B</strong>
-      </MarkButton>
+      />
 
       <MarkButton
         label="Italic"
+        icon={Italic}
         active={editor.isActive('italic')}
         onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <em>I</em>
-      </MarkButton>
+      />
 
       <MarkButton
         label="Underline"
+        icon={Underline}
         active={editor.isActive('underline')}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        <span className="selection-menu__underline">U</span>
-      </MarkButton>
+      />
 
       <MarkButton
         label="Strikethrough"
+        icon={Strikethrough}
         active={editor.isActive('strike')}
         onClick={() => editor.chain().focus().toggleStrike().run()}
-      >
-        <s>S</s>
-      </MarkButton>
+      />
 
       <MarkButton
         label="Inline code"
+        icon={Code}
         active={editor.isActive('code')}
         onClick={() => editor.chain().focus().toggleCode().run()}
-      >
-        <code>{'<>'}</code>
-      </MarkButton>
+      />
 
       <span className="selection-menu__divider" aria-hidden="true" />
 
-      <MarkButton label="Link" active={editor.isActive('link')} onClick={toggleLink}>
-        Link
-      </MarkButton>
+      <MarkButton label="Link" icon={Link} active={editor.isActive('link')} onClick={toggleLink} />
     </BubbleMenu>
   )
 }
 
 type MarkButtonProps = {
   label: string
+  icon: LucideIcon
   active: boolean
   onClick: () => void
-  children: React.ReactNode
 }
 
-function MarkButton({ label, active, onClick, children }: MarkButtonProps) {
+function MarkButton({ label, icon: Icon, active, onClick }: MarkButtonProps) {
   return (
     <button
       type="button"
@@ -108,7 +110,7 @@ function MarkButton({ label, active, onClick, children }: MarkButtonProps) {
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
-      {children}
+      <Icon size={16} strokeWidth={2} aria-hidden="true" />
     </button>
   )
 }

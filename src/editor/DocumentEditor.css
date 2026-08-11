@@ -303,55 +303,101 @@
 
 /* -------------------------------------------------------------- popups -- */
 
+/*
+ * One menu, three surfaces.
+ *
+ * The slash list, the cell menu and the selection bar are the same panel at
+ * three widths, and it is the same panel the application shell opens from the
+ * account button: 12px corners on a hairline, 6px of padding, 8px rows inset
+ * inside that, and an icon one step quieter than the label beside it. The
+ * shell spells that in Tailwind (see components/ui/Menu.tsx); these are
+ * portalled onto document.body, outside the shell, and are spelled here in this
+ * file's variables. The vocabulary is shared even though the two spellings
+ * cannot be. Anything that differs below is about what a menu holds, never
+ * about how it looks.
+ *
+ * The hairline is a spread shadow rather than a border so that the 6px of
+ * padding is exactly 6px and the rows inside land where the arithmetic says.
+ */
 .editor-popup {
-  border: 1px solid var(--color-border);
+  padding: 0.375rem;
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-popup);
+  box-shadow: 0 0 0 1px var(--color-border), var(--shadow-popup);
 }
 
-.slash-menu {
-  width: 19rem;
-  max-height: 20rem;
-  padding: var(--space-1);
-  overflow-y: auto;
-}
-
-.slash-menu__group + .slash-menu__group {
-  margin-top: var(--space-1);
-  padding-top: var(--space-1);
-  border-top: 1px solid var(--color-border);
-}
-
-.slash-menu__group-name,
-.cell-menu__group-name {
-  margin: var(--space-1) 0;
-  padding: 0 var(--space-2);
-  color: var(--color-text-subtle);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.slash-menu__item {
+/* The row, wherever it appears. */
+.slash-menu__item,
+.cell-menu__item {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   width: 100%;
-  padding: 0.3rem var(--space-2);
+  padding: 0.4375rem var(--space-2);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
   text-align: left;
   cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
-.slash-menu__item[data-selected='true'] {
+/*
+ * Hover and the keyboard's highlight are deliberately the same state. In the
+ * slash menu they are literally the same thing — pointing at a row moves the
+ * selection — so there is never a moment where two rows both look like the one
+ * Enter would act on.
+ */
+.slash-menu__item[data-selected='true'],
+.cell-menu__item:hover,
+.cell-menu__item:focus-visible {
+  outline: none;
   background-color: var(--color-surface-hover);
+}
+
+.menu-icon {
+  display: flex;
+  flex: none;
+  color: var(--color-text-subtle);
+  transition: color 120ms ease;
+}
+
+.slash-menu__item[data-selected='true'] .menu-icon,
+.cell-menu__item:hover .menu-icon,
+.cell-menu__item:focus-visible .menu-icon {
+  color: var(--color-text-muted);
+}
+
+/* Group headings: quiet, sentence case, the same in every menu in the product. */
+.slash-menu__group-name,
+.cell-menu__group-name {
+  margin: 0;
+  padding: 0.25rem var(--space-2) 0.375rem;
+  color: var(--color-text-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+}
+
+/*
+ * The slash menu's groups are separated by their own headings and nothing else.
+ * A rule as well as a heading is one separator too many — it was there because
+ * the headings used to be shouting in uppercase and needed the help.
+ */
+.slash-menu {
+  width: 20rem;
+  max-height: 21rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.slash-menu__group + .slash-menu__group {
+  margin-top: 0.25rem;
 }
 
 .slash-menu__title {
@@ -359,8 +405,10 @@
 }
 
 .slash-menu__description {
+  flex: 1;
+  min-width: 0;
   color: var(--color-text-subtle);
-  font-size: 0.8rem;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -368,9 +416,9 @@
 
 .slash-menu__empty {
   margin: 0;
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .slash-menu__hint {
@@ -393,8 +441,7 @@
 .cell-menu {
   position: fixed;
   z-index: 40;
-  width: 12rem;
-  padding: var(--space-1);
+  width: 13rem;
   transform-origin: top left;
   animation: cell-menu-open 90ms ease-out;
 }
@@ -406,66 +453,79 @@
   }
 }
 
+/*
+ * Here the rule earns its place: the second group has no heading, and without
+ * a divider "GM only" and "Duplicate" read as one list of seven things rather
+ * than as block types and then actions. Full-bleed through the panel's padding,
+ * so it divides the panel instead of floating inside it.
+ */
 .cell-menu__group + .cell-menu__group {
-  margin-top: var(--space-1);
-  padding-top: var(--space-1);
+  margin: 0.375rem -0.375rem 0;
+  padding: 0.375rem 0.375rem 0;
   border-top: 1px solid var(--color-border);
 }
 
-.cell-menu__item {
-  display: block;
-  width: 100%;
-  padding: 0.3rem var(--space-2);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
+/* The one row in either menu that cannot be undone by the row next to it. */
+.cell-menu__item--danger,
+.cell-menu__item--danger .menu-icon {
+  color: var(--color-danger-text);
 }
 
-.cell-menu__item:hover,
-.cell-menu__item:focus-visible {
-  background-color: var(--color-surface-hover);
+.cell-menu__item--danger:hover,
+.cell-menu__item--danger:focus-visible {
+  background-color: var(--color-danger-surface);
+}
+
+.cell-menu__item--danger:hover .menu-icon,
+.cell-menu__item--danger:focus-visible .menu-icon {
+  color: var(--color-danger-text);
 }
 
 .selection-menu {
   display: flex;
   align-items: center;
-  gap: 1px;
-  padding: var(--space-1);
+  gap: 2px;
 }
 
 .selection-menu__button {
-  min-width: 1.9rem;
-  height: 1.9rem;
-  padding: 0 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.9rem;
+  color: var(--color-text-muted);
   cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .selection-menu__button:hover {
   background-color: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
+.selection-menu__button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/*
+ * An applied mark is a held-down key, not merely a coloured one. Tint as well
+ * as colour, because on a six-button bar a colour change alone is easy to miss
+ * and impossible to see at a glance across two buttons.
+ */
 .selection-menu__button[data-active='true'] {
+  background-color: var(--color-primary-soft);
   color: var(--color-primary);
 }
 
-.selection-menu__underline {
-  text-decoration: underline;
-}
-
 .selection-menu__divider {
+  flex: none;
   width: 1px;
-  height: 1.2rem;
+  height: 1.25rem;
   margin: 0 var(--space-1);
   background-color: var(--color-border);
 }

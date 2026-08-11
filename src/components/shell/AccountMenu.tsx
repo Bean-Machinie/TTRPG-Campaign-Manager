@@ -1,17 +1,29 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { LogOut, Moon, Settings, Sun } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Moon, Settings, Sun } from 'lucide-react'
 import { LazyMotion, domAnimation, m } from 'motion/react'
 import type { Variants } from 'motion/react'
 import { useAuth } from '../../auth/useAuth'
 import { useMyProfile } from '../../profile/hooks'
 import { useTheme } from '../../theme/useTheme'
 import { cn } from '../../lib/cn'
+import { menuIcon, menuItem, menuPanel, menuSeparator } from '../ui/menuStyles'
 import { Avatar } from './Avatar'
 import { initialsOf } from './navigation'
 
 /**
  * Who you are signed in as, and everything that follows from that.
+ *
+ * The row identifies you and the panel acts. That split is what the previous
+ * version did not have: the panel opened onto a row repeating your name, and
+ * under it a "Settings" row going to the same route the name row went to — two
+ * rows, one destination, and your email nowhere on screen at all. The identity
+ * now lives entirely in the trigger, which has room for it, and the panel holds
+ * only the three things there are to do.
+ *
+ * The chevron is `ChevronsUpDown` rather than a single caret because the panel
+ * opens upward from a control at the bottom of the sidebar; a caret pointing
+ * down would be describing the wrong direction half the time.
  *
  * The panel never unmounts — it sits in the DOM at all times with `inert`
  * standing in for conditional rendering, which is what lets the *closing*
@@ -56,12 +68,6 @@ const itemVariants: Variants = {
   open: { opacity: 1, y: 0, transition: { duration: 0.11, ease: [0.22, 1, 0.36, 1] } },
   closed: { opacity: 0, y: -8, transition: { duration: 0.07 } },
 }
-
-const itemClass = cn(
-  'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium',
-  'text-gray-700 outline-hidden transition-colors hover:bg-gray-50',
-  'dark:text-gray-300 dark:hover:bg-gray-800/60',
-)
 
 export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { user, signOut } = useAuth()
@@ -110,17 +116,44 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div ref={containerRef} className="relative">
+      {/*
+        `aria-expanded` is doing double duty: it tells a screen reader the panel
+        is open and it is the selector that keeps the row lit while it is.
+      */}
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60"
+        className={cn(
+          'group flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-left',
+          'outline-hidden transition-colors',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
+          'hover:bg-gray-50 aria-expanded:bg-gray-50',
+          'dark:hover:bg-gray-800/60 dark:aria-expanded:bg-gray-800/60',
+        )}
       >
         <Avatar initials={initialsOf(name)} size="md" />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {name}
+
+        {/* Two lines in the space one used to take: the avatar is 36px and a
+            13px name over an 11px address is 34px, so the row does not grow. */}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {name}
+          </span>
+          {email ? (
+            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{email}</span>
+          ) : null}
         </span>
+
+        <ChevronsUpDown
+          className={cn(
+            'size-4 shrink-0 transition-colors',
+            'text-gray-400 group-hover:text-gray-500',
+            'dark:text-gray-500 dark:group-hover:text-gray-400',
+          )}
+          aria-hidden="true"
+        />
       </button>
 
       <LazyMotion features={domAnimation} strict>
@@ -133,46 +166,44 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           animate={open ? 'open' : 'closed'}
           variants={panelVariants}
           style={{ transformOrigin: 'bottom' }}
-          className="absolute inset-x-0 bottom-full z-50 mb-2 overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-gray-800 dark:bg-gray-900"
+          className={cn(menuPanel, 'absolute inset-x-0 bottom-full mb-2')}
         >
           <m.button
             variants={itemVariants}
             role="menuitem"
             onClick={() => go('/app/settings')}
-            className={itemClass}
+            className={menuItem()}
           >
-            <Avatar initials={initialsOf(name)} size="sm" />
-            <span className="min-w-0 flex-1 truncate">{name}</span>
-          </m.button>
-
-          <m.button
-            variants={itemVariants}
-            role="menuitem"
-            onClick={() => go('/app/settings')}
-            className={itemClass}
-          >
-            <Settings className="size-4 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+            <Settings className={menuIcon} aria-hidden="true" />
             <span className="flex-1">Settings</span>
           </m.button>
 
-          <m.div
+          {/*
+            The whole row toggles, rather than being a label with a switch
+            parked at the end of it that is the only live 36 pixels in a 235px
+            row. `menuitemcheckbox` rather than `switch` because this is inside
+            a menu: it is the role that means "a checkable thing in a list of
+            commands", and it is what a screen reader expects to find here. The
+            track below is then decoration and carries no semantics at all.
+          */}
+          <m.button
             variants={itemVariants}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={isDark}
+            onClick={toggleTheme}
+            className={menuItem()}
           >
             {isDark ? (
-              <Moon className="size-4 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              <Moon className={menuIcon} aria-hidden="true" />
             ) : (
-              <Sun className="size-4 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              <Sun className={menuIcon} aria-hidden="true" />
             )}
-            <span className="flex-1 text-left">Dark mode</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isDark}
-              aria-label="Toggle dark mode"
-              onClick={toggleTheme}
+            <span className="flex-1">Dark mode</span>
+            <span
+              aria-hidden="true"
               className={cn(
-                'inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+                'inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors',
                 isDark ? 'bg-brand-600' : 'bg-gray-200 dark:bg-gray-700',
               )}
             >
@@ -182,16 +213,16 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
                   isDark ? 'translate-x-4' : 'translate-x-0.5',
                 )}
               />
-            </button>
-          </m.div>
+            </span>
+          </m.button>
 
-          <div className="my-1.5 h-px bg-gray-100 dark:bg-gray-800" />
+          <div role="separator" className={menuSeparator} />
 
           <m.button
             variants={itemVariants}
             role="menuitem"
             onClick={handleSignOut}
-            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-error-700 outline-hidden transition-colors hover:bg-error-50 dark:text-error-500 dark:hover:bg-error-500/10"
+            className={menuItem('danger')}
           >
             <LogOut className="size-4 shrink-0" aria-hidden="true" />
             <span className="flex-1">Sign out</span>

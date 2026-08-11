@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router'
 import { ChevronRight, Dices, Menu } from 'lucide-react'
 import { APP_NAME } from '../../constants'
 import { useCampaignList } from '../../campaigns/useCampaignList'
+import { IconButton } from '../ui/IconButton'
 import { SearchIcon } from './icons/SearchIcon'
 import type { AnimatedIconHandle } from './icons/types'
 import { CAMPAIGN_SECTIONS, sectionHref } from './navigation'
@@ -30,14 +31,9 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:px-8 dark:border-gray-800 dark:bg-gray-900">
-      <button
-        type="button"
-        onClick={onMenu}
-        aria-label="Open navigation"
-        className="icon-host grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
-      >
+      <IconButton onClick={onMenu} aria-label="Open navigation" className="lg:hidden">
         <Menu className="ui-icon size-5" data-motion="lift" aria-hidden="true" />
-      </button>
+      </IconButton>
 
       <Link to="/app" className="flex items-center gap-2 no-underline lg:hidden">
         <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
@@ -48,16 +44,15 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
 
       <Trail />
 
-      <button
-        type="button"
+      <IconButton
         onClick={onSearch}
         aria-label="Search"
         onMouseEnter={() => searchIcon.current?.startAnimation()}
         onMouseLeave={() => searchIcon.current?.stopAnimation()}
-        className="ml-auto grid size-10 shrink-0 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
+        className="ml-auto lg:hidden"
       >
         <SearchIcon ref={searchIcon} size={20} />
-      </button>
+      </IconButton>
     </header>
   )
 }
@@ -76,7 +71,7 @@ function Trail() {
           {crumb.to && index < crumbs.length - 1 ? (
             <Link
               to={crumb.to}
-              className="truncate rounded px-1.5 py-1 text-sm font-medium text-gray-500 no-underline transition-colors hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
+              className="truncate rounded-md px-1.5 py-1 text-sm font-medium text-gray-500 no-underline outline-hidden transition-colors hover:bg-gray-50 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
             >
               {crumb.label}
             </Link>

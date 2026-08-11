@@ -4,6 +4,8 @@ import { useRef } from 'react'
 import type { ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
 import { useCampaignList } from '../../campaigns/useCampaignList'
+import { cn } from '../../lib/cn'
+import { Kbd } from '../ui/Kbd'
 import { AccountMenu } from './AccountMenu'
 import { Avatar } from './Avatar'
 import { NavIcon } from './NavIcon'
@@ -35,7 +37,35 @@ import './icons.css'
  * card, no support link. Those are in the reference dashboards because those
  * dashboards are for products that have them. An item in this list is an item
  * that navigates somewhere real.
+ *
+ * Search, a nav item and a campaign are one row shape, so they are one set of
+ * classes. They had been three near-copies that disagreed about the radius and
+ * about which grey an idle icon is — the kind of difference nobody can name and
+ * everybody sees. 8px corners, the same as the menu rows the account button
+ * opens, and a focus ring, which none of the three had.
  */
+
+const ROW = cn(
+  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline',
+  'outline-hidden transition-colors',
+  'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
+)
+
+const ROW_IDLE = cn(
+  'text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+  'dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white',
+)
+
+const ROW_ACTIVE = 'bg-gray-50 text-gray-900 dark:bg-gray-800/60 dark:text-white'
+
+/* Split from its colour because `cn` concatenates rather than merges — an
+   active row's brand tint has to replace the idle grey, not race it. */
+const ROW_ICON = 'shrink-0 transition-colors'
+
+const ROW_ICON_IDLE = cn(
+  'text-gray-400 group-hover:text-gray-500',
+  'dark:text-gray-500 dark:group-hover:text-gray-400',
+)
 
 type SidebarProps = {
   /** Opens the command palette. The field below is a trigger, not an input. */
@@ -58,7 +88,7 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         <Link
           to="/app"
           onClick={onNavigate}
-          className="icon-host flex items-center gap-2.5 rounded-md px-1 py-0.5 no-underline"
+          className="icon-host flex items-center gap-2.5 rounded-md px-1 py-0.5 no-underline outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         >
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-xs">
             <Dices className="ui-icon size-5" data-motion="spin" aria-hidden="true" />
@@ -82,13 +112,11 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           onMouseLeave={() => searchIcon.current?.stopAnimation()}
           onFocus={() => searchIcon.current?.startAnimation()}
           onBlur={() => searchIcon.current?.stopAnimation()}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-gray-100"
+          className={cn(ROW, 'group w-full cursor-pointer', ROW_IDLE)}
         >
-          <SearchIcon ref={searchIcon} size={20} className="shrink-0 text-gray-400 dark:text-gray-500" />
+          <SearchIcon ref={searchIcon} size={20} className={cn(ROW_ICON, ROW_ICON_IDLE)} />
           <span className="flex-1 text-left">Search</span>
-          <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-px font-sans text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {SEARCH_SHORTCUT_LABEL}
-          </kbd>
+          <Kbd>{SEARCH_SHORTCUT_LABEL}</Kbd>
         </button>
       </div>
 
@@ -182,12 +210,7 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
       onFocus={() => iconRef.current?.startAnimation()}
       onBlur={() => iconRef.current?.stopAnimation()}
       className={({ isActive }) =>
-        [
-          'icon-host group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
-          isActive
-            ? 'bg-gray-50 text-gray-900 dark:bg-gray-800/60 dark:text-white'
-            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white',
-        ].join(' ')
+        cn('icon-host group', ROW, isActive ? ROW_ACTIVE : ROW_IDLE)
       }
     >
       {({ isActive }) => (
@@ -195,11 +218,10 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
           <NavIcon
             icon={icon}
             ref={iconRef}
-            className={
-              isActive
-                ? 'text-brand-600 dark:text-brand-400'
-                : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
-            }
+            className={cn(
+              ROW_ICON,
+              isActive ? 'text-brand-600 dark:text-brand-400' : ROW_ICON_IDLE,
+            )}
           />
           <span className="truncate">{label}</span>
         </>
@@ -234,7 +256,7 @@ function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
           key={campaign.id}
           to={`/app/campaigns/${campaign.id}`}
           onClick={onNavigate}
-          className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white"
+          className={cn('group', ROW, ROW_IDLE)}
         >
           <Avatar initials={initialsOf(campaign.name)} />
           <span className="truncate">{campaign.name}</span>

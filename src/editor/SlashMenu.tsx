@@ -86,6 +86,7 @@ export function SlashMenu({ groups, query, onSelect, ref }: SlashMenuProps) {
             const isSelected = index === selected
             // Captured because `index` keeps moving as the map continues.
             const itemIndex = index
+            const Icon = item.icon
 
             return (
               <button
@@ -102,6 +103,9 @@ export function SlashMenu({ groups, query, onSelect, ref }: SlashMenuProps) {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onSelect(item)}
               >
+                <span className="menu-icon" aria-hidden="true">
+                  <Icon size={16} strokeWidth={2} />
+                </span>
                 <span className="slash-menu__title">{item.title}</span>
                 <span className="slash-menu__description">{item.description}</span>
               </button>

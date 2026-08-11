@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  Copy,
+  EyeOff,
+  Heading1,
+  Heading2,
+  Heading3,
+  Speech,
+  TextQuote,
+  Trash2,
+  Type,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { CSSProperties, HTMLAttributes } from 'react'
 import type { Editor } from '@tiptap/react'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
@@ -169,7 +181,12 @@ type CellMenuProps = {
   onClose: () => void
 }
 
-type MenuAction = { label: string; run: () => void }
+/**
+ * `tone` exists for exactly one row. Delete is the only thing in here that
+ * cannot be undone by pressing the button next to it, and a menu where every
+ * row looks identical is a menu where that row is one slip away.
+ */
+type MenuAction = { label: string; icon: LucideIcon; tone?: 'danger'; run: () => void }
 
 type CellType = 'paragraph' | 'heading1' | 'heading2' | 'heading3' | 'blockquote' | 'readAloud' | 'secret'
 
@@ -251,22 +268,30 @@ function CellMenu({ editor, cellId, canWriteSecrets, anchor, onClose }: CellMenu
     }
   }, [editor, onClose])
 
+  // The glyphs are the slash menu's, deliberately: inserting a read-aloud and
+  // turning a paragraph into one are the same block arrived at two ways, and
+  // they should look it.
   const turnInto: MenuAction[] = [
-    { label: 'Text', run: () => turnCellInto(editor, cellId, 'paragraph') },
-    { label: 'Heading 1', run: () => turnCellInto(editor, cellId, 'heading1') },
-    { label: 'Heading 2', run: () => turnCellInto(editor, cellId, 'heading2') },
-    { label: 'Heading 3', run: () => turnCellInto(editor, cellId, 'heading3') },
-    { label: 'Quote', run: () => turnCellInto(editor, cellId, 'blockquote') },
-    { label: 'Read-aloud', run: () => turnCellInto(editor, cellId, 'readAloud') },
+    { label: 'Text', icon: Type, run: () => turnCellInto(editor, cellId, 'paragraph') },
+    { label: 'Heading 1', icon: Heading1, run: () => turnCellInto(editor, cellId, 'heading1') },
+    { label: 'Heading 2', icon: Heading2, run: () => turnCellInto(editor, cellId, 'heading2') },
+    { label: 'Heading 3', icon: Heading3, run: () => turnCellInto(editor, cellId, 'heading3') },
+    { label: 'Quote', icon: TextQuote, run: () => turnCellInto(editor, cellId, 'blockquote') },
+    { label: 'Read-aloud', icon: Speech, run: () => turnCellInto(editor, cellId, 'readAloud') },
   ]
 
   if (canWriteSecrets) {
-    turnInto.push({ label: 'GM only', run: () => turnCellInto(editor, cellId, 'secret') })
+    turnInto.push({
+      label: 'GM only',
+      icon: EyeOff,
+      run: () => turnCellInto(editor, cellId, 'secret'),
+    })
   }
 
   const actions: MenuAction[] = [
     {
       label: 'Duplicate',
+      icon: Copy,
       run: () => {
         const cell = findCell(editor, cellId)
         if (!cell) return
@@ -279,6 +304,8 @@ function CellMenu({ editor, cellId, canWriteSecrets, anchor, onClose }: CellMenu
     },
     {
       label: 'Delete',
+      icon: Trash2,
+      tone: 'danger',
       run: () => {
         const cell = findCell(editor, cellId)
         if (!cell) return
@@ -304,33 +331,41 @@ function CellMenu({ editor, cellId, canWriteSecrets, anchor, onClose }: CellMenu
       <div className="cell-menu__group">
         <p className="cell-menu__group-name">Turn into</p>
         {turnInto.map((action) => (
-          <button
-            type="button"
-            className="cell-menu__item"
-            role="menuitem"
-            key={action.label}
-            onClick={() => choose(action)}
-          >
-            {action.label}
-          </button>
+          <MenuRow key={action.label} action={action} onChoose={choose} />
         ))}
       </div>
 
       <div className="cell-menu__group">
         {actions.map((action) => (
-          <button
-            type="button"
-            className="cell-menu__item"
-            role="menuitem"
-            key={action.label}
-            onClick={() => choose(action)}
-          >
-            {action.label}
-          </button>
+          <MenuRow key={action.label} action={action} onChoose={choose} />
         ))}
       </div>
     </div>,
     document.body,
+  )
+}
+
+function MenuRow({
+  action,
+  onChoose,
+}: {
+  action: MenuAction
+  onChoose: (action: MenuAction) => void
+}) {
+  const Icon = action.icon
+
+  return (
+    <button
+      type="button"
+      className={`cell-menu__item${action.tone === 'danger' ? ' cell-menu__item--danger' : ''}`}
+      role="menuitem"
+      onClick={() => onChoose(action)}
+    >
+      <span className="menu-icon" aria-hidden="true">
+        <Icon size={16} strokeWidth={2} />
+      </span>
+      {action.label}
+    </button>
   )
 }
 

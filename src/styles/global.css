@@ -26,6 +26,9 @@
   --color-primary: #444ce7;
   --color-primary-hover: #3538cd;
   --color-primary-contrast: #ffffff;
+  /* The lightest step of the brand ramp — the tint under a control that is
+     currently applied, such as a mark in the selection menu. */
+  --color-primary-soft: #eef4ff;
 
   --color-danger-text: #b42318;
   --color-danger-border: #fecdca;
