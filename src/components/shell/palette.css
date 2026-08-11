@@ -1,0 +1,38 @@
+/*
+ * The command palette's entrance.
+ *
+ * Two movements, both 300ms ease-out: the scrim fades up, and the panel comes
+ * with it from 95%. React Aria puts `data-entering` on each while it opens, so
+ * neither needs a state of its own here.
+ *
+ * There is no exit animation on purpose. A palette you have finished with
+ * should be gone the moment you press Escape — a dialog that lingers on the way
+ * out reads as lag, not as polish.
+ */
+@keyframes palette-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes palette-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.palette-scrim[data-entering] {
+  animation: palette-scrim-in 300ms ease-out;
+}
+
+.palette-panel[data-entering] {
+  animation: palette-panel-in 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palette-scrim[data-entering],
+  .palette-panel[data-entering] {
+    animation: none;
+  }
+}

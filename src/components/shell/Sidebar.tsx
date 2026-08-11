@@ -1,15 +1,6 @@
-import {
-  Button,
-  Header,
-  Menu,
-  MenuItem,
-  MenuSection,
-  MenuTrigger,
-  Popover,
-  Separator,
-} from 'react-aria-components'
+import { Button, Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { ChevronsUpDown, Dices, EllipsisVertical, LogOut, Plus, Settings } from 'lucide-react'
+import { Dices, EllipsisVertical, LogOut, Plus, Settings } from 'lucide-react'
 import { useRef } from 'react'
 import type { Key, ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
@@ -37,7 +28,7 @@ import './icons.css'
  * The arrangement is Untitled UI's application shell, and each part of it earns
  * its place from the route table rather than from the reference design:
  *
- *   brand ─── switcher ─── search
+ *   brand ─── search
  *   the campaign you are in, section by section
  *   settings ─── who you are signed in as
  *
@@ -78,13 +69,12 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           </span>
         </Link>
 
-        <CampaignSwitcher onNavigate={onNavigate} />
-
         {/*
-          A trigger dressed as an input. It carries the field's affordance — the
-          magnifier, the placeholder, the shortcut — but opening a palette is
-          what a search that spans a whole campaign has to do; typing into a
-          20rem box in the corner could only ever filter the sidebar itself.
+          A button, not a field dressed up as one: it opens a palette rather
+          than accepting text itself, and looking like an input it can't act
+          like was the part of the old design worth dropping. Same row
+          treatment as everything below it in the nav, so it reads as one more
+          thing you can do rather than as a second kind of control.
         */}
         <button
           type="button"
@@ -93,9 +83,9 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
           onMouseLeave={() => searchIcon.current?.stopAnimation()}
           onFocus={() => searchIcon.current?.startAnimation()}
           onBlur={() => searchIcon.current?.stopAnimation()}
-          className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 shadow-xs transition-colors hover:bg-gray-50"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
         >
-          <SearchIcon ref={searchIcon} size={16} className="shrink-0 text-gray-400" />
+          <SearchIcon ref={searchIcon} size={20} className="shrink-0 text-gray-400" />
           <span className="flex-1 text-left">Search</span>
           <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-px font-sans text-xs text-gray-500">
             {SEARCH_SHORTCUT_LABEL}
@@ -266,93 +256,6 @@ function Avatar({ initials, size = 'sm' }: { initials: string; size?: 'sm' | 'md
     >
       {initials}
     </span>
-  )
-}
-
-/**
- * Which campaign you are in, and the way into another one.
- *
- * The switcher is the reason the section list below it can be unqualified: the
- * sidebar shows one campaign's sections at a time, and this says whose.
- */
-function CampaignSwitcher({ onNavigate }: { onNavigate?: () => void }) {
-  const navigate = useNavigate()
-  const { campaigns } = useCampaignList()
-  const activeCampaignId = useActiveCampaignId()
-  const active = campaigns.find((campaign) => campaign.id === activeCampaignId)
-
-  function handleAction(key: Key) {
-    onNavigate?.()
-    if (key === 'new') navigate('/app/campaigns/new')
-    else if (key === 'all') navigate('/app')
-    else navigate(`/app/campaigns/${key}`)
-  }
-
-  return (
-    <MenuTrigger>
-      <Button
-        aria-label="Switch campaign"
-        className="flex w-full items-center gap-2.5 rounded-lg border border-gray-200 bg-white p-2 text-left shadow-xs transition-colors hover:bg-gray-50 data-[pressed]:bg-gray-50"
-      >
-        <Avatar initials={active ? initialsOf(active.name) : '★'} size="md" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-gray-900">
-            {active?.name ?? 'All campaigns'}
-          </span>
-          <span className="block truncate text-xs text-gray-500">
-            {active ? 'Campaign' : `${campaigns.length} ${campaigns.length === 1 ? 'campaign' : 'campaigns'}`}
-          </span>
-        </span>
-        <ChevronsUpDown className="size-4 shrink-0 text-gray-400" aria-hidden="true" />
-      </Button>
-
-      <Popover
-        placement="bottom start"
-        offset={6}
-        className="w-(--trigger-width) rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
-      >
-        <Menu onAction={handleAction} className="max-h-80 overflow-y-auto outline-hidden">
-          {/* A heading over nothing, and a rule under nothing, are both worse
-              than neither: before the first campaign this menu is only the two
-              things you can still do. */}
-          {campaigns.length > 0 ? (
-            <MenuSection>
-              <Header className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Campaigns
-              </Header>
-              {campaigns.map((campaign) => (
-                <MenuItem
-                  key={campaign.id}
-                  id={campaign.id}
-                  textValue={campaign.name}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50 focus:text-gray-900"
-                >
-                  <Avatar initials={initialsOf(campaign.name)} />
-                  <span className="truncate">{campaign.name}</span>
-                </MenuItem>
-              ))}
-            </MenuSection>
-          ) : null}
-
-          {campaigns.length > 0 ? <Separator className="my-1 h-px bg-gray-200" /> : null}
-
-          <MenuItem
-            id="all"
-            className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50"
-          >
-            <NavIcon icon={ALL_CAMPAIGNS_ICON} size={16} className="text-gray-400" />
-            All campaigns
-          </MenuItem>
-          <MenuItem
-            id="new"
-            className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-hidden focus:bg-gray-50"
-          >
-            <Plus className="size-4 text-gray-400" aria-hidden="true" />
-            New campaign
-          </MenuItem>
-        </Menu>
-      </Popover>
-    </MenuTrigger>
   )
 }
 
