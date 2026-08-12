@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router'
-import { Dices, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
@@ -119,28 +119,14 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
           to="/app"
           onClick={onNavigate}
           className={cn(
-            // px-3, like every row below it, so the mark, the section icons and
-            // the account tile all stand on one line down the left of the panel.
-            'icon-host flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-3 py-1.5 no-underline',
+            // px-3, like every row below it, keeps the wordmark on the shared
+            // left gutter without needing a decorative logo tile.
+            'flex min-w-0 flex-1 items-center rounded-md px-3 py-1.5 no-underline',
             'outline-hidden transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60',
             'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
           )}
         >
-          {/*
-            The mark, the campaign tiles and the account tile are one family of
-            tinted squares rather than a saturated logo block sitting above a
-            column of quiet ones. A filled indigo tile is the loudest thing a
-            productivity sidebar can put in its top-left corner, and it is
-            competing with the campaign you are actually working in.
-          */}
-          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
-            <Dices className="ui-icon size-[18px]" data-motion="spin" aria-hidden="true" />
-          </span>
-          {/* A step smaller than the campaign name below it, and deliberately:
-              the product is the room, the campaign is what you came for. It
-              also leaves the wordmark whole in the 280px drawer, where the
-              close button is taking forty pixels off this row. */}
-          <span className="truncate font-serif text-sm font-semibold text-gray-900 dark:text-white">
+          <span className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
             {APP_NAME}
           </span>
         </Link>
@@ -163,7 +149,12 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
         from navigation by twelve pixels of air rather than by a rule, because
         it is one item and a rule around one item is a box.
       */}
-      <div className={cn('shrink-0 pt-3 pb-3', BAND)}>
+      <div
+        className={cn(
+          'shrink-0 border-b border-gray-200 pt-3 pb-3 dark:border-gray-800',
+          BAND,
+        )}
+      >
         <button
           type="button"
           onClick={onSearch}
@@ -183,50 +174,54 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
           account band off the bottom of a short window. */}
       <nav
         className={cn(
-          'flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-4',
+          'flex min-h-0 flex-1 flex-col overflow-y-auto pb-4',
           '[scrollbar-color:var(--color-gray-300)_transparent] [scrollbar-width:thin]',
           'dark:[scrollbar-color:var(--color-gray-700)_transparent]',
           BAND,
         )}
         aria-label="Main"
       >
-        <NavGroup>
-          <NavItem
-            to="/app"
-            end
-            icon={ALL_CAMPAIGNS_ICON}
-            label="All campaigns"
-            onNavigate={onNavigate}
-          />
-          <NavItem
-            to="/app/campaigns/new"
-            icon={cssIcon(Plus, 'spin')}
-            label="New campaign"
-            onNavigate={onNavigate}
-          />
-        </NavGroup>
-
-        {activeCampaignId ? (
-          <NavGroup
-            title={activeCampaign?.name ?? 'Campaign'}
-            heading={<CampaignHeading name={activeCampaign?.name ?? 'Campaign'} />}
-          >
-            {CAMPAIGN_SECTIONS.map((section) => (
-              <NavItem
-                key={section.path}
-                to={sectionHref(activeCampaignId, section.path)}
-                // Only the overview matches exactly; every other section owns
-                // its subtree, so a document stays under Documents.
-                end={section.path === ''}
-                icon={section.icon}
-                label={section.label}
-                onNavigate={onNavigate}
-              />
-            ))}
+        <div className="border-b border-gray-200 py-3 dark:border-gray-800">
+          <NavGroup title="Workspace">
+            <NavItem
+              to="/app"
+              end
+              icon={ALL_CAMPAIGNS_ICON}
+              label="All campaigns"
+              onNavigate={onNavigate}
+            />
+            <NavItem
+              to="/app/campaigns/new"
+              icon={cssIcon(Plus, 'spin')}
+              label="New campaign"
+              onNavigate={onNavigate}
+            />
           </NavGroup>
-        ) : (
-          <RecentCampaigns onNavigate={onNavigate} />
-        )}
+        </div>
+
+        <div className="pt-3">
+          {activeCampaignId ? (
+            <NavGroup
+              title={activeCampaign?.name ?? 'Campaign'}
+              heading={<CampaignHeading name={activeCampaign?.name ?? 'Campaign'} />}
+            >
+              {CAMPAIGN_SECTIONS.map((section) => (
+                <NavItem
+                  key={section.path}
+                  to={sectionHref(activeCampaignId, section.path)}
+                  // Only the overview matches exactly; every other section owns
+                  // its subtree, so a document stays under Documents.
+                  end={section.path === ''}
+                  icon={section.icon}
+                  label={section.label}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </NavGroup>
+          ) : (
+            <RecentCampaigns onNavigate={onNavigate} />
+          )}
+        </div>
       </nav>
 
       <div
@@ -257,11 +252,16 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
  */
 function CampaignHeading({ name }: { name: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 pt-0.5 pb-2">
-      <Avatar initials={initialsOf(name)} />
-      <span className="min-w-0 flex-1 truncate font-serif text-[0.9375rem] font-semibold text-gray-900 dark:text-white">
-        {name}
-      </span>
+    <div className="px-3 pt-0.5 pb-2.5">
+      <p className="m-0 text-[0.6875rem] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        Current campaign
+      </p>
+      <div className="mt-2 flex items-center gap-2.5">
+        <Avatar initials={initialsOf(name)} />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">
+          {name}
+        </span>
+      </div>
     </div>
   )
 }

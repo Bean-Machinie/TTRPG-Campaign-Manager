@@ -43,7 +43,7 @@ a.campaign-card:hover {
   flex: none;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   background-color: #eef4ff;
   color: #3538cd;
   font-size: 0.8rem;

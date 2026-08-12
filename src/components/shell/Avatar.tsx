@@ -13,17 +13,17 @@ type AvatarProps = {
 }
 
 const SIZES = {
-  xs: 'size-5 rounded text-[0.625rem] tracking-tight',
-  sm: 'size-6 rounded-md text-[0.625rem]',
-  md: 'size-9 rounded-lg text-xs',
+  xs: 'size-5 text-[0.625rem] tracking-tight',
+  sm: 'size-6 text-[0.625rem]',
+  md: 'size-9 text-xs',
 } as const
 
-/** Initials on a tinted square — every campaign and every person gets one, nothing else. */
+/** Initials in a clean circle — every campaign and every person gets one. */
 export function Avatar({ initials, size = 'sm' }: AvatarProps) {
   return (
     <span
       className={cn(
-        'grid shrink-0 place-items-center bg-brand-50 font-semibold text-brand-700',
+        'grid shrink-0 place-items-center rounded-full bg-brand-50 font-semibold text-brand-700',
         'dark:bg-brand-500/15 dark:text-brand-300',
         SIZES[size],
       )}
