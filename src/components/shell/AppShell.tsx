@@ -87,7 +87,11 @@ function Shell() {
       >
         <Modal className="h-full w-sidebar max-w-[85vw] border-r border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
           <Dialog aria-label="Navigation" className="h-full outline-hidden">
-            <Sidebar onSearch={openSearch} onNavigate={() => setDrawerOpen(false)} />
+            <Sidebar
+              onSearch={openSearch}
+              onNavigate={() => setDrawerOpen(false)}
+              onClose={() => setDrawerOpen(false)}
+            />
           </Dialog>
         </Modal>
       </ModalOverlay>

@@ -94,12 +94,59 @@
      has it. It is not fetched: a webfont request on every page load is a poor
      trade for a face most systems now ship something very close to. */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /*
+   * The name of a thing, as opposed to the interface around it.
+   *
+   * Reserved for proper nouns the reader owns — the product's wordmark, a
+   * campaign's title — and never for controls, labels or dense interface text,
+   * which stay in the sans stack above. One editorial note, held to the places
+   * where something is being *named*; used anywhere else it reads as costume.
+   *
+   * Not fetched either, for the same reason. Every listed face ships with a
+   * mainstream OS, and the ordering runs from the most bookish to the most
+   * ubiquitous — Georgia and Cambria are the ones that will actually resolve on
+   * most machines.
+   */
+  --font-serif: 'Iowan Old Style', 'Hoefler Text', Charter, Georgia, Cambria, 'Times New Roman',
+    serif;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/*
+ * The one piece of Preflight this project cannot do without.
+ *
+ * theme.css skips Tailwind's reset on purpose — see rule 1 at the top of it —
+ * and the price was the user agent's own idea of a button: a 2px outset bevel,
+ * a light grey face and 13px Arial, on every control that did not overwrite all
+ * three itself. `.button` below did. Nothing written in Tailwind utilities did,
+ * so the menu rows, the icon buttons, the slash menu and the editor gutter were
+ * each drawing a hard-edged 3D border around a design made of soft corners and
+ * hairlines — sharpest exactly where the app is quietest.
+ *
+ * Scoped to the control rather than to Preflight's universal `*`: that selector
+ * also flattens every margin, list and heading size in the twenty-odd
+ * hand-written stylesheets this project still has, which is the rewrite
+ * theme.css exists to avoid. `border-radius` is left alone so a control can
+ * round itself, and `cursor` is left alone because the components that want a
+ * pointer already ask for one.
+ */
+button,
+::file-selector-button {
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+  background-color: transparent;
+  background-image: none;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  appearance: none;
 }
 
 html {

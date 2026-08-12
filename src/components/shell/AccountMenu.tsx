@@ -126,9 +126,12 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          'group flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-left',
-          'outline-hidden transition-colors',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
+          // Eight-pixel corners and a twelve-pixel gutter, the same as every
+          // nav row above it: the avatar's left edge lands on the column the
+          // section icons are already standing in.
+          'group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left',
+          'outline-hidden transition-colors duration-150',
+          'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
           'hover:bg-gray-50 aria-expanded:bg-gray-50',
           'dark:hover:bg-gray-800/60 dark:aria-expanded:bg-gray-800/60',
         )}

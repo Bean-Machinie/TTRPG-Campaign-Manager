@@ -1,10 +1,11 @@
 import { Link, NavLink } from 'react-router'
-import { Dices, Plus } from 'lucide-react'
-import { useRef } from 'react'
+import { Dices, Plus, X } from 'lucide-react'
+import { useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { APP_NAME } from '../../constants'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { cn } from '../../lib/cn'
+import { IconButton } from '../ui/IconButton'
 import { Kbd } from '../ui/Kbd'
 import { AccountMenu } from './AccountMenu'
 import { Avatar } from './Avatar'
@@ -43,20 +44,36 @@ import './icons.css'
  * about which grey an idle icon is — the kind of difference nobody can name and
  * everybody sees. 8px corners, the same as the menu rows the account button
  * opens, and a focus ring, which none of the three had.
+ *
+ * Three bands, and the rules between them are the panel's only structure:
+ * a 64px brand band that lines up exactly with the top bar beside it so the
+ * horizon runs unbroken across the application, the scrolling navigation, and
+ * the account. Everything inside them sits on one 12px gutter.
  */
 
 const ROW = cn(
-  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline',
-  'outline-hidden transition-colors',
+  'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm no-underline',
+  'outline-hidden transition-colors duration-150',
   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
 )
 
 const ROW_IDLE = cn(
-  'text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+  'font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900',
   'dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white',
 )
 
-const ROW_ACTIVE = 'bg-gray-50 text-gray-900 dark:bg-gray-800/60 dark:text-white'
+/*
+ * Idle, hover and current used to be two states wearing three names: the
+ * current row and a hovered row were the same grey, so the panel could not
+ * answer "where am I" while the pointer was anywhere in it. Current is now a
+ * step further up the ramp than hover, a half-step heavier, and carries the
+ * rail below — three quiet signals rather than one loud one, which is what
+ * keeps it legible in a list of nine without shouting.
+ */
+const ROW_ACTIVE = cn(
+  'font-semibold text-gray-900 bg-gray-100',
+  'dark:bg-gray-800 dark:text-white',
+)
 
 /* Split from its colour because `cn` concatenates rather than merges — an
    active row's brand tint has to replace the idle grey, not race it. */
@@ -67,14 +84,22 @@ const ROW_ICON_IDLE = cn(
   'dark:text-gray-500 dark:group-hover:text-gray-400',
 )
 
+/** The gutter every band shares, so nothing in the column is a pixel out. */
+const BAND = 'px-3'
+
 type SidebarProps = {
   /** Opens the command palette. The field below is a trigger, not an input. */
   onSearch: () => void
   /** Called after any navigation, so the mobile drawer can close itself. */
   onNavigate?: () => void
+  /**
+   * Dismisses the panel. Passed only by the mobile drawer, and the presence of
+   * it is what draws the close button — the docked sidebar has nothing to close.
+   */
+  onClose?: () => void
 }
 
-export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
+export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
   const { campaigns } = useCampaignList()
   const activeCampaignId = useActiveCampaignId()
   const activeCampaign = campaigns.find((campaign) => campaign.id === activeCampaignId)
@@ -84,27 +109,61 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
 
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
-      <div className="flex flex-col gap-4 px-4 pt-5">
+      <div
+        className={cn(
+          'flex h-16 shrink-0 items-center gap-1 border-b border-gray-200 dark:border-gray-800',
+          BAND,
+        )}
+      >
         <Link
           to="/app"
           onClick={onNavigate}
-          className="icon-host flex items-center gap-2.5 rounded-md px-1 py-0.5 no-underline outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          className={cn(
+            // px-3, like every row below it, so the mark, the section icons and
+            // the account tile all stand on one line down the left of the panel.
+            'icon-host flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-3 py-1.5 no-underline',
+            'outline-hidden transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60',
+            'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
+          )}
         >
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-xs">
-            <Dices className="ui-icon size-5" data-motion="spin" aria-hidden="true" />
+          {/*
+            The mark, the campaign tiles and the account tile are one family of
+            tinted squares rather than a saturated logo block sitting above a
+            column of quiet ones. A filled indigo tile is the loudest thing a
+            productivity sidebar can put in its top-left corner, and it is
+            competing with the campaign you are actually working in.
+          */}
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <Dices className="ui-icon size-[18px]" data-motion="spin" aria-hidden="true" />
           </span>
-          <span className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
+          {/* A step smaller than the campaign name below it, and deliberately:
+              the product is the room, the campaign is what you came for. It
+              also leaves the wordmark whole in the 280px drawer, where the
+              close button is taking forty pixels off this row. */}
+          <span className="truncate font-serif text-sm font-semibold text-gray-900 dark:text-white">
             {APP_NAME}
           </span>
         </Link>
 
-        {/*
-          A button, not a field dressed up as one: it opens a palette rather
-          than accepting text itself, and looking like an input it can't act
-          like was the part of the old design worth dropping. Same row
-          treatment as everything below it in the nav, so it reads as one more
-          thing you can do rather than as a second kind of control.
-        */}
+        {/* Full size, not the dense one: this only ever appears in the drawer,
+            and the drawer is only ever driven by a thumb. */}
+        {onClose ? (
+          <IconButton onClick={onClose} aria-label="Close navigation">
+            <X className="size-5" aria-hidden="true" />
+          </IconButton>
+        ) : null}
+      </div>
+
+      {/*
+        A button, not a field dressed up as one: it opens a palette rather
+        than accepting text itself, and looking like an input it can't act
+        like was the part of the old design worth dropping. Same row
+        treatment as everything below it in the nav, so it reads as one more
+        thing you can do rather than as a second kind of control — set apart
+        from navigation by twelve pixels of air rather than by a rule, because
+        it is one item and a rule around one item is a box.
+      */}
+      <div className={cn('shrink-0 pt-3 pb-3', BAND)}>
         <button
           type="button"
           onClick={onSearch}
@@ -120,7 +179,17 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 py-5" aria-label="Main">
+      {/* `min-h-0` is what lets this actually scroll rather than push the
+          account band off the bottom of a short window. */}
+      <nav
+        className={cn(
+          'flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-4',
+          '[scrollbar-color:var(--color-gray-300)_transparent] [scrollbar-width:thin]',
+          'dark:[scrollbar-color:var(--color-gray-700)_transparent]',
+          BAND,
+        )}
+        aria-label="Main"
+      >
         <NavGroup>
           <NavItem
             to="/app"
@@ -138,7 +207,10 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         </NavGroup>
 
         {activeCampaignId ? (
-          <NavGroup label={activeCampaign?.name ?? 'Campaign'}>
+          <NavGroup
+            title={activeCampaign?.name ?? 'Campaign'}
+            heading={<CampaignHeading name={activeCampaign?.name ?? 'Campaign'} />}
+          >
             {CAMPAIGN_SECTIONS.map((section) => (
               <NavItem
                 key={section.path}
@@ -157,20 +229,74 @@ export function Sidebar({ onSearch, onNavigate }: SidebarProps) {
         )}
       </nav>
 
-      <div className="mt-auto border-t border-gray-200 px-4 py-4 dark:border-gray-800">
+      <div
+        className={cn(
+          'mt-auto shrink-0 border-t border-gray-200 py-3 dark:border-gray-800',
+          BAND,
+        )}
+      >
         <AccountMenu onNavigate={onNavigate} />
       </div>
     </div>
   )
 }
 
-function NavGroup({ label, children }: { label?: string; children: ReactNode }) {
+/**
+ * The campaign you are inside, named rather than labelled.
+ *
+ * It had been the group heading every other sidebar gives a section: eleven-pixel
+ * grey capitals, letter-spaced, shouting SECTIONS at you. But this line is not a
+ * category — it is the proper noun the whole panel below it belongs to, and the
+ * one place in the chrome where the reader's own writing appears. Serif, at rest,
+ * in the text colour: the campaign is the loudest thing here and it still says
+ * nothing.
+ *
+ * Not a link. The row directly beneath it goes to the same place, and two
+ * controls one pixel apart leading to one destination is the ambiguity the
+ * account menu was already fixed for.
+ */
+function CampaignHeading({ name }: { name: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      {label ? (
-        <p className="truncate px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-          {label}
-        </p>
+    <div className="flex items-center gap-2.5 px-3 pt-0.5 pb-2">
+      <Avatar initials={initialsOf(name)} />
+      <span className="min-w-0 flex-1 truncate font-serif text-[0.9375rem] font-semibold text-gray-900 dark:text-white">
+        {name}
+      </span>
+    </div>
+  )
+}
+
+type NavGroupProps = {
+  /** The group's accessible name. Also the visible label, unless `heading` says otherwise. */
+  title?: string
+  /** A richer rendering of `title` — the campaign identity block, in practice. */
+  heading?: ReactNode
+  children: ReactNode
+}
+
+function NavGroup({ title, heading, children }: NavGroupProps) {
+  const headingId = useId()
+
+  return (
+    // A named group rather than a bare div: a screen reader moving through the
+    // nav now hears which campaign the nine sections belong to, which is
+    // exactly what the sighted reader gets from the heading.
+    <div
+      role={title ? 'group' : undefined}
+      aria-labelledby={title ? headingId : undefined}
+      className="flex flex-col gap-0.5"
+    >
+      {title ? (
+        heading ? (
+          <div id={headingId}>{heading}</div>
+        ) : (
+          <p
+            id={headingId}
+            className="m-0 truncate px-3 pt-0.5 pb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+          >
+            {title}
+          </p>
+        )
       ) : null}
       {children}
     </div>
@@ -201,20 +327,16 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
       to={to}
       end={end}
       onClick={onNavigate}
-      onMouseEnter={(event) => {
-        ;(event.currentTarget as HTMLElement).dataset.probe = String(!!iconRef.current)
-        iconRef.current?.startAnimation()
-      }}
+      onMouseEnter={() => iconRef.current?.startAnimation()}
       onMouseLeave={() => iconRef.current?.stopAnimation()}
       // Keyboard users get the same thing, on the same element, for free.
       onFocus={() => iconRef.current?.startAnimation()}
       onBlur={() => iconRef.current?.stopAnimation()}
-      className={({ isActive }) =>
-        cn('icon-host group', ROW, isActive ? ROW_ACTIVE : ROW_IDLE)
-      }
+      className={({ isActive }) => cn('icon-host group', ROW, isActive ? ROW_ACTIVE : ROW_IDLE)}
     >
       {({ isActive }) => (
         <>
+          {isActive ? <ActiveRail /> : null}
           <NavIcon
             icon={icon}
             ref={iconRef}
@@ -230,16 +352,33 @@ function NavItem({ to, end, icon, label, onNavigate }: NavItemProps) {
   )
 }
 
+/**
+ * The mark on the current row.
+ *
+ * Absolutely positioned, so arriving and leaving move nothing: a rail that took
+ * layout would shunt nine labels sideways every time you navigated. Three
+ * pixels wide and sixteen tall, which is short enough to sit inside the row's
+ * straight left edge rather than crossing its rounded corners.
+ */
+function ActiveRail() {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute top-1/2 left-0 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-600 dark:bg-brand-400"
+    />
+  )
+}
+
 /** The campaigns themselves, listed where the sections would be. */
 function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
   const { campaigns, loading } = useCampaignList()
 
   if (loading && campaigns.length === 0) {
     return (
-      <NavGroup label="Campaigns">
+      <NavGroup title="Campaigns">
         {[0, 1, 2].map((row) => (
-          <div key={row} className="flex items-center gap-3 px-3 py-2">
-            <span className="size-6 animate-pulse rounded-md bg-gray-100 dark:bg-gray-800" />
+          <div key={row} className="flex items-center gap-3 px-3 py-2" aria-hidden="true">
+            <span className="size-5 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
             <span className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
           </div>
         ))}
@@ -247,21 +386,29 @@ function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
     )
   }
 
-  if (campaigns.length === 0) return null
-
   return (
-    <NavGroup label="Campaigns">
-      {campaigns.map((campaign) => (
-        <NavLink
-          key={campaign.id}
-          to={`/app/campaigns/${campaign.id}`}
-          onClick={onNavigate}
-          className={cn('group', ROW, ROW_IDLE)}
-        >
-          <Avatar initials={initialsOf(campaign.name)} />
-          <span className="truncate">{campaign.name}</span>
-        </NavLink>
-      ))}
+    <NavGroup title="Campaigns">
+      {campaigns.length === 0 ? (
+        // One line, in the place a campaign would be. "New campaign" is four
+        // rows above it, so there is nothing here worth a button or a picture.
+        <p className="m-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+          Nothing here yet.
+        </p>
+      ) : (
+        // Never a current row: reaching a campaign is what replaces this list
+        // with that campaign's sections, so idle is the only state it has.
+        campaigns.map((campaign) => (
+          <NavLink
+            key={campaign.id}
+            to={`/app/campaigns/${campaign.id}`}
+            onClick={onNavigate}
+            className={cn('group', ROW, ROW_IDLE)}
+          >
+            <Avatar initials={initialsOf(campaign.name)} size="xs" />
+            <span className="truncate">{campaign.name}</span>
+          </NavLink>
+        ))
+      )}
     </NavGroup>
   )
 }
