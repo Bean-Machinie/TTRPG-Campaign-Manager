@@ -131,7 +131,38 @@ function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
   return result.status === 'fulfilled' ? result.value : []
 }
 
-export async function loadCampaignContents(
+/**
+ * One request per campaign, however many things ask.
+ *
+ * Three callers want a campaign's contents now — the sidebar's tree, the
+ * palette's tree, and the palette's ranked search — and the palette's tree is
+ * unmounted and remounted every time the dialog is closed and reopened. Each
+ * of those asking on its own meant seven list requests per open. The promise
+ * is cached rather than its result, so callers that arrive while one is still
+ * in flight join it instead of starting a second.
+ *
+ * Held for the life of the tab, like the caches it replaces, and dropped on
+ * failure so a dropped connection is retried rather than remembered.
+ */
+const contentsByCampaign = new Map<string, Promise<Command[]>>()
+
+export function loadCampaignContents(
+  campaignId: string,
+  campaignName: string,
+): Promise<Command[]> {
+  const pending = contentsByCampaign.get(campaignId)
+  if (pending) return pending
+
+  const request = fetchCampaignContents(campaignId, campaignName).catch((error: unknown) => {
+    contentsByCampaign.delete(campaignId)
+    throw error
+  })
+
+  contentsByCampaign.set(campaignId, request)
+  return request
+}
+
+async function fetchCampaignContents(
   campaignId: string,
   campaignName: string,
 ): Promise<Command[]> {

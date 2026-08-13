@@ -9,6 +9,24 @@
  * should be gone the moment you press Escape — a dialog that lingers on the way
  * out reads as lag, not as polish.
  */
+/*
+ * The search field's missing focus ring.
+ *
+ * global.css draws a 2px indigo ring on :focus-visible for the whole app, and
+ * it is unlayered — so it outranks the `outline-hidden` utility on the input
+ * no matter what order they are written in, and drew a hard indigo rectangle
+ * across the top of the panel. That ring is right everywhere else and wrong
+ * here: this input is autofocused the instant the dialog opens and can never
+ * be anything *but* focused, so the ring marks nothing while ruling a box
+ * around the one element that did not need one.
+ *
+ * A class rather than an element selector, so this cannot reach any other
+ * field: 0,2,0 against global's 0,1,0 is what makes it win.
+ */
+.palette-field:focus-visible {
+  outline: none;
+}
+
 @keyframes palette-scrim-in {
   from {
     opacity: 0;

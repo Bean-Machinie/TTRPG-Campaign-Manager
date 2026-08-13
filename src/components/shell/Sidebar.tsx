@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useNavigate } from 'react-router'
 import { Plus, X } from 'lucide-react'
 import { useId, useRef } from 'react'
 import type { ReactNode } from 'react'
@@ -9,7 +9,7 @@ import { IconButton } from '../ui/IconButton'
 import { Kbd } from '../ui/Kbd'
 import { AccountMenu } from './AccountMenu'
 import { NavIcon } from './NavIcon'
-import { SidebarCampaignTree } from './SidebarCampaignTree'
+import { CampaignTree } from './CampaignTree'
 import { SearchIcon } from './icons/SearchIcon'
 import type { AnimatedIconHandle } from './icons/types'
 import {
@@ -99,6 +99,7 @@ type SidebarProps = {
 export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
   const { campaigns, loading: campaignsLoading } = useCampaignList()
   const activeCampaignId = useActiveCampaignId()
+  const navigate = useNavigate()
   // The lens should jump when the pointer reaches the field, not when it
   // finally reaches the 16 pixels of magnifier inside it.
   const searchIcon = useRef<AnimatedIconHandle>(null)
@@ -199,11 +200,14 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
           <p className="m-0 truncate px-3 pt-0.5 pb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
             Campaigns
           </p>
-          <SidebarCampaignTree
+          <CampaignTree
             campaigns={campaigns}
             loading={campaignsLoading}
             activeCampaignId={activeCampaignId}
-            onNavigate={onNavigate}
+            onNavigate={(to) => {
+              navigate(to)
+              onNavigate?.()
+            }}
           />
         </div>
       </nav>

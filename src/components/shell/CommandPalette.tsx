@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 import {
   Autocomplete,
   Collection,
@@ -15,9 +14,12 @@ import {
 } from 'react-aria-components'
 import type { Key } from 'react-aria-components'
 import { useNavigate } from 'react-router'
-import { Settings, Plus } from 'lucide-react'
+import { Settings, Plus, X } from 'lucide-react'
 import { useCampaignList } from '../../campaigns/useCampaignList'
+import { cn } from '../../lib/cn'
 import { Button } from '../ui/Button'
+import { Kbd } from '../ui/Kbd'
+import { Avatar } from './Avatar'
 import { CampaignTree } from './CampaignTree'
 import { NavIcon } from './NavIcon'
 import { SearchIcon } from './icons/SearchIcon'
@@ -31,7 +33,6 @@ import {
   sectionHref,
 } from './navigation'
 import type { SectionIcon } from './navigation'
-import { SEARCH_SHORTCUT_LABEL } from './shortcut'
 import './palette.css'
 
 /**
@@ -44,9 +45,14 @@ import './palette.css'
  *
  * The palette has two resting states, not one. With nothing typed, there is
  * nothing to filter, so it shows what the product *is*: quick actions for the
- * three things you can always do, and a tree of every campaign and its
- * sections — global, not scoped to wherever you happen to be. The moment you
- * type, the tree gives way to the flat, ranked results a query actually needs.
+ * three things you can always do, and the same campaign tree the sidebar
+ * navigates by — global here, not scoped to wherever you happen to be. The
+ * moment you type, the tree gives way to the flat, ranked results a query
+ * actually needs.
+ *
+ * Browsing and searching therefore reach the same ground by the same shapes:
+ * open a campaign, open a section, and its records are listed under it exactly
+ * as they are in the sidebar. See CampaignTree, which is that one component.
  *
  * The field and the flat results are one control, not two. React Aria's
  * Autocomplete keeps the caret in the input while the arrow keys move a
@@ -88,20 +94,11 @@ export function CommandPalette({
   const hasQuery = query.trim().length > 0
 
   // A palette that reopens holding the last search is a palette you have to
-  // clear before you can use it. Opening is also when the campaign you are
-  // currently in earns a spot in the tree — without forcing anything you had
-  // already opened yourself back shut.
+  // clear before you can use it. Opening the campaign you are currently in is
+  // the tree's own business — it takes `activeCampaignId` for that.
   useEffect(() => {
-    if (!isOpen) {
-      setQuery('')
-      return
-    }
-    if (campaignId) {
-      setExpandedCampaigns((current) =>
-        current.has(campaignId) ? current : new Set(current).add(campaignId),
-      )
-    }
-  }, [isOpen, campaignId])
+    if (!isOpen) setQuery('')
+  }, [isOpen])
 
   const commands = useMemo<Command[]>(() => {
     const navigation: Command[] = [
@@ -183,31 +180,72 @@ export function CommandPalette({
       {/* 640px, and narrower only when the viewport is: the panel is a flex
           item, so it gives up width to the scrim's padding rather than needing
           a breakpoint of its own. */}
-      <Modal className="palette-panel flex max-h-full w-160 flex-col overflow-hidden rounded-xl bg-white text-left shadow-xl">
+      <Modal className="palette-panel flex max-h-full w-160 flex-col overflow-hidden rounded-xl bg-white text-left shadow-xl dark:bg-gray-900 dark:ring-1 dark:ring-gray-800">
         <Dialog aria-label="Search" className="relative flex min-h-0 flex-1 flex-col outline-hidden">
           <Autocomplete inputValue={query} onInputChange={setQuery}>
             {/*
-              The rule under the field is drawn as a pseudo-element rather than
-              a border so it sits flush inside the panel's rounded corners
-              instead of being clipped by them.
+              The field is chrome, not a control to be found: no box, no fill,
+              no ring — the panel it sits at the top of is the box, and the
+              caret is already in it before you have looked. It is given height
+              and a rule instead, which is what makes it read as a header.
+              (`.palette-field` is why the ring is gone; see palette.css.)
+
+              The rule is a pseudo-element rather than a border so it sits
+              flush inside the panel's rounded corners instead of being
+              clipped by them.
             */}
             <SearchField
               aria-label="Search"
               autoFocus
-              className="relative flex items-center gap-x-2 p-4 after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200"
+              className={cn(
+                'relative flex h-16 shrink-0 items-center gap-3 px-4',
+                'after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-gray-200',
+                'dark:after:bg-gray-800',
+              )}
             >
-              {/* Absolute, but with no inset: it stays where the flex layout
-                  already put it, and the input's left padding clears it. */}
-              <SearchIcon size={20} className="pointer-events-none absolute text-gray-400" />
+              <SearchIcon
+                size={20}
+                className="pointer-events-none shrink-0 text-gray-400 dark:text-gray-500"
+              />
               {/* No Preflight in this project, so the reset a bare input needs
                   — its 2px UA border, its padding, its Arial — is spelled out
                   here rather than assumed. */}
               <Input
                 ref={field}
-                placeholder="Search sections, campaigns and entries…"
-                className="m-0 w-full border-0 bg-transparent p-0 pl-7 font-sans text-base text-gray-900 outline-hidden placeholder:text-gray-500 [&::-webkit-search-cancel-button]:hidden"
+                placeholder="Search campaigns, sections and entries…"
+                className={cn(
+                  'palette-field m-0 min-w-0 flex-1 border-0 bg-transparent p-0',
+                  'font-sans text-base text-gray-900 outline-hidden placeholder:text-gray-400',
+                  'dark:text-white dark:placeholder:text-gray-500',
+                  '[&::-webkit-search-cancel-button]:hidden',
+                )}
               />
-              <Kbd>{SEARCH_SHORTCUT_LABEL}</Kbd>
+
+              {/* Reaching for the mouse to empty a field you are already
+                  typing in would be absurd, so this is not the way to clear a
+                  search — it is the acknowledgement that there *is* one, which
+                  an unringed field would otherwise be missing. */}
+              {hasQuery ? (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setQuery('')
+                    field.current?.focus()
+                  }}
+                  className={cn(
+                    'grid size-6 shrink-0 cursor-pointer place-items-center rounded-full',
+                    'text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600',
+                    'dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300',
+                  )}
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              ) : null}
+
+              {/* Esc, not the shortcut that opened this: the palette is
+                  already open, so the only key worth naming is the way out. */}
+              <Kbd>Esc</Kbd>
             </SearchField>
 
             <QuickActions onNavigate={handleNavigate} />
@@ -238,9 +276,9 @@ export function CommandPalette({
                 {groups.map(([group, items]) => (
                   <ListBoxSection
                     key={group}
-                    className="border-b border-gray-200 pb-2 last:border-transparent"
+                    className="border-b border-gray-200 pb-2 last:border-transparent dark:border-gray-800 dark:last:border-transparent"
                   >
-                    <Header className="flex px-4.5 pt-2 pb-1 text-xs leading-[18px] font-semibold text-gray-600">
+                    <Header className="flex px-4.5 pt-2 pb-1 text-xs leading-[18px] font-semibold text-gray-600 dark:text-gray-400">
                       {group}
                     </Header>
 
@@ -263,9 +301,12 @@ export function CommandPalette({
             <CampaignTree
               campaigns={campaigns}
               loading={campaignsLoading}
+              activeCampaignId={campaignId}
               expandedKeys={expandedCampaigns}
               onExpandedChange={setExpandedCampaigns}
               onNavigate={handleNavigate}
+              className="max-h-106 flex-1 scroll-py-2 overflow-auto p-2"
+              emptyState={<NoCampaigns onNavigate={handleNavigate} />}
             />
           ) : null}
         </Dialog>
@@ -288,20 +329,57 @@ function QuickActions({ onNavigate }: { onNavigate: (to: string) => void }) {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-2 border-b border-gray-200 px-4 pt-1 pb-4">
+    <div className="grid shrink-0 grid-cols-3 gap-2 border-b border-gray-200 px-4 pt-3 pb-4 dark:border-gray-800">
       {actions.map((action) => (
         <button
           key={action.key}
           type="button"
           onClick={() => onNavigate(action.to)}
-          className="flex flex-col items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-2.5 text-center transition-colors hover:border-gray-300 hover:bg-gray-50"
+          className={cn(
+            'flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-2.5 text-center',
+            'transition-colors hover:border-gray-300 hover:bg-gray-50',
+            'dark:border-gray-800 dark:hover:border-gray-700 dark:hover:bg-gray-800/60',
+          )}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-gray-50 text-gray-500" aria-hidden="true">
+          <span
+            className="grid size-8 shrink-0 place-items-center rounded-md bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+            aria-hidden="true"
+          >
             <NavIcon icon={action.icon} size={18} />
           </span>
-          <span className="truncate text-xs font-medium text-gray-700">{action.label}</span>
+          <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+            {action.label}
+          </span>
         </button>
       ))}
+    </div>
+  )
+}
+
+/**
+ * The tree with no campaigns in it.
+ *
+ * The sidebar answers this with one grey sentence, which is right for a
+ * narrow column you are already living in. A 640px panel opened on purpose is
+ * a question, and this is the one place in the product where "you have not
+ * started anything yet" can be answered with the thing that starts one.
+ */
+function NoCampaigns({ onNavigate }: { onNavigate: (to: string) => void }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+      <span
+        className="grid size-11 shrink-0 place-items-center rounded-[10px] bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700"
+        aria-hidden="true"
+      >
+        <NavIcon icon={ALL_CAMPAIGNS_ICON} size={22} />
+      </span>
+      <div>
+        <p className="m-0 text-sm font-semibold text-gray-900 dark:text-white">No campaigns yet</p>
+        <p className="m-0 text-sm text-gray-600 dark:text-gray-400">Start one to see it here.</p>
+      </div>
+      <Button variant="secondary" onClick={() => onNavigate('/app/campaigns/new')}>
+        New campaign
+      </Button>
     </div>
   )
 }
@@ -324,33 +402,33 @@ function CommandRow({ command }: { command: Command }) {
     >
       {/* rounded-md, not rounded-lg: this product's radius scale puts 8px on
           `md`, and 8px is the row radius. */}
-      <div className="relative flex min-h-10 items-center justify-between rounded-md px-2.5 py-2 transition duration-100 ease-linear group-data-[hovered]:bg-gray-50 group-data-[focus-visible]:outline-2 group-data-[focus-visible]:outline-offset-2 group-data-[focus-visible]:outline-brand-600">
+      <div
+        className={cn(
+          'relative flex min-h-10 items-center justify-between rounded-md px-2.5 py-2',
+          'transition duration-100 ease-linear group-data-[hovered]:bg-gray-50',
+          'group-data-[focus-visible]:outline-2 group-data-[focus-visible]:outline-offset-2 group-data-[focus-visible]:outline-brand-600',
+          'dark:group-data-[hovered]:bg-gray-800/60',
+        )}
+      >
+        {/* The same circle the tree gives a campaign, for the same campaign. */}
         {command.initials ? (
-          <span
-            className="mr-2 grid size-6 shrink-0 place-items-center rounded-md bg-brand-50 text-[0.625rem] font-semibold text-brand-700"
-            aria-hidden="true"
-          >
-            {command.initials}
+          <span className="mr-2 flex shrink-0">
+            <Avatar initials={command.initials} />
           </span>
         ) : (
-          <NavIcon icon={command.icon} size={20} className="mr-2 text-gray-400" />
+          <NavIcon
+            icon={command.icon}
+            size={20}
+            className="mr-2 text-gray-400 dark:text-gray-500"
+          />
         )}
 
         <div className="flex flex-1 gap-x-1.5">
-          <span className="text-sm font-medium text-gray-900">{command.label}</span>
-          <span className="text-sm text-gray-600">{command.hint}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">{command.label}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{command.hint}</span>
         </div>
       </div>
     </ListBoxItem>
-  )
-}
-
-/** A key as it is drawn in this design system: a small, flat, ringed chip. */
-function Kbd({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="min-w-6 shrink-0 rounded-[4px] bg-gray-50 px-1 py-0.5 text-center font-sans text-sm font-medium text-gray-600 ring-1 ring-gray-200 ring-inset">
-      {children}
-    </kbd>
   )
 }
 
@@ -374,16 +452,16 @@ function NoResults({
     <div className="mx-auto flex w-full max-w-lg flex-col items-center justify-center overflow-hidden p-6 pb-10">
       <header className="relative mb-4">
         <Rings />
-        <div className="relative grid size-12 shrink-0 place-items-center rounded-[10px] bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset">
+        <div className="relative grid size-12 shrink-0 place-items-center rounded-[10px] bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700">
           <SearchIcon size={24} />
         </div>
       </header>
 
       <main className="z-10 mb-6 flex w-full max-w-88 flex-col items-center justify-center gap-1">
-        <h2 className="m-0 text-base font-semibold text-gray-900">
+        <h2 className="m-0 text-base font-semibold text-gray-900 dark:text-white">
           {loading ? 'Still looking' : 'No results found'}
         </h2>
-        <p className="m-0 text-center text-sm text-gray-600">
+        <p className="m-0 text-center text-sm text-gray-600 dark:text-gray-400">
           {loading
             ? 'This campaign’s entries are still loading.'
             : `Your search “${query}” did not match anything. Please try again.`}
@@ -415,7 +493,7 @@ function Rings() {
       viewBox="0 0 480 480"
       fill="none"
       aria-hidden="true"
-      className="pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-gray-200"
+      className="pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-gray-200 dark:text-gray-800"
     >
       <mask id="palette-rings-mask" style={{ maskType: 'alpha' }} maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="480">
         <rect width="480" height="480" fill="url(#palette-rings-fade)" />
