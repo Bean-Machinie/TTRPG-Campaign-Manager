@@ -8,16 +8,13 @@ import { cn } from '../../lib/cn'
 import { IconButton } from '../ui/IconButton'
 import { Kbd } from '../ui/Kbd'
 import { AccountMenu } from './AccountMenu'
-import { Avatar } from './Avatar'
 import { NavIcon } from './NavIcon'
+import { SidebarCampaignTree } from './SidebarCampaignTree'
 import { SearchIcon } from './icons/SearchIcon'
 import type { AnimatedIconHandle } from './icons/types'
 import {
   ALL_CAMPAIGNS_ICON,
-  CAMPAIGN_SECTIONS,
   cssIcon,
-  initialsOf,
-  sectionHref,
 } from './navigation'
 import type { SectionIcon } from './navigation'
 import { SEARCH_SHORTCUT_LABEL } from './shortcut'
@@ -100,9 +97,8 @@ type SidebarProps = {
 }
 
 export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
-  const { campaigns } = useCampaignList()
+  const { campaigns, loading: campaignsLoading } = useCampaignList()
   const activeCampaignId = useActiveCampaignId()
-  const activeCampaign = campaigns.find((campaign) => campaign.id === activeCampaignId)
   // The lens should jump when the pointer reaches the field, not when it
   // finally reaches the 16 pixels of magnifier inside it.
   const searchIcon = useRef<AnimatedIconHandle>(null)
@@ -200,27 +196,15 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
         </div>
 
         <div className="pt-3">
-          {activeCampaignId ? (
-            <NavGroup
-              title={activeCampaign?.name ?? 'Campaign'}
-              heading={<CampaignHeading name={activeCampaign?.name ?? 'Campaign'} />}
-            >
-              {CAMPAIGN_SECTIONS.map((section) => (
-                <NavItem
-                  key={section.path}
-                  to={sectionHref(activeCampaignId, section.path)}
-                  // Only the overview matches exactly; every other section owns
-                  // its subtree, so a document stays under Documents.
-                  end={section.path === ''}
-                  icon={section.icon}
-                  label={section.label}
-                  onNavigate={onNavigate}
-                />
-              ))}
-            </NavGroup>
-          ) : (
-            <RecentCampaigns onNavigate={onNavigate} />
-          )}
+          <p className="m-0 truncate px-3 pt-0.5 pb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+            Campaigns
+          </p>
+          <SidebarCampaignTree
+            campaigns={campaigns}
+            loading={campaignsLoading}
+            activeCampaignId={activeCampaignId}
+            onNavigate={onNavigate}
+          />
         </div>
       </nav>
 
@@ -250,22 +234,6 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
  * controls one pixel apart leading to one destination is the ambiguity the
  * account menu was already fixed for.
  */
-function CampaignHeading({ name }: { name: string }) {
-  return (
-    <div className="px-3 pt-0.5 pb-2.5">
-      <p className="m-0 text-[0.6875rem] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-        Current campaign
-      </p>
-      <div className="mt-2 flex items-center gap-2.5">
-        <Avatar initials={initialsOf(name)} />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">
-          {name}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 type NavGroupProps = {
   /** The group's accessible name. Also the visible label, unless `heading` says otherwise. */
   title?: string
@@ -370,45 +338,3 @@ function ActiveRail() {
 }
 
 /** The campaigns themselves, listed where the sections would be. */
-function RecentCampaigns({ onNavigate }: { onNavigate?: () => void }) {
-  const { campaigns, loading } = useCampaignList()
-
-  if (loading && campaigns.length === 0) {
-    return (
-      <NavGroup title="Campaigns">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="flex items-center gap-3 px-3 py-2" aria-hidden="true">
-            <span className="size-5 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
-            <span className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
-          </div>
-        ))}
-      </NavGroup>
-    )
-  }
-
-  return (
-    <NavGroup title="Campaigns">
-      {campaigns.length === 0 ? (
-        // One line, in the place a campaign would be. "New campaign" is four
-        // rows above it, so there is nothing here worth a button or a picture.
-        <p className="m-0 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
-          Nothing here yet.
-        </p>
-      ) : (
-        // Never a current row: reaching a campaign is what replaces this list
-        // with that campaign's sections, so idle is the only state it has.
-        campaigns.map((campaign) => (
-          <NavLink
-            key={campaign.id}
-            to={`/app/campaigns/${campaign.id}`}
-            onClick={onNavigate}
-            className={cn('group', ROW, ROW_IDLE)}
-          >
-            <Avatar initials={initialsOf(campaign.name)} size="xs" />
-            <span className="truncate">{campaign.name}</span>
-          </NavLink>
-        ))
-      )}
-    </NavGroup>
-  )
-}

@@ -131,7 +131,10 @@ function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
   return result.status === 'fulfilled' ? result.value : []
 }
 
-async function loadCampaignContents(campaignId: string, campaignName: string): Promise<Command[]> {
+export async function loadCampaignContents(
+  campaignId: string,
+  campaignName: string,
+): Promise<Command[]> {
   const settled = await Promise.allSettled([
     listCampaignSessions(campaignId),
     listCampaignCharacters(campaignId),
