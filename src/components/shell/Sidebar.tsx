@@ -18,7 +18,6 @@ import {
 } from './navigation'
 import type { SectionIcon } from './navigation'
 import { SEARCH_SHORTCUT_LABEL } from './shortcut'
-import { useActiveCampaignId } from './useActiveCampaignId'
 import './icons.css'
 
 /**
@@ -98,7 +97,6 @@ type SidebarProps = {
 
 export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
   const { campaigns, loading: campaignsLoading } = useCampaignList()
-  const activeCampaignId = useActiveCampaignId()
   const navigate = useNavigate()
   // The lens should jump when the pointer reaches the field, not when it
   // finally reaches the 16 pixels of magnifier inside it.
@@ -203,7 +201,6 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
           <CampaignTree
             campaigns={campaigns}
             loading={campaignsLoading}
-            activeCampaignId={activeCampaignId}
             onNavigate={(to) => {
               navigate(to)
               onNavigate?.()

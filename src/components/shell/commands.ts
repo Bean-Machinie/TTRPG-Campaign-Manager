@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CampaignSummary } from '../../campaigns/types'
 import {
   listCampaignCharacters,
   listCampaignDocuments,
@@ -18,16 +19,26 @@ import type { SectionIcon } from './navigation'
  * what a result *is*, the other decides what a result looks like. Three sources
  * are merged by the component that renders them:
  *
- *   1. where you can go        — the sections of the campaign you are in
+ *   1. where you can go        — every section of every campaign
  *   2. what you belong to      — your campaigns
  *   3. what is *in* a campaign — its sessions, characters, locations, quests,
  *                                notes, documents and maps
  *
- * The third is fetched the first time the palette is opened for a campaign and
- * then kept, so the second open is instant. It is a client-side match over
- * lists the product already loads a page at a time; the indexed, visibility-
- * filtered search in the plan replaces the matching here without changing what
- * this module is.
+ * Search is global. All three reach every campaign you can read, not the one
+ * you happen to have navigated into — "where did I write that" is a question
+ * you ask precisely when you are not already standing in the answer. Which
+ * campaign you are in is a tie-break on the ordering, not a filter on what
+ * exists; see groupMatches.
+ *
+ * What you cannot read is not filtered out here, because it never arrives:
+ * every list this module calls is subject to row-level security, so a member
+ * gets the campaigns they are in and a private note stays with its author. A
+ * visibility check written in this file would be a second, weaker copy of a
+ * rule the database already enforces.
+ *
+ * It is a client-side match over lists the product already loads a page at a
+ * time; the indexed search in the plan replaces the matching here without
+ * changing what this module is.
  *
  * Nothing is fetched until the palette opens. A GM who never presses ⌘K never
  * pays for it.
@@ -42,6 +53,8 @@ export type Command = {
   to: string
   /** Shown instead of an icon, for campaigns. */
   initials?: string
+  /** Which campaign this belongs to, for ranking. Absent on global commands. */
+  campaignId?: string
 }
 
 /**
@@ -52,13 +65,22 @@ export type Command = {
  * "no" puts every note-adjacent hint above the location actually called
  * "Northwatch".
  */
-export function groupMatches(commands: Command[], query: string): Array<[string, Command[]]> {
+export function groupMatches(
+  commands: Command[],
+  query: string,
+  /** Broken ties go to this campaign. Where you are, in practice. */
+  preferCampaignId?: string | null,
+): Array<[string, Command[]]> {
   const needle = query.trim().toLowerCase()
 
   const scored = commands
     .map((command) => ({ command, score: scoreOf(command, needle) }))
     .filter((entry) => entry.score < 3)
-    .sort((a, b) => a.score - b.score)
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        localityOf(a.command, preferCampaignId) - localityOf(b.command, preferCampaignId),
+    )
 
   const groups = new Map<string, Command[]>()
   for (const { command } of scored) {
@@ -68,6 +90,23 @@ export function groupMatches(commands: Command[], query: string): Array<[string,
   }
 
   return [...groups]
+}
+
+/**
+ * The tie-break between two equally good matches.
+ *
+ * Reaching every campaign is not the same as treating them alike: "the vault"
+ * typed mid-session almost always means *this* table's vault, and eight other
+ * campaigns' vaults should not be sitting between you and it. It only ever
+ * separates rows that already matched equally well, so nothing is buried by
+ * being somewhere else — a better match elsewhere still wins outright.
+ *
+ * Groups are emitted in the order their best row was found, so this is also
+ * what floats the campaign you are in to the top of the results.
+ */
+function localityOf(command: Command, preferCampaignId?: string | null) {
+  if (!preferCampaignId) return 0
+  return command.campaignId === preferCampaignId ? 0 : 1
 }
 
 function scoreOf(command: Command, needle: string) {
@@ -81,48 +120,48 @@ function scoreOf(command: Command, needle: string) {
 }
 
 /**
- * Everything inside one campaign, as commands.
+ * The contents of the campaigns you pass, keyed by campaign.
  *
- * Fetched with allSettled rather than all: a campaign whose maps fail to load —
- * an expired signed URL, a dropped connection — should still be searchable by
- * character name. Kept in a ref keyed by campaign so reopening the palette
- * costs nothing, and dropped when the campaign changes.
+ * The caller decides *which* campaigns, and the two callers want different
+ * sets: a tree loads only what somebody has actually opened, while search
+ * loads everything, because a search that reaches one campaign is not a
+ * search. Both go through the cache below, so the two of them asking for the
+ * same campaign is still one request.
+ *
+ * Per campaign rather than all-or-nothing, in both directions: a campaign's
+ * results appear the moment it lands instead of waiting on the slowest, and
+ * one campaign failing to load costs you that campaign rather than the search.
  */
-export function useCampaignContents(campaignId: string | null, campaignName: string) {
-  const [contents, setContents] = useState<Command[]>([])
-  const [loading, setLoading] = useState(false)
-  const cache = useRef(new Map<string, Command[]>())
+export function useCampaignContents(campaigns: CampaignSummary[]) {
+  const [byCampaign, setByCampaign] = useState<Record<string, Command[]>>({})
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
+  const requested = useRef(new Set<string>())
 
   useEffect(() => {
-    if (!campaignId) {
-      setContents([])
-      return
+    for (const campaign of campaigns) {
+      if (requested.current.has(campaign.id)) continue
+
+      requested.current.add(campaign.id)
+      setLoadingIds((current) => new Set(current).add(campaign.id))
+
+      void loadCampaignContents(campaign.id, campaign.name)
+        .then((items) => {
+          setByCampaign((current) => ({ ...current, [campaign.id]: items }))
+        })
+        .catch(() => {
+          setByCampaign((current) => ({ ...current, [campaign.id]: [] }))
+        })
+        .finally(() => {
+          setLoadingIds((current) => {
+            const next = new Set(current)
+            next.delete(campaign.id)
+            return next
+          })
+        })
     }
+  }, [campaigns])
 
-    const cached = cache.current.get(campaignId)
-    if (cached) {
-      setContents(cached)
-      return
-    }
-
-    let active = true
-    setLoading(true)
-
-    loadCampaignContents(campaignId, campaignName)
-      .then((loaded) => {
-        cache.current.set(campaignId, loaded)
-        if (active) setContents(loaded)
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [campaignId, campaignName])
-
-  return { contents, loading }
+  return { byCampaign, loadingIds }
 }
 
 const sectionByPath = new Map(CAMPAIGN_SECTIONS.map((section) => [section.path, section]))
@@ -248,6 +287,7 @@ async function fetchCampaignContents(
         group: groupName,
         icon: section?.icon ?? ALL_CAMPAIGNS_ICON,
         to: described.to ?? sectionHref(campaignId, path),
+        campaignId,
       }
     })
   }

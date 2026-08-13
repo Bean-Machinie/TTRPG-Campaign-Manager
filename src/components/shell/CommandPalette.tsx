@@ -15,6 +15,7 @@ import {
 import type { Key } from 'react-aria-components'
 import { useNavigate } from 'react-router'
 import { Settings, Plus, X } from 'lucide-react'
+import type { CampaignSummary } from '../../campaigns/types'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { cn } from '../../lib/cn'
 import { Button } from '../ui/Button'
@@ -68,17 +69,17 @@ import './palette.css'
 type CommandPaletteProps = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  /** The campaign whose contents are searchable, if you are inside one. */
+  /**
+   * The campaign you are in, if any. Not a scope — everything is searchable
+   * either way — but it opens in the tree and it wins ties in the ranking.
+   */
   campaignId: string | null
-  campaignName: string
 }
 
-export function CommandPalette({
-  isOpen,
-  onOpenChange,
-  campaignId,
-  campaignName,
-}: CommandPaletteProps) {
+/** One empty list, so a closed palette asks the loader for the same nothing. */
+const NOTHING: CampaignSummary[] = []
+
+export function CommandPalette({ isOpen, onOpenChange, campaignId }: CommandPaletteProps) {
   const navigate = useNavigate()
   const { campaigns, loading: campaignsLoading } = useCampaignList()
   const [query, setQuery] = useState('')
@@ -90,7 +91,12 @@ export function CommandPalette({
   // Clearing the search from the empty state removes the button that was
   // clicked, so the caret has to be sent back to the field by hand.
   const field = useRef<HTMLInputElement>(null)
-  const { contents, loading } = useCampaignContents(isOpen ? campaignId : null, campaignName)
+  // Every campaign, not the one you are standing in: opening the palette is
+  // the moment "what can be found" stops meaning "what is on screen". Still
+  // nothing before that — closed, this asks for nothing.
+  const { byCampaign, loadingIds } = useCampaignContents(isOpen ? campaigns : NOTHING)
+  const contents = useMemo(() => Object.values(byCampaign).flat(), [byCampaign])
+  const loading = loadingIds.size > 0
   const hasQuery = query.trim().length > 0
 
   // A palette that reopens holding the last search is a palette you have to
@@ -138,6 +144,7 @@ export function CommandPalette({
       icon: ALL_CAMPAIGNS_ICON,
       to: `/app/campaigns/${campaign.id}`,
       initials: initialsOf(campaign.name),
+      campaignId: campaign.id,
     }))
 
     // Every campaign's sections, not only the one you are standing in — the
@@ -151,13 +158,17 @@ export function CommandPalette({
         group: campaign.name,
         icon: section.icon,
         to: sectionHref(campaign.id, section.path),
+        campaignId: campaign.id,
       })),
     )
 
     return [...navigation, ...campaignCommands, ...sectionCommands, ...contents]
   }, [campaigns, contents])
 
-  const groups = useMemo(() => groupMatches(commands, query), [commands, query])
+  const groups = useMemo(
+    () => groupMatches(commands, query, campaignId),
+    [commands, query, campaignId],
+  )
 
   function handleNavigate(to: string) {
     onOpenChange(false)
@@ -301,7 +312,6 @@ export function CommandPalette({
             <CampaignTree
               campaigns={campaigns}
               loading={campaignsLoading}
-              activeCampaignId={campaignId}
               expandedKeys={expandedCampaigns}
               onExpandedChange={setExpandedCampaigns}
               onNavigate={handleNavigate}
@@ -463,7 +473,7 @@ function NoResults({
         </h2>
         <p className="m-0 text-center text-sm text-gray-600 dark:text-gray-400">
           {loading
-            ? 'This campaign’s entries are still loading.'
+            ? 'Your campaigns are still loading.'
             : `Your search “${query}” did not match anything. Please try again.`}
         </p>
       </main>

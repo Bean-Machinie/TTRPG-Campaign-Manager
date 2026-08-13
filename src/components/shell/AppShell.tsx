@@ -3,7 +3,6 @@ import { Dialog, Modal, ModalOverlay } from 'react-aria-components'
 import { Outlet, useLocation } from 'react-router'
 import { CampaignListContext } from '../../campaigns/CampaignListContext'
 import { useCampaigns } from '../../campaigns/hooks'
-import { useCampaignList } from '../../campaigns/useCampaignList'
 import { CommandPalette } from './CommandPalette'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -38,9 +37,7 @@ function Shell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const { pathname } = useLocation()
-  const { campaigns } = useCampaignList()
   const campaignId = useActiveCampaignId()
-  const campaignName = campaigns.find((campaign) => campaign.id === campaignId)?.name ?? 'Campaign'
 
   // Following a link inside the drawer should leave you looking at where you
   // went, not at the drawer you went there from.
@@ -96,12 +93,7 @@ function Shell() {
         </Modal>
       </ModalOverlay>
 
-      <CommandPalette
-        isOpen={searchOpen}
-        onOpenChange={setSearchOpen}
-        campaignId={campaignId}
-        campaignName={campaignName}
-      />
+      <CommandPalette isOpen={searchOpen} onOpenChange={setSearchOpen} campaignId={campaignId} />
     </div>
   )
 }

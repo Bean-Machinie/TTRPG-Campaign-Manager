@@ -5,7 +5,16 @@ import { CommandPalette } from './components/shell/CommandPalette'
 import './styles/theme.css'
 import './styles/global.css'
 
-const campaigns: Array<{ id: string; name: string; createdAt: string; lastPlayedOn: null }> = []
+/**
+ * Two, not none: an empty list only ever exercises the empty state, and the
+ * palette's resting view is the campaign tree. Contents stay empty here —
+ * there is no Supabase behind this harness — so what this shows is the tree's
+ * chrome, which is exactly what it is for.
+ */
+const campaigns: Array<{ id: string; name: string; createdAt: string; lastPlayedOn: null }> = [
+  { id: 'c1', name: 'Curse of Strahd', createdAt: '2026-01-01', lastPlayedOn: null },
+  { id: 'c2', name: 'Bean test', createdAt: '2026-01-02', lastPlayedOn: null },
+]
 
 declare global {
   interface Window {
@@ -27,8 +36,7 @@ createRoot(document.getElementById('root')!).render(
       <CommandPalette
         isOpen
         onOpenChange={(open) => window.__log.push(`open:${open}`)}
-        campaignId={null}
-        campaignName="Campaign"
+        campaignId="c2"
       />
     </CampaignListContext>
   </MemoryRouter>,

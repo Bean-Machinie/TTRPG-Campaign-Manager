@@ -130,6 +130,50 @@ export function sectionHref(campaignId: string, path: string) {
   return path ? `/app/campaigns/${campaignId}/${path}` : `/app/campaigns/${campaignId}`
 }
 
+/* The tree's row keys. One scheme, so that a key can be built from a route as
+   easily as from the row that renders it. */
+export const campaignKey = (campaignId: string) => `campaign:${campaignId}`
+
+export const sectionKey = (campaignId: string, path: string) =>
+  `section:${campaignId}:${path || 'overview'}`
+
+export const entryKey = (campaignId: string, entryId: string) =>
+  `entry:${campaignId}:${entryId}`
+
+/**
+ * What has to be open for a path to be a row somebody can see.
+ *
+ * The campaign, always. Plus the section holding the entry, when the page you
+ * are on belongs to an entry with a page of its own — a document, today —
+ * because arriving there from search or from a link should leave the tree
+ * standing open at what you opened rather than one level above it.
+ *
+ * `to` is what distinguishes the two kinds of entry: a session's row points at
+ * the sessions list, so the list *is* the page and nothing needs opening,
+ * while a document points at itself. Deliberately the same test the tree uses
+ * to decide whether an entry row can be the current one — a row is revealed
+ * exactly when it is a row that can be marked.
+ */
+export function revealedKeys(
+  campaignId: string | null,
+  entries: Array<{ id: string; to: string }>,
+  pathname: string,
+): string[] {
+  if (!campaignId) return []
+
+  const keys = [campaignKey(campaignId)]
+
+  const entry = entries.find((item) => {
+    if (item.to !== pathname) return false
+    // `documents:8f2c…` — the section's path is the half in front of the colon.
+    return item.to !== sectionHref(campaignId, item.id.split(':')[0])
+  })
+
+  if (entry) keys.push(sectionKey(campaignId, entry.id.split(':')[0]))
+
+  return keys
+}
+
 /**
  * Initials for a campaign's avatar tile.
  *

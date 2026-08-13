@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import {
@@ -12,10 +12,18 @@ import { ChevronRight } from 'lucide-react'
 import type { CampaignSummary } from '../../campaigns/types'
 import { cn } from '../../lib/cn'
 import { Avatar } from './Avatar'
-import { loadCampaignContents } from './commands'
-import type { Command } from './commands'
+import { useCampaignContents } from './commands'
 import { NavIcon } from './NavIcon'
-import { CAMPAIGN_SECTIONS, initialsOf, sectionHref } from './navigation'
+import {
+  CAMPAIGN_SECTIONS,
+  campaignKey,
+  entryKey,
+  initialsOf,
+  revealedKeys,
+  sectionHref,
+  sectionKey,
+} from './navigation'
+import { useActiveCampaignId } from './useActiveCampaignId'
 
 /**
  * Everywhere you can go, laid out as what it actually is: your campaigns, the
@@ -42,8 +50,6 @@ type CampaignTreeProps = {
   loading: boolean
   /** Where a row goes. The caller decides what else happens on the way. */
   onNavigate: (to: string) => void
-  /** Opened on mount, so you land looking at wherever you already are. */
-  activeCampaignId?: string | null
   /**
    * Expansion, when the caller needs to outlive the tree. The palette keeps it
    * because typing a query unmounts the tree in favour of ranked results, and
@@ -57,78 +63,79 @@ type CampaignTreeProps = {
   emptyState?: ReactNode
 }
 
-const campaignKey = (campaignId: string) => `campaign:${campaignId}`
-const sectionKey = (campaignId: string, path: string) =>
-  `section:${campaignId}:${path || 'overview'}`
-
 const CONTAINER = 'flex flex-col gap-0.5 outline-hidden'
 
 export function CampaignTree({
   campaigns,
   loading,
   onNavigate,
-  activeCampaignId = null,
   expandedKeys,
   onExpandedChange,
   className,
   emptyState,
 }: CampaignTreeProps) {
   const location = useLocation()
+  const activeCampaignId = useActiveCampaignId()
   const [ownExpandedKeys, setOwnExpandedKeys] = useState<Set<Key>>(
     () => new Set(activeCampaignId ? [campaignKey(activeCampaignId)] : []),
   )
-  const [contents, setContents] = useState<Record<string, Command[]>>({})
-  const [loadingCampaigns, setLoadingCampaigns] = useState<Set<string>>(new Set())
-  const requestedCampaigns = useRef(new Set<string>())
 
   const expanded = expandedKeys ?? ownExpandedKeys
+
+  // Opening a campaign is the fetch boundary: sections cost nothing to expand,
+  // and only a campaign somebody has actually opened pulls its contents.
+  const { byCampaign, loadingIds } = useCampaignContents(
+    campaigns.filter((campaign) => expanded.has(campaignKey(campaign.id))),
+  )
 
   function changeExpanded(keys: Set<Key>) {
     if (!expandedKeys) setOwnExpandedKeys(keys)
     onExpandedChange?.(keys)
   }
 
+  // Resolved in two passes rather than one, and that is fine: expanding the
+  // campaign is what loads its contents, and the contents are what identify
+  // the section to open.
+  const revealKeys = useMemo(
+    () => revealedKeys(activeCampaignId, byCampaign[activeCampaignId ?? ''] ?? [], location.pathname),
+    [activeCampaignId, byCampaign, location.pathname],
+  )
+
+  /**
+   * Opening the tree onto where you are — once per arrival, not for as long as
+   * you stay.
+   *
+   * The difference matters because this only ever adds keys. Re-running it
+   * whenever expansion changes would mean a section you collapsed while
+   * reading a document in it sprang back open under your hand, forever. So
+   * each distinct destination is revealed exactly once, and after that the
+   * tree is yours: collapse what you like, and it stays collapsed until you
+   * navigate somewhere that needs it open again.
+   */
+  const revealed = useRef<string | null>(null)
+
   useEffect(() => {
-    if (!activeCampaignId) return
-    const key = campaignKey(activeCampaignId)
+    if (revealKeys.length === 0) return
+
+    const arrival = `${location.pathname}::${revealKeys.join('|')}`
+    if (revealed.current === arrival) return
+    revealed.current = arrival
 
     if (expandedKeys) {
-      if (!expandedKeys.has(key)) onExpandedChange?.(new Set(expandedKeys).add(key))
+      if (revealKeys.every((key) => expandedKeys.has(key))) return
+      const next = new Set<Key>(expandedKeys)
+      for (const key of revealKeys) next.add(key)
+      onExpandedChange?.(next)
       return
     }
-    setOwnExpandedKeys((current) => (current.has(key) ? current : new Set(current).add(key)))
-  }, [activeCampaignId, expandedKeys, onExpandedChange])
 
-  // Each lightweight list is loaded once per campaign, and section branches
-  // appear only where real records exist.
-  useEffect(() => {
-    for (const campaign of campaigns) {
-      if (
-        !expanded.has(campaignKey(campaign.id)) ||
-        requestedCampaigns.current.has(campaign.id)
-      ) {
-        continue
-      }
-
-      requestedCampaigns.current.add(campaign.id)
-      setLoadingCampaigns((current) => new Set(current).add(campaign.id))
-
-      void loadCampaignContents(campaign.id, campaign.name)
-        .then((items) => {
-          setContents((current) => ({ ...current, [campaign.id]: items }))
-        })
-        .catch(() => {
-          setContents((current) => ({ ...current, [campaign.id]: [] }))
-        })
-        .finally(() => {
-          setLoadingCampaigns((current) => {
-            const next = new Set(current)
-            next.delete(campaign.id)
-            return next
-          })
-        })
-    }
-  }, [campaigns, expanded])
+    setOwnExpandedKeys((current) => {
+      if (revealKeys.every((key) => current.has(key))) return current
+      const next = new Set(current)
+      for (const key of revealKeys) next.add(key)
+      return next
+    })
+  }, [revealKeys, location.pathname, expandedKeys, onExpandedChange])
 
   if (loading && campaigns.length === 0) {
     return (
@@ -162,7 +169,7 @@ export function CampaignTree({
       className={cn(CONTAINER, className)}
     >
       {campaigns.map((campaign) => {
-        const campaignContents = contents[campaign.id] ?? []
+        const campaignContents = byCampaign[campaign.id] ?? []
         const isCampaignActive = location.pathname.startsWith(`/app/campaigns/${campaign.id}`)
 
         return (
@@ -179,7 +186,7 @@ export function CampaignTree({
                   <TreeChevron isExpanded={isExpanded} label={`${campaign.name} sections`} />
                   <Avatar initials={initialsOf(campaign.name)} />
                   <span className="min-w-0 flex-1 truncate">{campaign.name}</span>
-                  {loadingCampaigns.has(campaign.id) ? <LoadingDot /> : null}
+                  {loadingIds.has(campaign.id) ? <LoadingDot /> : null}
                 </TreeRow>
               )}
             </TreeItemContent>
@@ -237,7 +244,7 @@ export function CampaignTree({
                   {sectionItems.map((item, itemIndex) => (
                     <TreeItem
                       key={item.id}
-                      id={`entry:${campaign.id}:${item.id}`}
+                      id={entryKey(campaign.id, item.id)}
                       textValue={item.label}
                       onAction={() => onNavigate(item.to)}
                       className="group outline-hidden"
