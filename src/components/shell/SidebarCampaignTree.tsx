@@ -249,8 +249,8 @@ function TreeRow({
         'group-data-[hovered]:bg-gray-50 group-data-[focus-visible]:outline-2 group-data-[focus-visible]:-outline-offset-2 group-data-[focus-visible]:outline-brand-600',
         'dark:group-data-[hovered]:bg-gray-800/60',
         level === 0 && 'pl-1',
-        level === 1 && 'pl-5',
-        level === 2 && 'pl-12 text-[0.8125rem]',
+        level === 1 && 'pl-8',
+        level === 2 && 'pl-15 text-[0.8125rem]',
         strong ? 'font-semibold' : 'font-medium',
         active
           ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
@@ -287,7 +287,7 @@ function TreeChevron({ isExpanded, label }: { isExpanded: boolean; label: string
  * The vertical guides that mark how deep a row sits.
  *
  * Each column is centred on the chevron of the row that opened it — 0.875rem
- * for a campaign, 1.875rem for a section — so a branch drops straight out of
+ * for a campaign, 2.625rem for a section — so a branch drops straight out of
  * its own control and turns into the row it belongs to on a 4px corner. The
  * column stops at the elbow of the last row in a group, and a deeper row only
  * carries its grandparent's column through when that group is still open
@@ -304,8 +304,7 @@ function IndentGuides({
   parentIsLast?: boolean
 }) {
   const stroke = 'bg-gray-200 dark:bg-gray-700'
-  const column = level === 1 ? 'left-3.5' : 'left-[1.875rem]'
-  const elbow = level === 1 ? 'w-1.5' : 'w-3.5'
+  const column = level === 1 ? 'left-3.5' : 'left-[2.625rem]'
 
   return (
     <span aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -314,10 +313,9 @@ function IndentGuides({
       ) : null}
       <span
         className={cn(
-          'absolute -top-0.5 bottom-1/2 rounded-bl-[0.25rem]',
+          'absolute -top-0.5 bottom-1/2 w-3.5 rounded-bl-[0.25rem]',
           'border-b border-l border-gray-200 dark:border-gray-700',
           column,
-          elbow,
         )}
       />
       {!isLast ? (
