@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../../auth/useAuth'
+import { useGameSystems } from '../../campaigns/hooks'
 import { useMyProfile } from '../../profile/hooks'
 import { updateDisplayName } from '../../profile/profileApi'
 import { errorMessage } from '../../lib/errors'
@@ -48,7 +49,44 @@ export function SettingsPage() {
           Changing your email address and password will be added in a later iteration.
         </p>
       </Card>
+
+      <Licences />
     </Page>
+  )
+}
+
+/**
+ * Attribution for the rulesets the app ships.
+ *
+ * Read from each system's own definition rather than written out here. The 5e
+ * ruleset is SRD 5.2.1 material under CC BY 4.0, which obliges the app to carry
+ * the notice; keeping the notice in the same row as the material means a
+ * ruleset added later brings its own, and one removed takes its own away.
+ */
+function Licences() {
+  const { systems, error } = useGameSystems()
+
+  const licensed = systems.filter((system) => system.definition.license)
+  if (licensed.length === 0 || error) return null
+
+  return (
+    <Card>
+      <h2 className="section-title">Rulesets and licences</h2>
+
+      {licensed.map((system) => {
+        const license = system.definition.license
+        if (!license) return null
+
+        return (
+          <div key={system.id} className="settings__licence">
+            <p>
+              <strong>{system.name}</strong> · {license.name}
+            </p>
+            <p className="settings__hint">{license.notice}</p>
+          </div>
+        )
+      })}
+    </Card>
   )
 }
 

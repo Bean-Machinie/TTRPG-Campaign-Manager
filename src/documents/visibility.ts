@@ -20,7 +20,13 @@
  * result counts even if the text were stripped.
  */
 
-/** Mirrors the `visibility` check constraint on public.campaign_documents. */
+/**
+ * Mirrors the `visibility` check constraint on public.campaign_documents, and
+ * on public.campaign_entities, which shares these tiers rather than inventing
+ * its own. The type keeps its document-flavoured name because the rule is the
+ * documents rule — `can_read_visibility()` is the same function either way, and
+ * a second name for it would eventually become a second meaning.
+ */
 export const VISIBILITY_TIERS = ['shared', 'gm_only', 'author_only'] as const
 
 export type DocumentVisibility = (typeof VISIBILITY_TIERS)[number]

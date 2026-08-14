@@ -23,3 +23,11 @@
 .settings__account {
   margin-top: var(--space-4);
 }
+
+.settings__licence + .settings__licence {
+  margin-top: var(--space-3);
+}
+
+.settings__licence p:last-child {
+  margin-bottom: 0;
+}

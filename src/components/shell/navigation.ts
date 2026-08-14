@@ -83,9 +83,9 @@ export const CAMPAIGN_SECTIONS: CampaignSection[] = [
   },
   {
     label: 'Characters',
-    path: 'characters',
+    path: 'entities',
     icon: motionIcon(UserRoundPenIcon),
-    hint: 'Player characters and NPCs',
+    hint: 'Player characters, NPCs and creatures',
   },
   {
     label: 'Locations',

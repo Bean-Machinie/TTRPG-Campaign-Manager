@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CampaignSummary } from '../../campaigns/types'
+import { ENTITY_KIND_LABELS } from '../../campaigns/types'
 import {
-  listCampaignCharacters,
   listCampaignDocuments,
+  listCampaignEntities,
   listCampaignLocations,
   listCampaignMaps,
   listCampaignNotes,
@@ -207,7 +208,7 @@ async function fetchCampaignContents(
 ): Promise<Command[]> {
   const settled = await Promise.allSettled([
     listCampaignSessions(campaignId),
-    listCampaignCharacters(campaignId),
+    listCampaignEntities(campaignId),
     listCampaignLocations(campaignId),
     listCampaignQuests(campaignId),
     listCampaignNotes(campaignId),
@@ -218,7 +219,7 @@ async function fetchCampaignContents(
   // Indexed rather than mapped over: allSettled types a tuple, and mapping it
   // would collapse seven element types into one union.
   const sessions = settledValue(settled[0])
-  const characters = settledValue(settled[1])
+  const entities = settledValue(settled[1])
   const locations = settledValue(settled[2])
   const quests = settledValue(settled[3])
   const notes = settledValue(settled[4])
@@ -233,10 +234,13 @@ async function fetchCampaignContents(
       label: item.title,
       hint: item.scheduledFor ? `Session · ${item.scheduledFor}` : 'Session',
     })),
-    ...toCommands(characters, 'characters', group, (item) => ({
+    // Entities have pages of their own, so — like documents — the command opens
+    // the thing rather than the list it is in.
+    ...toCommands(entities, 'entities', group, (item) => ({
       id: item.id,
       label: item.name,
-      hint: item.kind === 'pc' ? 'Player character' : 'NPC',
+      hint: ENTITY_KIND_LABELS[item.kind],
+      to: `${sectionHref(campaignId, 'entities')}/${item.id}`,
     })),
     ...toCommands(locations, 'locations', group, (item) => ({
       id: item.id,
@@ -253,8 +257,6 @@ async function fetchCampaignContents(
       label: item.title,
       hint: item.isPrivate ? 'Note · private' : 'Note',
     })),
-    // The only kind with a page of its own, so the only one whose command opens
-    // the thing itself rather than the list it is in.
     ...toCommands(documents, 'documents', group, (item) => ({
       id: item.id,
       label: item.title,

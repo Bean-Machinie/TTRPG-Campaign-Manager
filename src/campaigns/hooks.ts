@@ -1,9 +1,10 @@
 import { useAsyncData } from '../lib/useAsyncData'
 import {
   getCampaignDocument,
+  getCampaignEntity,
   getCampaignMembership,
-  listCampaignCharacters,
   listCampaignDocuments,
+  listCampaignEntities,
   listCampaignInvitations,
   listCampaignLocations,
   listCampaignMaps,
@@ -12,6 +13,7 @@ import {
   listCampaignQuests,
   listCampaignSessions,
   listCampaigns,
+  listGameSystems,
   listPendingInvitations,
 } from './campaignsApi'
 
@@ -63,13 +65,40 @@ export function useCampaignSessions(campaignId: string) {
   return { sessions: data ?? [], loading, error, reload }
 }
 
-export function useCampaignCharacters(campaignId: string) {
+export function useCampaignEntities(campaignId: string) {
   const { data, loading, error, reload } = useAsyncData(
-    () => listCampaignCharacters(campaignId),
-    `characters:${campaignId}`,
+    () => listCampaignEntities(campaignId),
+    `entities:${campaignId}`,
     'Could not load the characters of this campaign.',
   )
-  return { characters: data ?? [], loading, error, reload }
+  return { entities: data ?? [], loading, error, reload }
+}
+
+/** One entity with its stats. Null means "not yours to read", as elsewhere. */
+export function useCampaignEntity(entityId: string | undefined) {
+  const { data, loading, error, reload } = useAsyncData(
+    async () => (entityId ? getCampaignEntity(entityId) : null),
+    `entity:${entityId}`,
+    'Could not load this character.',
+  )
+  return { entity: data, loading, error, reload }
+}
+
+/**
+ * The rulesets an entity can be built in.
+ *
+ * Not campaign-scoped and not expected to change while a tab is open, but
+ * loaded through the same hook as everything else rather than through a cache
+ * of its own — there is one data-loading strategy in this app, and a second one
+ * for a table with one row in it would be a strange place to start a second.
+ */
+export function useGameSystems() {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listGameSystems(),
+    'game-systems',
+    'Could not load the available rulesets.',
+  )
+  return { systems: data ?? [], loading, error, reload }
 }
 
 export function useCampaignLocations(campaignId: string) {

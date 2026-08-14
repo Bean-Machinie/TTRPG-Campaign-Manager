@@ -14,7 +14,9 @@ import { CampaignWorkspaceLayout } from './pages/app/campaign/CampaignWorkspaceL
 import { CampaignOverviewPage } from './pages/app/campaign/CampaignOverviewPage'
 import { CampaignMembersPage } from './pages/app/campaign/CampaignMembersPage'
 import { CampaignSessionsPage } from './pages/app/campaign/CampaignSessionsPage'
-import { CampaignCharactersPage } from './pages/app/campaign/CampaignCharactersPage'
+import { CampaignEntitiesPage } from './pages/app/campaign/CampaignEntitiesPage'
+import { CampaignEntityPage } from './pages/app/campaign/CampaignEntityPage'
+import { CampaignEntityEditPage } from './pages/app/campaign/CampaignEntityEditPage'
 import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPage'
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
 import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
@@ -70,7 +72,13 @@ export default function App() {
           <Route path="campaigns/:campaignId" element={<CampaignWorkspaceLayout />}>
             <Route index element={<CampaignOverviewPage />} />
             <Route path="sessions" element={<CampaignSessionsPage />} />
-            <Route path="characters" element={<CampaignCharactersPage />} />
+            {/* Characters, NPCs and creatures are one entity feature; the old
+                /characters path is kept as a redirect so links still resolve. */}
+            <Route path="characters" element={<Navigate to="../entities" replace />} />
+            <Route path="entities" element={<CampaignEntitiesPage />} />
+            <Route path="entities/new" element={<CampaignEntityEditPage />} />
+            <Route path="entities/:entityId" element={<CampaignEntityPage />} />
+            <Route path="entities/:entityId/edit" element={<CampaignEntityEditPage />} />
             <Route path="locations" element={<CampaignLocationsPage />} />
             <Route path="quests" element={<CampaignQuestsPage />} />
             <Route path="notes" element={<CampaignNotesPage />} />

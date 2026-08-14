@@ -43,7 +43,10 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/new`         | authenticated | Create a campaign              |
 | `/app/campaigns/:campaignId` | authenticated | Campaign workspace (Overview)  |
 | `/app/campaigns/:campaignId/sessions` | authenticated | Game sessions          |
-| `/app/campaigns/:campaignId/characters` | authenticated | Player characters and NPCs |
+| `/app/campaigns/:campaignId/entities` | authenticated | Player characters, NPCs and creatures |
+| `/app/campaigns/:campaignId/entities/new` | authenticated | Create one |
+| `/app/campaigns/:campaignId/entities/:entityId` | authenticated | One entity's sheet |
+| `/app/campaigns/:campaignId/entities/:entityId/edit` | authenticated | Edit one |
 | `/app/campaigns/:campaignId/locations` | authenticated | Locations              |
 | `/app/campaigns/:campaignId/quests` | authenticated | Quests                    |
 | `/app/campaigns/:campaignId/notes` | authenticated | Notes, shared or private   |
@@ -81,7 +84,9 @@ There are four variants to copy from:
 - **`campaign_sessions`** — only owners and GMs write. The simpler case, and what
   locations and quests copy verbatim.
 - **`campaign_characters`** — adds per-row ownership through `player_user_id`, so
-  a player may write their own character and nothing else.
+  a player may write their own character and nothing else. Superseded by
+  `campaign_entities`, which composes this rule with the documents one; the
+  table is left in place but nothing reads it.
 - **`campaign_notes`** — every member writes, only the author edits or deletes,
   and `is_private` narrows the read policy to the author alone.
 - **`campaign_documents`** — the same idea as notes, but with three tiers
@@ -135,6 +140,62 @@ ever narrows: `mostRestrictive()` in `src/documents/visibility.ts` combines a
 block's inherited visibility with its document's tier, so a secret inside an
 `author_only` document stays `author_only`.
 
+### Entities
+
+`campaign_entities` holds player characters, NPCs and creatures in one table,
+told apart by `kind`. It replaces `campaign_characters`, which is left in place
+but no longer read.
+
+**No rule is a column.** There is no `strength` field and there will not be one.
+A ruleset is a row in `game_systems` whose `definition` jsonb says which
+abilities exist, which ability governs each skill, what proficiency bonus a
+level grants, and how the system's own derived stats are worked out. An entity
+references that row and keeps its numbers in `data`. Adding a second system is
+writing a second row, not writing a migration.
+
+Three rules divide the work, and getting them confused is the likely future
+mistake:
+
+- **The definition** holds what varies between systems — the lists, the tables,
+  and `derived` formulas as trees of closed operations (`const`, `level`,
+  `proficiency`, `abilityMod`, `abilityScore`, `stat`, `sum`, `min`, `max`).
+  Deliberately not an expression language: data that can compute arbitrarily is
+  a program.
+- **`src/entities/derive.ts`** holds what is structural — a modifier from a
+  score, a save as modifier plus proficiency, a skill as modifier plus
+  proficiency times rank, a passive as `passiveBase` plus a skill. Pure, and
+  covered by tests that need no database.
+- **Zod** (`src/entities/system.ts`, `src/entities/entityData.ts`) validates
+  both blobs at the application boundary. Postgres treats `data` as opaque apart
+  from three generated columns — `level`, `challenge_rating`, `creature_type` —
+  which exist so a list can filter and sort without the blob being indexed.
+
+Store inputs, derive outputs, allow overrides. Nothing computed is ever written
+to the database. Every derived value is a `Derived<T>`:
+
+```ts
+type Derived<T> = { computed: T | null; override: T | null }  // display = override ?? computed
+```
+
+That is what lets one table and one renderer hold a level 3 rogue and an adult
+red dragon. A statblock is an entity with `derive: false` and its numbers in
+`data.overrides`: the computed half is null, the display value is the assertion,
+and no second code path exists.
+
+Visibility is the documents rule, unchanged — `can_read_visibility()` and
+`can_write_visibility()`, composed with the per-row ownership clause
+`campaign_characters` had, so a player may still write their own PC and nothing
+else. GM-only fields live in a `secrets` column protected the way document
+bodies are: the blanket `select` grant is revoked, every other column is granted
+back by name, and `get_campaign_entity()` decides who gets `secrets`. Because
+Postgres checks column privileges inside `where` clauses too, that also closes
+the `?secrets->>trueName=eq.…` guessing channel. **Never `select('*')` on this
+table** — it will fail rather than quietly omit the column, which is the point.
+
+Secrets are written through `saveEntitySecrets()` rather than as part of
+`updateEntity()`. A player is sent an empty secrets object, and a combined save
+would write that emptiness back over the GM's notes with no error raised.
+
 On the UI side the matching pages share one stylesheet,
 `pages/app/campaign/entryList.css`. The pages themselves stay separate and
 explicit — they differ in fields, grouping and permissions, and a generic
@@ -172,6 +233,7 @@ src/
   auth/                   session state and route guards
   campaigns/              types, queries (campaignsApi.ts) and hooks
   documents/              visibility rules, the block walker, autosave
+  entities/               ruleset schema, entity data schema, the derivation
   editor/                 TipTap: the editor, block uids, the secret node
   profile/                the signed-in user's own profile
   lib/supabase/client.ts  the only place Supabase is constructed
@@ -187,7 +249,16 @@ src/
 
 `npm test` runs Vitest over `src/**/*.test.ts`. Tests sit next to what they test.
 
-What is covered today is the pure logic the document feature rests on: the
+What is covered today is the pure logic the document and entity features rest
+on. For entities that is the derivation module — ability modifiers, proficiency
+by level, saves, skills, expertise, passives, null propagation, override
+precedence, statblock mode and a system definition that names itself in a circle
+— plus the two Zod schemas, tested for the mistakes a hand-written ruleset
+actually makes: a skill governed by an ability that does not exist, a
+proficiency table shorter than the game has levels, an ability keyed `strength`
+in a system whose ability is `str`.
+
+For documents it is the
 visibility resolver, the block walker, and block uid assignment. The walker is
 deliberately a pure function — `(pmDoc, visibility) => blocks`, no database, no
 clock — because anchors, snippets and secret isolation are all decided in it.
@@ -197,3 +268,20 @@ only be testing the browser.
 Access control is not covered by these. Policies can only be tested against a
 database that is enforcing them, which needs two signed-in accounts with
 different roles, and arrives with the search feature.
+
+## Licences
+
+The 5e ruleset seeded by `supabase/migrations/20260814090000_entities.sql`
+transcribes mechanics from the SRD. The notice travels inside the system
+definition itself, so the app renders it from the same row that creates the
+obligation — see Settings → Rulesets and licences.
+
+> This work includes material from the System Reference Document 5.2.1
+> ("SRD 5.2.1") by Wizards of the Coast LLC, available at
+> https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative
+> Commons Attribution 4.0 International License, available at
+> https://creativecommons.org/licenses/by/4.0/legalcode.
+
+Only the mechanics are used. The published character sheet's layout is not
+reproduced, and the entity pages are deliberately plain fields rather than an
+imitation of it.

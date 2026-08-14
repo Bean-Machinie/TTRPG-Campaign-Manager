@@ -3,14 +3,18 @@ import { requireSupabase } from '../lib/supabase/client'
 import { todayIsoDate } from '../lib/format'
 import { PROFILE_COLUMNS, personLabel } from '../profile/profileApi'
 import type { DocumentVisibility } from '../documents/visibility'
+import { parseEntityData, parseEntitySecrets } from '../entities/entityData'
+import type { EntitySecrets } from '../entities/entityData'
+import { gameSystemDefinitionSchema } from '../entities/system'
 import type {
   Campaign,
   CampaignInvitation,
   CampaignMember,
   CampaignMembership,
-  CampaignCharacter,
   CampaignDocument,
   CampaignDocumentSummary,
+  CampaignEntity,
+  CampaignEntitySummary,
   CampaignLocation,
   CampaignMap,
   CampaignNote,
@@ -18,10 +22,11 @@ import type {
   CampaignRole,
   CampaignSession,
   CampaignSummary,
-  CharacterInput,
-  CharacterKind,
   DocumentInput,
   DocumentType,
+  EntityInput,
+  EntityKind,
+  GameSystem,
   InvitableRole,
   LocationInput,
   MapInput,
@@ -383,78 +388,228 @@ export async function deleteSession(sessionId: string): Promise<void> {
   if (error) throw error
 }
 
-// ------------------------------------------------------------ characters --
+// -------------------------------------------------------------- entities --
 
-const CHARACTER_COLUMNS = 'id, name, kind, player_user_id, description, created_at'
+/**
+ * Never `select('*')` on this table.
+ *
+ * `secrets` is excluded from the grant that PostgREST reads with, so a star
+ * select fails outright rather than quietly omitting the column. That is
+ * deliberate — the failure is loud, and it is the reason this constant is
+ * spelled out. Secrets come back from get_campaign_entity() or not at all.
+ */
+// One literal, unwrapped: supabase-js parses this string as a type, and a
+// concatenation of two literals widens to `string` and defeats it.
+// prettier-ignore
+const ENTITY_SUMMARY_COLUMNS = 'id, name, kind, system_id, player_user_id, summary, visibility, author_id, level, challenge_rating, creature_type, updated_at'
 
-type CharacterRow = {
+type EntitySummaryRow = {
   id: string
   name: string
-  kind: CharacterKind
+  kind: EntityKind
+  system_id: string
   player_user_id: string | null
-  description: string | null
+  summary: string | null
+  visibility: DocumentVisibility
+  author_id: string
+  level: number | null
+  challenge_rating: number | null
+  creature_type: string | null
+  updated_at: string
+}
+
+type EntityRow = EntitySummaryRow & {
+  campaign_id: string
+  data: unknown
+  secrets: unknown
   created_at: string
 }
 
-function toCharacter(row: CharacterRow): CampaignCharacter {
+type GameSystemRow = {
+  id: string
+  key: string
+  name: string
+  version: string
+  definition: unknown
+}
+
+function toEntitySummary(row: EntitySummaryRow): CampaignEntitySummary {
   return {
     id: row.id,
     name: row.name,
     kind: row.kind,
+    systemId: row.system_id,
     playerUserId: row.player_user_id,
-    description: row.description,
+    summary: row.summary,
+    visibility: row.visibility,
+    authorId: row.author_id,
+    level: row.level,
+    challengeRating: row.challenge_rating,
+    creatureType: row.creature_type,
+    updatedAt: row.updated_at,
+  }
+}
+
+function toEntityRow(input: EntityInput) {
+  return {
+    name: input.name.trim(),
+    kind: input.kind,
+    system_id: input.systemId,
+    // Only a PC belongs to a player; the check constraint rejects anything else.
+    player_user_id: input.kind === 'pc' ? input.playerUserId : null,
+    summary: input.summary?.trim() || null,
+    visibility: input.visibility,
+    data: input.data,
+  }
+}
+
+/**
+ * The rulesets available to build an entity in.
+ *
+ * Validated here rather than trusted, because a definition is content someone
+ * pasted into a SQL editor: a typo in it should say so once, with the system's
+ * name attached, instead of surfacing later as a blank Armor Class that nobody
+ * can account for.
+ */
+export async function listGameSystems(): Promise<GameSystem[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('game_systems')
+    .select('id, key, name, version, definition')
+    .order('name', { ascending: true })
+
+  if (error) throw error
+
+  return (data as GameSystemRow[]).map((row) => {
+    const parsed = gameSystemDefinitionSchema.safeParse(row.definition)
+
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]
+      throw new Error(
+        `The "${row.name}" ruleset is not valid: ${first.path.join('.')} — ${first.message}`,
+      )
+    }
+
+    return {
+      id: row.id,
+      key: row.key,
+      name: row.name,
+      version: row.version,
+      definition: parsed.data,
+    }
+  })
+}
+
+/**
+ * Entities of a campaign, player characters first and alphabetical within a
+ * kind.
+ *
+ * Which rows come back is decided by public.can_read_visibility() in the select
+ * policy, so nothing is filtered here — a player asking this question is never
+ * sent a GM-only NPC to discard. Grouping by kind on the page is presentation,
+ * not access control.
+ */
+export async function listCampaignEntities(
+  campaignId: string,
+): Promise<CampaignEntitySummary[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_entities')
+    .select(ENTITY_SUMMARY_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .order('kind', { ascending: true })
+    .order('name', { ascending: true })
+
+  if (error) throw error
+  return (data as EntitySummaryRow[]).map(toEntitySummary)
+}
+
+/**
+ * One entity with its stats, or null when it is not readable by this user.
+ *
+ * Through the RPC rather than the table, for the same reason documents are:
+ * row level security can decide whether you may see the row, but not whether
+ * you may see one column of it. `secrets` comes back populated for a campaign
+ * manager and as an empty object for everyone else, and that decision is made
+ * in Postgres.
+ */
+export async function getCampaignEntity(entityId: string): Promise<CampaignEntity | null> {
+  if (!UUID_PATTERN.test(entityId)) return null
+
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .rpc('get_campaign_entity', { p_entity_id: entityId })
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const row = data as EntityRow
+
+  return {
+    ...toEntitySummary(row),
+    campaignId: row.campaign_id,
+    data: parseEntityData(row.data),
+    secrets: parseEntitySecrets(row.secrets),
     createdAt: row.created_at,
   }
 }
 
-function toCharacterRow(input: CharacterInput) {
-  return {
-    name: input.name.trim(),
-    kind: input.kind,
-    // Only a PC belongs to a player; the policies reject anything else.
-    player_user_id: input.kind === 'pc' ? input.playerUserId : null,
-    description: input.description?.trim() || null,
-  }
-}
-
-export async function listCampaignCharacters(campaignId: string): Promise<CampaignCharacter[]> {
+/** Returns the new id, because creating an entity means opening it. */
+export async function createEntity(campaignId: string, input: EntityInput): Promise<string> {
   const supabase = requireSupabase()
 
   const { data, error } = await supabase
-    .from('campaign_characters')
-    .select(CHARACTER_COLUMNS)
-    .eq('campaign_id', campaignId)
-    .order('name', { ascending: true })
+    .from('campaign_entities')
+    .insert({ campaign_id: campaignId, ...toEntityRow(input) })
+    .select('id')
+    .single()
 
   if (error) throw error
-  return (data as CharacterRow[]).map(toCharacter)
+  return (data as { id: string }).id
 }
 
-export async function createCharacter(campaignId: string, input: CharacterInput): Promise<void> {
+export async function updateEntity(entityId: string, input: EntityInput): Promise<void> {
   const supabase = requireSupabase()
 
   const { error } = await supabase
-    .from('campaign_characters')
-    .insert({ campaign_id: campaignId, ...toCharacterRow(input) })
+    .from('campaign_entities')
+    .update(toEntityRow(input))
+    .eq('id', entityId)
 
   if (error) throw error
 }
 
-export async function updateCharacter(characterId: string, input: CharacterInput): Promise<void> {
+/**
+ * The GM's half, written on its own.
+ *
+ * Separate from updateEntity() so that a player saving their own character
+ * cannot write back the empty secrets object they were sent. The policies would
+ * happily allow that write — it is their character — and the notes would be
+ * gone with nothing raised. Splitting the call is what makes it impossible
+ * rather than merely discouraged.
+ */
+export async function saveEntitySecrets(
+  entityId: string,
+  secrets: EntitySecrets,
+): Promise<void> {
   const supabase = requireSupabase()
 
   const { error } = await supabase
-    .from('campaign_characters')
-    .update(toCharacterRow(input))
-    .eq('id', characterId)
+    .from('campaign_entities')
+    .update({ secrets })
+    .eq('id', entityId)
 
   if (error) throw error
 }
 
-export async function deleteCharacter(characterId: string): Promise<void> {
+export async function deleteEntity(entityId: string): Promise<void> {
   const supabase = requireSupabase()
 
-  const { error } = await supabase.from('campaign_characters').delete().eq('id', characterId)
+  const { error } = await supabase.from('campaign_entities').delete().eq('id', entityId)
   if (error) throw error
 }
 
