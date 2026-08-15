@@ -1,0 +1,60 @@
+/*
+ * The signed-in canvas carries one quiet piece of campaign atmosphere behind
+ * every working page. It lives on the shell rather than individual routes so
+ * editors, lists and profile surfaces all share the same visual ground.
+ *
+ * The source art already reserves a pale centre for content. Low opacity,
+ * restrained saturation and the application's neutral canvas beneath it keep
+ * the objects at the edge peripheral: recognisable when the page is sparse,
+ * effectively absent underneath an opaque card.
+ */
+.app-workspace {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-gray-50, #f9fafb);
+}
+
+.app-workspace::before {
+  position: fixed;
+  z-index: 0;
+  inset: 4rem 0 0 var(--spacing-sidebar);
+  pointer-events: none;
+  background-image: url('../../assets/images/backdrop.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: '';
+  filter: saturate(0.62) contrast(0.94);
+  opacity: 0.2;
+}
+
+/* Route content remains a clean interaction plane above the decorative layer. */
+.app-workspace > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dark .app-workspace {
+  background-color: var(--color-gray-950, #0c111d);
+}
+
+.dark .app-workspace::before {
+  filter: saturate(0.38) brightness(0.48) contrast(0.9);
+  opacity: 0.13;
+}
+
+@media (max-width: 63.999rem) {
+  .app-workspace::before {
+    left: 0;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-workspace::before {
+    opacity: 0.08;
+  }
+
+  .dark .app-workspace::before {
+    opacity: 0.06;
+  }
+}

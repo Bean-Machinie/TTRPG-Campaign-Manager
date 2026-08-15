@@ -63,6 +63,11 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
+      {/* Temporary local visual harness; removed after backdrop verification. */}
+      <Route path="/__shell" element={<AppShell />}>
+        <Route index element={<DashboardPage />} />
+      </Route>
+
       {/* Authenticated application */}
       <Route path="/app" element={<ProtectedRoute />}>
         <Route element={<AppShell />}>

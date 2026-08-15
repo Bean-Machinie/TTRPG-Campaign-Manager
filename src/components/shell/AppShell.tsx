@@ -8,6 +8,7 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { isSearchShortcut } from './shortcut'
 import { useActiveCampaignId } from './useActiveCampaignId'
+import './AppShell.css'
 
 /**
  * The application shell.
@@ -71,7 +72,7 @@ function Shell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onMenu={() => setDrawerOpen(true)} onSearch={openSearch} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="app-workspace flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>
