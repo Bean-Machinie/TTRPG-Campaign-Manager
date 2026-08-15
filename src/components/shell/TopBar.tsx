@@ -1,14 +1,30 @@
-import { useMemo, useRef } from 'react'
-import { Breadcrumb, Breadcrumbs } from 'react-aria-components'
-import { Link, useLocation } from 'react-router'
-import { ChevronRight, Dices, Menu, Plus } from 'lucide-react'
+import { Fragment, useMemo, useRef } from 'react'
+import {
+  Button as AriaButton,
+  Menu as AriaMenu,
+  MenuItem as AriaMenuItem,
+  MenuTrigger,
+  Popover,
+} from 'react-aria-components'
+import { Link, useLocation, useNavigate } from 'react-router'
+import { Dices, Menu, Plus } from 'lucide-react'
 import { APP_NAME } from '../../constants'
 import { cn } from '../../lib/cn'
 import { useCampaignContents } from './commands'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { IconButton } from '../ui/IconButton'
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '../ui/Breadcrumb'
 import { Kbd } from '../ui/Kbd'
 import { Separator } from '../ui/Separator'
+import { menuItem, menuPanel } from '../ui/menuStyles'
 import { BellIcon } from './icons/BellIcon'
 import type { BellIconHandle } from './icons/BellIcon'
 import { SearchIcon } from './icons/SearchIcon'
@@ -104,33 +120,74 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
 
 function Trail() {
   const crumbs = useTrail()
+  const navigate = useNavigate()
+  const collapsedCrumbs = crumbs.length > 3 ? crumbs.slice(1, -2) : []
+  const visibleCrumbs = collapsedCrumbs.length > 0 ? [crumbs[0], ...crumbs.slice(-2)] : crumbs
 
   return (
-    <Breadcrumbs className="hidden min-w-0 items-center lg:flex">
-      {crumbs.map((crumb, index) => (
-        <Breadcrumb key={crumb.to ?? crumb.label} className="flex min-w-0 items-center">
-          {index > 0 ? (
-            <ChevronRight className="mx-1 size-4 shrink-0 text-gray-300 dark:text-gray-700" aria-hidden="true" />
-          ) : null}
+    <Breadcrumb className="hidden min-w-0 lg:block">
+      <BreadcrumbList>
+        {visibleCrumbs.map((crumb, index) => {
+          const isCurrent = index === visibleCrumbs.length - 1
 
-          {crumb.to && index < crumbs.length - 1 ? (
-            <Link
-              to={crumb.to}
-              className="truncate rounded-md px-1.5 py-1 text-sm font-medium text-gray-500 no-underline outline-hidden transition-colors hover:bg-gray-50 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200"
-            >
-              {crumb.label}
-            </Link>
-          ) : (
-            <span
-              className="truncate px-1.5 py-1 text-sm font-semibold text-gray-700 dark:text-gray-200"
-              aria-current="page"
-            >
-              {crumb.label}
-            </span>
-          )}
-        </Breadcrumb>
-      ))}
-    </Breadcrumbs>
+          return (
+            <Fragment key={crumb.to ?? crumb.label}>
+              {index > 0 ? <BreadcrumbSeparator /> : null}
+
+              {index === 1 && collapsedCrumbs.length > 0 ? (
+                <>
+                  <BreadcrumbItem>
+                    <MenuTrigger>
+                      <AriaButton
+                        aria-label="Show hidden breadcrumb levels"
+                        className={cn(
+                          'grid size-8 shrink-0 cursor-pointer place-items-center rounded-md outline-hidden',
+                          'text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700',
+                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
+                          'data-[pressed]:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
+                        )}
+                      >
+                        <BreadcrumbEllipsis />
+                      </AriaButton>
+                      <Popover placement="bottom start" offset={6} className="z-50 outline-hidden">
+                        <AriaMenu
+                          aria-label="Hidden breadcrumb levels"
+                          className={cn(menuPanel, 'min-w-44 outline-hidden')}
+                          onAction={(key) => {
+                            const hiddenCrumb = collapsedCrumbs[Number(key)]
+                            if (hiddenCrumb?.to) navigate(hiddenCrumb.to)
+                          }}
+                        >
+                          {collapsedCrumbs.map((hiddenCrumb, hiddenIndex) => (
+                            <AriaMenuItem
+                              key={hiddenCrumb.to ?? hiddenCrumb.label}
+                              id={String(hiddenIndex)}
+                              textValue={hiddenCrumb.label}
+                              className={menuItem()}
+                            >
+                              {hiddenCrumb.label}
+                            </AriaMenuItem>
+                          ))}
+                        </AriaMenu>
+                      </Popover>
+                    </MenuTrigger>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </>
+              ) : null}
+
+              <BreadcrumbItem className={isCurrent ? 'min-w-0' : 'shrink-0'}>
+                {crumb.to && !isCurrent ? (
+                  <BreadcrumbLink to={crumb.to}>{crumb.label}</BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
+          )
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   )
 }
 
