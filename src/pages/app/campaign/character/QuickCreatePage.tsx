@@ -5,6 +5,7 @@ import { useCampaignEntity, useGameSystems } from '../../../../campaigns/hooks'
 import { completeEntity, deleteEntity, updateEntity } from '../../../../campaigns/campaignsApi'
 import type { CampaignEntity, EntityInput } from '../../../../campaigns/types'
 import { useAutosave } from '../../../../documents/useAutosave'
+import { invalidateCampaignContents } from '../../../../components/shell/commands'
 import { canEditEntity } from '../../../../entities/access'
 import {
   formatChallengeRating,
@@ -113,6 +114,7 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
     try {
       await updateEntity(entity.id, draft)
       await completeEntity(entity.id)
+      invalidateCampaignContents(campaign.id)
       navigate(`/app/campaigns/${campaign.id}/entities/${entity.id}`, { replace: true })
     } catch (caught) {
       setActionError(errorMessage(caught, 'Could not save that character.'))

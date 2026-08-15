@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { campaignKey, revealedKeys, sectionKey } from './navigation'
+import { campaignKey, isEntryRoute, revealedKeys, sectionKey } from './navigation'
+
+describe('isEntryRoute', () => {
+  const character = '/app/campaigns/c1/entities/e-1'
+
+  it('matches the entry itself', () => {
+    expect(isEntryRoute(character, character)).toBe(true)
+  })
+
+  it('matches a section inside it, which is where a character is actually read', () => {
+    expect(isEntryRoute(`${character}/sheet`, character)).toBe(true)
+    expect(isEntryRoute(`${character}/description`, character)).toBe(true)
+  })
+
+  it('does not match a sibling whose id merely starts the same way', () => {
+    expect(isEntryRoute('/app/campaigns/c1/entities/e-12', character)).toBe(false)
+  })
+
+  it('does not match the list the entry is in', () => {
+    expect(isEntryRoute('/app/campaigns/c1/entities', character)).toBe(false)
+  })
+})
 
 /**
  * Which rows the tree opens to show you where you are.
@@ -43,6 +64,15 @@ describe('revealedKeys', () => {
 
   it('leaves a section shut when its entries have no page of their own', () => {
     expect(revealedKeys('c1', sessions, '/app/campaigns/c1/sessions')).toEqual([campaignKey('c1')])
+  })
+
+  it('opens the section holding the character you are looking at, on any of its tabs', () => {
+    const characters = [{ id: 'entities:e-1', to: '/app/campaigns/c1/entities/e-1' }]
+
+    expect(revealedKeys('c1', characters, '/app/campaigns/c1/entities/e-1/sheet')).toEqual([
+      campaignKey('c1'),
+      sectionKey('c1', 'entities'),
+    ])
   })
 
   it('opens nothing extra before the campaign contents have loaded', () => {

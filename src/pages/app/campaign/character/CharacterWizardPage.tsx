@@ -8,6 +8,7 @@ import {
   useGameSystems,
 } from '../../../../campaigns/hooks'
 import { completeEntity, deleteEntity, updateEntity } from '../../../../campaigns/campaignsApi'
+import { invalidateCampaignContents } from '../../../../components/shell/commands'
 import type { CampaignEntity } from '../../../../campaigns/types'
 import { canEditEntity } from '../../../../entities/access'
 import type { EntityData } from '../../../../entities/entityData'
@@ -196,6 +197,8 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
       // character saved under a status nobody chose.
       await updateEntity(entity.id, draft)
       await completeEntity(entity.id)
+      // The campaign has one more character in it than the sidebar thinks.
+      invalidateCampaignContents(campaign.id)
       navigate(`/app/campaigns/${campaign.id}/entities/${entity.id}`, { replace: true })
     } catch (caught) {
       setActionError(errorMessage(caught, 'Could not finish that character.'))

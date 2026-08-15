@@ -141,11 +141,27 @@ export const entryKey = (campaignId: string, entryId: string) =>
   `entry:${campaignId}:${entryId}`
 
 /**
+ * Whether a route is an entry's own page, or a page inside it.
+ *
+ * An entry used to be one URL, and this was an equality test. A character is
+ * four — `/entities/:id/sheet`, `/features`, `/description`, `/notes` — because
+ * reading a character is random access and each section is a place you can link
+ * to. Under an equality test the tree stopped marking a character the moment
+ * you were actually looking at one, which is the only time it matters.
+ *
+ * The trailing slash is what keeps it honest: `/documents/doc-12` must not
+ * count as being inside `/documents/doc-1`.
+ */
+export function isEntryRoute(pathname: string, to: string): boolean {
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
+/**
  * What has to be open for a path to be a row somebody can see.
  *
  * The campaign, always. Plus the section holding the entry, when the page you
- * are on belongs to an entry with a page of its own — a document, today —
- * because arriving there from search or from a link should leave the tree
+ * are on belongs to an entry with a page of its own — a document or a character
+ * — because arriving there from search or from a link should leave the tree
  * standing open at what you opened rather than one level above it.
  *
  * `to` is what distinguishes the two kinds of entry: a session's row points at
@@ -164,7 +180,7 @@ export function revealedKeys(
   const keys = [campaignKey(campaignId)]
 
   const entry = entries.find((item) => {
-    if (item.to !== pathname) return false
+    if (!isEntryRoute(pathname, item.to)) return false
     // `documents:8f2c…` — the section's path is the half in front of the colon.
     return item.to !== sectionHref(campaignId, item.id.split(':')[0])
   })

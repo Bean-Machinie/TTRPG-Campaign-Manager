@@ -17,6 +17,7 @@ import { VISIBILITY_BADGES, VISIBILITY_LABELS } from '../../../../documents/visi
 import { canEditEntity } from '../../../../entities/access'
 import { applyOverlay, formatChallengeRating } from '../../../../entities/entityData'
 import type { EntitySecrets } from '../../../../entities/entityData'
+import { invalidateCampaignContents } from '../../../../components/shell/commands'
 import { errorMessage } from '../../../../lib/errors'
 import { Alert } from '../../../../components/ui/Alert'
 import { Button } from '../../../../components/ui/Button'
@@ -130,6 +131,12 @@ export function CharacterDetailPage() {
       data: entity.data,
       ...changes,
     })
+
+    // Only when the row's own label could have moved. A backstory rewrite is
+    // not something the sidebar is showing, and refetching a campaign's seven
+    // lists to redraw a name that did not change is a request nobody asked for.
+    if (changes.name !== undefined) invalidateCampaignContents(campaign.id)
+
     reload()
   }
 
@@ -148,7 +155,10 @@ export function CharacterDetailPage() {
     setBusy(true)
 
     deleteEntity(entity.id)
-      .then(() => navigate(listHref))
+      .then(() => {
+        invalidateCampaignContents(campaign.id)
+        navigate(listHref)
+      })
       .catch((caught: unknown) => {
         setActionError(errorMessage(caught, 'Could not delete that character.'))
       })

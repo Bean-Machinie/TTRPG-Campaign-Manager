@@ -19,6 +19,7 @@ import {
   campaignKey,
   entryKey,
   initialsOf,
+  isEntryRoute,
   revealedKeys,
   sectionHref,
   sectionKey,
@@ -250,7 +251,12 @@ export function CampaignTree({
                       className="group outline-hidden"
                     >
                       <TreeItemContent>
-                        <TreeRow active={location.pathname === item.to && item.to !== to} level={2}>
+                        <TreeRow
+                          // At the entry's page, or at a section inside it — a
+                          // character's Sheet tab is still that character.
+                          active={item.to !== to && isEntryRoute(location.pathname, item.to)}
+                          level={2}
+                        >
                           <IndentGuides
                             level={2}
                             isLast={itemIndex === sectionItems.length - 1}

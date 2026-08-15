@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CampaignSummary } from '../../campaigns/types'
 import { ENTITY_KIND_LABELS } from '../../campaigns/types'
 import {
@@ -136,13 +136,21 @@ function scoreOf(command: Command, needle: string) {
 export function useCampaignContents(campaigns: CampaignSummary[]) {
   const [byCampaign, setByCampaign] = useState<Record<string, Command[]>>({})
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
-  const requested = useRef(new Set<string>())
+  // Which generation of each campaign this hook is holding, rather than merely
+  // which ones it has asked for. A set could only say "already fetched", and
+  // the thing an invalidation needs to say is "what you fetched is old".
+  const loaded = useRef(new Map<string, number>())
+
+  // Re-runs the effect when anything invalidates. The value itself is only a
+  // counter; which campaign went stale is answered per campaign below.
+  const revision = useSyncExternalStore(subscribeToContents, contentsRevision)
 
   useEffect(() => {
     for (const campaign of campaigns) {
-      if (requested.current.has(campaign.id)) continue
+      const generation = generationOf(campaign.id)
+      if (loaded.current.get(campaign.id) === generation) continue
 
-      requested.current.add(campaign.id)
+      loaded.current.set(campaign.id, generation)
       setLoadingIds((current) => new Set(current).add(campaign.id))
 
       void loadCampaignContents(campaign.id, campaign.name)
@@ -160,7 +168,7 @@ export function useCampaignContents(campaigns: CampaignSummary[]) {
           })
         })
     }
-  }, [campaigns])
+  }, [campaigns, revision])
 
   return { byCampaign, loadingIds }
 }
@@ -185,6 +193,53 @@ function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
  * failure so a dropped connection is retried rather than remembered.
  */
 const contentsByCampaign = new Map<string, Promise<Command[]>>()
+
+/**
+ * How many times each campaign's contents have been thrown away.
+ *
+ * The cache above is what makes seven callers cost one request; this is what
+ * stops it also meaning "and never notices anything changed". Creating a
+ * character used to leave the sidebar showing the campaign as it stood when the
+ * tab was opened, and the only way to see it was a reload — which reads as the
+ * new character not being in the tree at all rather than as a stale cache.
+ *
+ * A generation per campaign rather than one flag, because a mounted tree has to
+ * be able to tell which of the campaigns it is holding is the old one, and a
+ * revision counter beside it, because a hook needs something to subscribe to.
+ */
+const generations = new Map<string, number>()
+const contentsListeners = new Set<() => void>()
+let revision = 0
+
+/**
+ * Forget what this campaign contained, and tell anything showing it.
+ *
+ * Called after a write that changes what is *in* a campaign — a character
+ * created, renamed or deleted — and not after one that only changes what is
+ * inside a record, which no row in the tree is showing.
+ */
+export function invalidateCampaignContents(campaignId: string) {
+  contentsByCampaign.delete(campaignId)
+  generations.set(campaignId, generationOf(campaignId) + 1)
+  revision += 1
+
+  for (const listener of contentsListeners) listener()
+}
+
+function generationOf(campaignId: string): number {
+  return generations.get(campaignId) ?? 0
+}
+
+function subscribeToContents(listener: () => void): () => void {
+  contentsListeners.add(listener)
+  return () => {
+    contentsListeners.delete(listener)
+  }
+}
+
+function contentsRevision(): number {
+  return revision
+}
 
 export function loadCampaignContents(
   campaignId: string,
