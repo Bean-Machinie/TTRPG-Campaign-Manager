@@ -12,27 +12,27 @@
  * see the note at the top of theme.css.
  */
 :root {
-  --color-bg: #ffffff;
-  --color-bg-muted: #f9fafb;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f9fafb;
-  --color-border: #eaecf0;
-  --color-border-strong: #d0d5dd;
+  --color-bg: #e8e0d1;
+  --color-bg-muted: #ded5c6;
+  --color-surface: #f6efe3;
+  --color-surface-hover: #eee4d5;
+  --color-border: #c8c0b3;
+  --color-border-strong: #9b958b;
 
-  --color-text: #101828;
-  --color-text-muted: #475467;
-  --color-text-subtle: #667085;
+  --color-text: #20211f;
+  --color-text-muted: #444139;
+  --color-text-subtle: #69655e;
 
-  --color-primary: #444ce7;
-  --color-primary-hover: #3538cd;
-  --color-primary-contrast: #ffffff;
+  --color-primary: #b98b50;
+  --color-primary-hover: #c99b5b;
+  --color-primary-contrast: #191a18;
   /* The lightest step of the brand ramp — the tint under a control that is
      currently applied, such as a mark in the selection menu. */
-  --color-primary-soft: #eef4ff;
+  --color-primary-soft: #e3ceb0;
 
-  --color-danger-text: #b42318;
-  --color-danger-border: #fecdca;
-  --color-danger-surface: #fef3f2;
+  --color-danger-text: #733e36;
+  --color-danger-border: #d2aaa3;
+  --color-danger-surface: #f3eae8;
 
   /*
    * Content tiers inside a document. Deliberately not the danger colours: a
@@ -42,20 +42,20 @@
    */
   /* Each block sits on its own faint ground, so where one ends and the next
      begins is visible without drawing a box around anything. */
-  --color-block-surface: #fafbfc;
-  --color-block-surface-hover: #f1f3f6;
+  --color-block-surface: #f1e9dc;
+  --color-block-surface-hover: #e7ddce;
 
-  --color-secret-surface: #fdf7ea;
-  --color-secret-rule: #b07d1a;
-  --color-secret-text: #7a5610;
+  --color-secret-surface: #eadbc5;
+  --color-secret-rule: #b98b50;
+  --color-secret-text: #684a2c;
 
-  --color-private-surface: #f6f4fc;
-  --color-private-rule: #6b5bb0;
-  --color-private-text: #4c3f86;
+  --color-private-surface: #ead8d4;
+  --color-private-rule: #914f45;
+  --color-private-text: #733e36;
 
-  --color-readaloud-surface: #f1f5fa;
-  --color-readaloud-rule: #6d87a8;
-  --color-readaloud-text: #3f556f;
+  --color-readaloud-surface: #dbe0e1;
+  --color-readaloud-rule: #697985;
+  --color-readaloud-text: #475760;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -81,7 +81,7 @@
   /* True circles and capsules are geometric primitives, not optical corners. */
   --radius-full: 9999px;
 
-  --shadow-popup: 0 12px 16px -4px rgb(16 24 40 / 8%), 0 4px 6px -2px rgb(16 24 40 / 3%);
+  --shadow-popup: 0 12px 20px -4px rgb(14 13 11 / 28%), 0 4px 8px -2px rgb(14 13 11 / 18%);
 
   --width-content: 76rem;
   --width-narrow: 26rem;
@@ -122,6 +122,43 @@
    */
   --font-serif: 'Iowan Old Style', 'Hoefler Text', Charter, Georgia, Cambria, 'Times New Roman',
     serif;
+}
+
+/* The primary application theme: warm charcoal, stone, parchment and brass. */
+.dark {
+  color-scheme: dark;
+
+  --color-bg: #191a18;
+  --color-bg-muted: #20211f;
+  --color-surface: #272824;
+  --color-surface-hover: #30312c;
+  --color-border: #34342f;
+  --color-border-strong: #444139;
+
+  --color-text: #e8e0d1;
+  --color-text-muted: #b8b0a3;
+  --color-text-subtle: #827d74;
+
+  --color-primary: #b98b50;
+  --color-primary-hover: #c99b5b;
+  --color-primary-contrast: #191a18;
+  --color-primary-soft: #392f24;
+
+  --color-danger-text: #cf9186;
+  --color-danger-border: #68413a;
+  --color-danger-surface: #342725;
+
+  --color-block-surface: #20211f;
+  --color-block-surface-hover: #30312c;
+  --color-secret-surface: #392f24;
+  --color-secret-rule: #b98b50;
+  --color-secret-text: #d5b889;
+  --color-private-surface: #342725;
+  --color-private-rule: #914f45;
+  --color-private-text: #d2aaa3;
+  --color-readaloud-surface: #252c30;
+  --color-readaloud-rule: #697985;
+  --color-readaloud-text: #b7c1c7;
 }
 
 *,

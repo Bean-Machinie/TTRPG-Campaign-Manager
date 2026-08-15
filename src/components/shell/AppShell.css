@@ -11,7 +11,7 @@
 .app-workspace {
   position: relative;
   isolation: isolate;
-  background-color: var(--color-gray-50, #f9fafb);
+  background-color: var(--color-bg);
 }
 
 .app-workspace::before {
@@ -24,8 +24,8 @@
   background-repeat: no-repeat;
   background-size: cover;
   content: '';
-  filter: saturate(0.62) contrast(0.94);
-  opacity: 0.2;
+  filter: sepia(0.12) saturate(0.5) contrast(0.92);
+  opacity: 0.14;
 }
 
 /* Route content remains a clean interaction plane above the decorative layer. */
@@ -35,12 +35,12 @@
 }
 
 .dark .app-workspace {
-  background-color: var(--color-gray-950, #0c111d);
+  background-color: var(--color-bg);
 }
 
 .dark .app-workspace::before {
-  filter: saturate(0.38) brightness(0.48) contrast(0.9);
-  opacity: 0.13;
+  filter: sepia(0.46) saturate(0.42) brightness(0.72) contrast(0.92);
+  opacity: 0.16;
 }
 
 @media (max-width: 63.999rem) {

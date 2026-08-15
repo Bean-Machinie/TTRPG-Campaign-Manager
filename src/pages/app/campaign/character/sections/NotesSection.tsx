@@ -105,7 +105,7 @@ export function NotesSection() {
           </fieldset>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 rounded-md border border-amber-300 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+        <div className="flex flex-col gap-4 rounded-md border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-800 dark:bg-brand-950/70">
           {entity.secrets.trueName ? (
             <p className="text-sm text-gray-900 dark:text-gray-100">
               <span className="text-gray-500 dark:text-gray-400">Actually: </span>
@@ -121,7 +121,7 @@ export function NotesSection() {
 
           {hidden.length > 0 ? (
             <div>
-              <h3 className="text-xs font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
+              <h3 className="text-xs font-semibold tracking-wide text-brand-800 uppercase dark:text-brand-300">
                 Hidden statistics
               </h3>
               <ul className="mt-1 grid gap-1 text-sm sm:grid-cols-2">

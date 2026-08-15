@@ -255,7 +255,7 @@ function StatRow({
 function OverrideMark({ derived }: { derived: Derived<number> }) {
   return (
     <span
-      className="ml-1 text-xs text-amber-600 dark:text-amber-400"
+      className="ml-1 text-xs text-brand-700 dark:text-brand-300"
       title={`Set by hand. The rules give ${derived.computed ?? 'no value'}.`}
     >
       ◆

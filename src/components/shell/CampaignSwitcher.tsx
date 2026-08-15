@@ -159,6 +159,6 @@ function campaignItemClass(active: boolean) {
     'font-medium text-gray-700 outline-hidden transition-colors hover:bg-gray-50',
     'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
     'dark:text-gray-300 dark:hover:bg-gray-800/70',
-    active && 'bg-gray-50 text-gray-900 dark:bg-gray-800 dark:text-white',
+    active && 'bg-gray-50 text-gray-900 dark:bg-gray-800 dark:text-gray-50',
   )
 }

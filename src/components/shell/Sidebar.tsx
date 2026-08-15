@@ -68,7 +68,7 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
             'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
           )}
         >
-          <span className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
+          <span className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-gray-50">
             {APP_NAME}
           </span>
         </Link>

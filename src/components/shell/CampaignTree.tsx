@@ -354,7 +354,7 @@ function TreeRow({
         level === 2 && 'pl-15 text-[0.8125rem]',
         strong ? 'font-semibold' : 'font-medium',
         active
-          ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
+          ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50'
           : 'text-gray-700 dark:text-gray-300',
       )}
     >

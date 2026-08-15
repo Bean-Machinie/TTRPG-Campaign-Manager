@@ -165,7 +165,7 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           preset={profile?.avatarPreset}
         />
 
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-gray-50">
           {name}
         </span>
 

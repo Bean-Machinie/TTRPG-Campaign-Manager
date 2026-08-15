@@ -9,10 +9,6 @@ function readStoredTheme(): Theme | null {
   return stored === 'light' || stored === 'dark' ? stored : null
 }
 
-function systemTheme(): Theme {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 /**
  * The signed-in user's light/dark preference.
  *
@@ -24,7 +20,7 @@ function systemTheme(): Theme {
  * calls it agree without a provider: there is only one class to read.
  */
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => readStoredTheme() ?? systemTheme())
+  const [theme, setTheme] = useState<Theme>(() => readStoredTheme() ?? 'dark')
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')

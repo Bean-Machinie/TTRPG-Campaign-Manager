@@ -59,10 +59,10 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
       </IconButton>
 
       <Link to="/app" className="flex items-center gap-2 no-underline lg:hidden">
-        <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
+        <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-gray-950">
           <Dices className="size-4" aria-hidden="true" />
         </span>
-        <span className="text-sm font-semibold text-gray-900 dark:text-white">{APP_NAME}</span>
+        <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{APP_NAME}</span>
       </Link>
 
       <Trail />
@@ -80,7 +80,7 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
             'text-sm font-medium text-gray-600 outline-hidden transition-colors',
             'hover:bg-gray-100 hover:text-gray-900',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
-            'dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white',
+            'dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50',
           )}
           aria-label="Search"
         >
@@ -92,8 +92,8 @@ export function TopBar({ onMenu, onSearch }: TopBarProps) {
         <Link
           to="/app/campaigns/new"
           className={cn(
-            'inline-flex h-10 items-center gap-2 rounded-md bg-brand-600 px-3 text-sm font-semibold text-white no-underline shadow-xs',
-            'transition-colors hover:bg-brand-700 hover:text-white',
+            'inline-flex h-10 items-center gap-2 rounded-md bg-brand-600 px-3 text-sm font-semibold text-gray-950 no-underline shadow-xs',
+            'transition-colors hover:bg-brand-700 hover:text-gray-950',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
           )}
         >

@@ -227,7 +227,7 @@ export function CommandPalette({ isOpen, onOpenChange, campaignId }: CommandPale
                 className={cn(
                   'palette-field m-0 min-w-0 flex-1 border-0 bg-transparent p-0',
                   'font-sans text-base text-gray-900 outline-hidden placeholder:text-gray-400',
-                  'dark:text-white dark:placeholder:text-gray-500',
+                  'dark:text-gray-50 dark:placeholder:text-gray-500',
                   '[&::-webkit-search-cancel-button]:hidden',
                 )}
               />
@@ -384,7 +384,7 @@ function NoCampaigns({ onNavigate }: { onNavigate: (to: string) => void }) {
         <NavIcon icon={ALL_CAMPAIGNS_ICON} size={22} />
       </span>
       <div>
-        <p className="m-0 text-sm font-semibold text-gray-900 dark:text-white">No campaigns yet</p>
+        <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-50">No campaigns yet</p>
         <p className="m-0 text-sm text-gray-600 dark:text-gray-400">Start one to see it here.</p>
       </div>
       <Button variant="secondary" onClick={() => onNavigate('/app/campaigns/new')}>
@@ -433,7 +433,7 @@ function CommandRow({ command }: { command: Command }) {
         )}
 
         <div className="flex flex-1 gap-x-1.5">
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{command.label}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-50">{command.label}</span>
           <span className="text-sm text-gray-600 dark:text-gray-400">{command.hint}</span>
         </div>
       </div>
@@ -467,7 +467,7 @@ function NoResults({
       </header>
 
       <main className="z-10 mb-6 flex w-full max-w-88 flex-col items-center justify-center gap-1">
-        <h2 className="m-0 text-base font-semibold text-gray-900 dark:text-white">
+        <h2 className="m-0 text-base font-semibold text-gray-900 dark:text-gray-50">
           {loading ? 'Still looking' : 'No results found'}
         </h2>
         <p className="m-0 text-center text-sm text-gray-600 dark:text-gray-400">
@@ -521,8 +521,8 @@ function Rings() {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(240 240) rotate(90) scale(240)"
         >
-          <stop stopColor="#ffffff" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          <stop stopColor="#e8e0d1" />
+          <stop offset="1" stopColor="#e8e0d1" stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>

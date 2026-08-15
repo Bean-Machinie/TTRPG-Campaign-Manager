@@ -21,9 +21,9 @@
 }
 
 .character-card {
-  --card-top: #303d9d;
-  --card-bottom: #101b45;
-  --card-glow: #6172f3;
+  --card-top: #745633;
+  --card-bottom: #27231e;
+  --card-glow: #b98b50;
   position: relative;
   display: block;
   min-height: 22rem;
@@ -31,17 +31,17 @@
   border: 1px solid rgb(255 255 255 / 12%);
   border-radius: var(--radius-xl);
   background: var(--card-bottom);
-  color: #fff;
-  box-shadow: 0 2px 4px rgb(16 24 40 / 8%), 0 10px 24px rgb(16 24 40 / 14%);
+  color: #e8e0d1;
+  box-shadow: 0 2px 4px rgb(14 13 11 / 24%), 0 10px 24px rgb(14 13 11 / 32%);
   text-decoration: none;
   isolation: isolate;
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .character-card:hover {
-  color: #fff;
+  color: #e8e0d1;
   transform: translateY(-0.375rem);
-  box-shadow: 0 8px 12px rgb(16 24 40 / 12%), 0 22px 36px rgb(16 24 40 / 22%);
+  box-shadow: 0 8px 12px rgb(14 13 11 / 28%), 0 22px 36px rgb(14 13 11 / 42%);
 }
 
 .character-card:focus-visible {
@@ -98,8 +98,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgb(255 255 255 / 18%);
-  background: rgb(16 24 40 / 54%);
-  color: #fff;
+  background: rgb(25 26 24 / 64%);
+  color: #e8e0d1;
   box-shadow: 0 1px 2px rgb(0 0 0 / 14%);
   backdrop-filter: blur(8px);
   cursor: pointer;
@@ -124,13 +124,13 @@
 
 .character-card__upload-button:hover,
 .character-card__remove-portrait:hover {
-  background: rgb(16 24 40 / 76%);
+  background: rgb(25 26 24 / 84%);
   transform: translateY(-1px);
 }
 
 .character-card__upload-button:focus-visible,
 .character-card__remove-portrait:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid #e8e0d1;
   outline-offset: 2px;
 }
 
@@ -144,7 +144,7 @@
   padding: 0.35rem 0.55rem;
   border-radius: var(--radius-sm);
   background: rgb(180 35 24 / 88%);
-  color: #fff;
+  color: #e8e0d1;
   font-size: 0.72rem;
   line-height: 1.35;
   backdrop-filter: blur(8px);
@@ -196,9 +196,9 @@
   padding: 0.22rem 0.625rem;
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: var(--radius-full);
-  background: rgb(16 24 40 / 48%);
+  background: rgb(25 26 24 / 58%);
   box-shadow: 0 1px 2px rgb(0 0 0 / 14%);
-  color: #fff;
+  color: #e8e0d1;
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.35;
@@ -219,7 +219,7 @@
 
 .character-card__name {
   overflow: hidden;
-  color: #fff;
+  color: #e8e0d1;
   font-family: var(--font-serif);
   font-size: 1.4rem;
   font-weight: 700;
@@ -259,33 +259,33 @@
 }
 
 .character-card--slate {
-  --card-top: #344054;
-  --card-bottom: #101828;
-  --card-glow: #667085;
+  --card-top: #444139;
+  --card-bottom: #20211f;
+  --card-glow: #827d74;
 }
 
 .character-card--violet {
-  --card-top: #5925dc;
-  --card-bottom: #27115f;
-  --card-glow: #9b8afb;
+  --card-top: #5b5043;
+  --card-bottom: #28241f;
+  --card-glow: #b98b50;
 }
 
 .character-card--emerald {
-  --card-top: #087a5b;
-  --card-bottom: #073f35;
-  --card-glow: #47cd89;
+  --card-top: #68775f;
+  --card-bottom: #252b22;
+  --card-glow: #96a38e;
 }
 
 .character-card--ember {
-  --card-top: #b54708;
-  --card-bottom: #5f2307;
-  --card-glow: #fdb022;
+  --card-top: #914f45;
+  --card-bottom: #332421;
+  --card-glow: #c27768;
 }
 
 .character-card--ocean {
-  --card-top: #175cd3;
-  --card-bottom: #102a56;
-  --card-glow: #53b1fd;
+  --card-top: #697985;
+  --card-bottom: #252c30;
+  --card-glow: #93a2ab;
 }
 
 @media (max-width: 36rem) {

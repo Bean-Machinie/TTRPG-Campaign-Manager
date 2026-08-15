@@ -157,8 +157,8 @@ function StepperIndicator({ className, ...props }: HTMLAttributes<HTMLDivElement
     <div
       className={cn(
         'flex size-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-500 transition-colors dark:bg-gray-800 dark:text-gray-400',
-        'data-[state=active]:bg-brand-600 data-[state=active]:text-white',
-        'data-[state=completed]:bg-success-500 data-[state=completed]:text-white',
+        'data-[state=active]:bg-brand-600 data-[state=active]:text-gray-950',
+        'data-[state=completed]:bg-success-500 data-[state=completed]:text-gray-50',
         className,
       )}
       data-slot="stepper-indicator"
