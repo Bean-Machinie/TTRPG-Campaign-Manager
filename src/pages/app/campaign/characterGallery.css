@@ -29,7 +29,7 @@
   min-height: 22rem;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 12%);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--card-bottom);
   color: #fff;
   box-shadow: 0 2px 4px rgb(16 24 40 / 8%), 0 10px 24px rgb(16 24 40 / 14%);
@@ -110,7 +110,7 @@
   left: 0.875rem;
   gap: 0.35rem;
   padding: 0.32rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.72rem;
   font-weight: 650;
 }
@@ -119,7 +119,7 @@
   left: 8.25rem;
   width: 1.8rem;
   height: 1.8rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .character-card__upload-button:hover,
@@ -142,7 +142,7 @@
   max-width: calc(100% - 1.75rem);
   margin: 0;
   padding: 0.35rem 0.55rem;
-  border-radius: 0.4rem;
+  border-radius: var(--radius-sm);
   background: rgb(180 35 24 / 88%);
   color: #fff;
   font-size: 0.72rem;
@@ -195,7 +195,7 @@
   overflow: hidden;
   padding: 0.22rem 0.625rem;
   border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: rgb(16 24 40 / 48%);
   box-shadow: 0 1px 2px rgb(0 0 0 / 14%);
   color: #fff;

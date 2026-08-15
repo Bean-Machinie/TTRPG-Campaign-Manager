@@ -124,7 +124,7 @@ export function FeaturesSection() {
             {species.traits.map((trait) => (
               <li
                 key={trait}
-                className="rounded border border-gray-200 px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                className="rounded-xs border border-gray-200 px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300"
               >
                 {trait}
               </li>

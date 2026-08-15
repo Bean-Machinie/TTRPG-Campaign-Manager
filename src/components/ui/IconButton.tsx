@@ -27,7 +27,7 @@ export function IconButton({ size = 'md', className, type = 'button', ...rest }:
     <button
       type={type}
       className={cn(
-        // 8px on this project's scale — see global.css, which redefines it.
+        // A control-sized radius from the shared optical scale.
         'icon-host inline-grid shrink-0 cursor-pointer place-items-center rounded-md',
         'text-gray-500 outline-hidden transition-colors',
         'hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200',

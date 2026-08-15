@@ -64,10 +64,22 @@
   --space-5: 1.5rem;
   --space-6: 2.5rem;
 
-  /* Also what Tailwind's `rounded-md` / `rounded-lg` resolve to, so the shell
-     and the pages inside it round their corners by the same amounts. */
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /*
+   * Optical corner geometry. `--roundness` is the only tuning control; every
+   * non-circular corner in both the CSS components and Tailwind utilities is a
+   * proportional step on this scale. Change it once to sharpen or soften the
+   * entire product without flattening the hierarchy between controls, cards,
+   * dialogs and canvases.
+   */
+  --roundness: 0.6;
+  --radius-xs: calc(4px * var(--roundness));
+  --radius-sm: calc(6px * var(--roundness));
+  --radius-md: calc(8px * var(--roundness));
+  --radius-lg: calc(12px * var(--roundness));
+  --radius-xl: calc(16px * var(--roundness));
+  --radius-2xl: calc(20px * var(--roundness));
+  /* True circles and capsules are geometric primitives, not optical corners. */
+  --radius-full: 9999px;
 
   --shadow-popup: 0 12px 16px -4px rgb(16 24 40 / 8%), 0 4px 6px -2px rgb(16 24 40 / 3%);
 

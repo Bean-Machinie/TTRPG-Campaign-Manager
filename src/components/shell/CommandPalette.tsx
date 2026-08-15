@@ -378,7 +378,7 @@ function NoCampaigns({ onNavigate }: { onNavigate: (to: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
       <span
-        className="grid size-11 shrink-0 place-items-center rounded-[10px] bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700"
+        className="grid size-11 shrink-0 place-items-center rounded-md bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700"
         aria-hidden="true"
       >
         <NavIcon icon={ALL_CAMPAIGNS_ICON} size={22} />
@@ -410,8 +410,7 @@ function CommandRow({ command }: { command: Command }) {
       textValue={command.label}
       className="group block cursor-pointer px-2 py-0.5 outline-hidden"
     >
-      {/* rounded-md, not rounded-lg: this product's radius scale puts 8px on
-          `md`, and 8px is the row radius. */}
+      {/* A row uses the control tier, one step inside the floating panel. */}
       <div
         className={cn(
           'relative flex min-h-10 items-center justify-between rounded-md px-2.5 py-2',
@@ -462,7 +461,7 @@ function NoResults({
     <div className="mx-auto flex w-full max-w-lg flex-col items-center justify-center overflow-hidden p-6 pb-10">
       <header className="relative mb-4">
         <Rings />
-        <div className="relative grid size-12 shrink-0 place-items-center rounded-[10px] bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700">
+        <div className="relative grid size-12 shrink-0 place-items-center rounded-md bg-white text-gray-600 shadow-xs ring-1 ring-gray-200 ring-inset dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700">
           <SearchIcon size={24} />
         </div>
       </header>

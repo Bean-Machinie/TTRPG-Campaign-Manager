@@ -186,7 +186,7 @@ export function CharacterDetailPage() {
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {entity.name}
             {badge ? (
-              <span className="ml-2 rounded border border-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              <span className="ml-2 rounded-xs border border-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:border-gray-700 dark:text-gray-400">
                 {badge}
               </span>
             ) : null}

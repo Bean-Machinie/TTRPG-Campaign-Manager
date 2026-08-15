@@ -369,7 +369,7 @@ function TreeChevron({ isExpanded, label }: { isExpanded: boolean; label: string
     <ChevronButton
       slot="chevron"
       aria-label={label}
-      className="grid size-5 shrink-0 cursor-pointer place-items-center rounded text-gray-400 outline-hidden dark:text-gray-500"
+      className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-xs text-gray-400 outline-hidden dark:text-gray-500"
     >
       <ChevronRight
         className={cn('size-3.5 transition-transform duration-150', isExpanded && 'rotate-90')}
@@ -384,7 +384,8 @@ function TreeChevron({ isExpanded, label }: { isExpanded: boolean; label: string
  *
  * Each column is centred on the chevron of the row that opened it — 0.875rem
  * for a campaign, 2.625rem for a section — so a branch drops straight out of
- * its own control and turns into the row it belongs to on a 4px corner. The
+ * its own control and turns into the row it belongs to on the smallest optical
+ * corner tier. The
  * column stops at the elbow of the last row in a group, and a deeper row only
  * carries its grandparent's column through when that group is still open
  * below it. Rows sit 2px apart, so segments bleed into the gap to read as one
@@ -409,7 +410,7 @@ function IndentGuides({
       ) : null}
       <span
         className={cn(
-          'absolute -top-0.5 bottom-1/2 w-3.5 rounded-bl-[0.25rem]',
+          'absolute -top-0.5 bottom-1/2 w-3.5 rounded-bl-xs',
           'border-b border-l border-gray-200 dark:border-gray-700',
           column,
         )}

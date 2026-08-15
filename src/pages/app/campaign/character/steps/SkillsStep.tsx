@@ -82,7 +82,7 @@ export function SkillsStep({ draft, context, onPatchData }: StepProps) {
                 {grant.fixed.map((skill) => (
                   <li
                     key={skill}
-                    className="rounded border border-gray-200 px-2 py-1 text-sm dark:border-gray-700"
+                    className="rounded-xs border border-gray-200 px-2 py-1 text-sm dark:border-gray-700"
                   >
                     {skillName.get(skill) ?? skill}
                     {draft.data.proficiencies.skills[skill] ? null : (

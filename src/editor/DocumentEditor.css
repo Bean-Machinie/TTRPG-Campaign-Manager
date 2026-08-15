@@ -90,7 +90,7 @@
   bottom: 0.15em;
   left: 0;
   width: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-full);
   background-color: var(--color-border-strong);
 }
 
@@ -193,7 +193,7 @@
 
 .document-editor__surface :not(pre) > code {
   padding: 0.1em 0.3em;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background-color: var(--color-bg-muted);
   font-size: 0.88em;
 }
@@ -293,7 +293,7 @@
 
 /* The drop indicator while dragging text — cells no longer use it. */
 .document-editor .ProseMirror-dropcursor {
-  border-radius: 2px;
+  border-radius: var(--radius-full);
 }
 
 .document-editor__surface .ProseMirror-selectednode {
@@ -308,7 +308,8 @@
  *
  * The slash list, the cell menu and the selection bar are the same panel at
  * three widths, and it is the same panel the application shell opens from the
- * account button: 12px corners on a hairline, 6px of padding, 8px rows inset
+ * account button: floating-surface corners on a hairline, with rows one tier
+ * smaller inside
  * inside that, and an icon one step quieter than the label beside it. The
  * shell spells that in Tailwind (see components/ui/Menu.tsx); these are
  * portalled onto document.body, outside the shell, and are spelled here in this
@@ -321,7 +322,7 @@
  */
 .editor-popup {
   padding: 0.375rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background-color: var(--color-surface);
   box-shadow: 0 0 0 1px var(--color-border), var(--shadow-popup);
 }

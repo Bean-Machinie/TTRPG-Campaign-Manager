@@ -9,8 +9,8 @@ import { cn } from '../../lib/cn'
  * whispering in sentence case in the next. The specification is now here, and
  * everything that opens a panel spells it the same way.
  *
- *   panel      12px corners, a hairline ring, 6px of padding
- *   row        8px corners inside that, icon → label → trailing
+ *   panel      floating-surface radius, a hairline ring, 6px of padding
+ *   row        control radius one tier inside, icon → label → trailing
  *   icon       one step quieter than its label, and it warms on hover
  *   divider    full-bleed, so it divides the panel rather than floating in it
  *   heading    sentence case, small, quiet — a label, not an announcement
@@ -56,8 +56,7 @@ export type MenuTone = 'default' | 'danger'
 
 export function menuItem(tone: MenuTone = 'default', className?: string) {
   return cn(
-    // rounded-md, not rounded-lg: global.css redefines the radius scale, and on
-    // it `md` is the 8px this row wants while `lg` is the panel's 12px.
+    // Rows step down from the floating panel's radius to the control tier.
     'group/menu-item flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2',
     'text-left text-sm font-medium outline-hidden transition-colors',
     'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
