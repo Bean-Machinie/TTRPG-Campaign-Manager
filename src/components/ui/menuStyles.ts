@@ -24,10 +24,20 @@ import { cn } from '../../lib/cn'
  * half only — nothing the shell opens has groups in it yet.
  */
 
-/** A ring, not a border: the panel's padding then means what it says. */
+/**
+ * A ring, not a border: the panel's padding then means what it says.
+ *
+ * The ring is doing more work than usual here, because the shadow can't do it
+ * alone. A popover's background is the same white (or the same gray-900) as
+ * whatever it's sitting on top of — the sidebar, a page, another panel — so
+ * there is no colour difference to lean on, only the edge itself and the lift
+ * of a shadow behind it. `gray-200` was too close to that background to read
+ * as an edge at a glance; `gray-300` still whispers rather than draws a box,
+ * but it is now a line you register.
+ */
 export const menuPanel = cn(
-  'z-50 overflow-hidden rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-gray-200',
-  'dark:bg-gray-900 dark:ring-gray-800',
+  'z-50 overflow-hidden rounded-xl bg-white p-1.5 shadow-xl ring-1 ring-gray-300',
+  'dark:bg-gray-900 dark:ring-gray-700',
 )
 
 /** Negative margins carry it out through the panel's 6px of padding. */
