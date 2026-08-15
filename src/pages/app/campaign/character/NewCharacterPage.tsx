@@ -11,6 +11,7 @@ import { errorMessage } from '../../../../lib/errors'
 import { Alert } from '../../../../components/ui/Alert'
 import { Button } from '../../../../components/ui/Button'
 import { useCampaignOutlet } from '../useCampaignOutlet'
+import { CharacterCreationStepper } from './CharacterCreationStepper'
 import { SetupStep } from './steps/SetupStep'
 
 /**
@@ -90,51 +91,57 @@ export function NewCharacterPage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">New character</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Step 1 of 7 · Who this is, and which rules they are built under.
-        </p>
       </header>
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <SetupStep
-        draft={value}
-        context={context}
-        onChange={(changes) => setDraft({ ...value, ...changes })}
-        onPatchData={(changes) => setDraft({ ...value, data: { ...value.data, ...changes } })}
-        members={members}
-        canManage={canManage}
-        systems={systems}
-      />
+      <CharacterCreationStepper
+        currentStep="setup"
+        isStepEnabled={(step) => step === 'setup'}
+        onStepChange={() => undefined}
+        previousDisabled
+        nextDisabled={busy || problems.length > 0}
+        onPrevious={() => undefined}
+        onNext={() => void start(quick ? 'quick' : 'wizard')}
+        nextLabel={busy ? 'Starting…' : 'Next'}
+      >
+        <div className="flex flex-col gap-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Who this is, and which rules they are built under.
+          </p>
 
-      {problems.length > 0 ? (
-        <Alert>
-          <ul className="list-disc pl-4">
-            {problems.map((problem) => (
-              <li key={problem}>{problem}</li>
-            ))}
-          </ul>
-        </Alert>
-      ) : null}
+          <SetupStep
+            draft={value}
+            context={context}
+            onChange={(changes) => setDraft({ ...value, ...changes })}
+            onPatchData={(changes) => setDraft({ ...value, data: { ...value.data, ...changes } })}
+            members={members}
+            canManage={canManage}
+            systems={systems}
+          />
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          disabled={busy || problems.length > 0}
-          onClick={() => void start(quick ? 'quick' : 'wizard')}
-        >
-          {busy ? 'Starting…' : 'Continue'}
-        </Button>
+          {problems.length > 0 ? (
+            <Alert>
+              <ul className="list-disc pl-4">
+                {problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </Alert>
+          ) : null}
 
-        {quick ? (
-          <Button
-            variant="secondary"
-            disabled={busy || problems.length > 0}
-            onClick={() => void start('wizard')}
-          >
-            Build with full rules
-          </Button>
-        ) : null}
-      </div>
+          {quick ? (
+            <Button
+              className="self-start"
+              variant="secondary"
+              disabled={busy || problems.length > 0}
+              onClick={() => void start('wizard')}
+            >
+              Build with full rules
+            </Button>
+          ) : null}
+        </div>
+      </CharacterCreationStepper>
 
       {quick ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">

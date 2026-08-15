@@ -20,7 +20,6 @@ import {
   firstIncompleteStep,
   isWizardStep,
   resolveStep,
-  stepProgress,
   validateStep,
 } from '../../../../entities/wizard/steps'
 import type { WizardContext, WizardDraft, WizardStep } from '../../../../entities/wizard/steps'
@@ -29,6 +28,7 @@ import { errorMessage } from '../../../../lib/errors'
 import { Alert } from '../../../../components/ui/Alert'
 import { Button } from '../../../../components/ui/Button'
 import { useCampaignOutlet } from '../useCampaignOutlet'
+import { CharacterCreationStepper } from './CharacterCreationStepper'
 import { WizardSummary } from './WizardSummary'
 import { SetupStep } from './steps/SetupStep'
 import { ClassStep } from './steps/ClassStep'
@@ -166,7 +166,6 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
     return <Navigate to={`${wizardHref}/${allowed}`} replace />
   }
 
-  const progress = stepProgress(draft, context)
   const problems = validateStep(allowed, draft, context)
   const index = WIZARD_STEPS.indexOf(allowed)
 
@@ -230,9 +229,6 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {WIZARD_STEP_LABELS[allowed]}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Step {index + 1} of {WIZARD_STEPS.length} · {WIZARD_STEP_HINTS[allowed]}
-          </p>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {saveError ?? SAVE_STATUS_LABELS[saveStatus]}
@@ -241,82 +237,49 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <nav aria-label="Creation steps">
-        <ol className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {WIZARD_STEPS.map((entry, at) => {
-            const reachable = resolveStep(entry, draft, context) === entry
-            const current = entry === allowed
-
-            return (
-              <li key={entry}>
-                <button
-                  type="button"
-                  disabled={!reachable}
-                  onClick={() => goTo(entry)}
-                  className={
-                    current
-                      ? 'font-semibold text-gray-900 underline dark:text-gray-100'
-                      : reachable
-                        ? 'text-gray-600 underline-offset-2 hover:underline dark:text-gray-300'
-                        : 'text-gray-400 dark:text-gray-600'
-                  }
-                >
-                  {at + 1}. {WIZARD_STEP_LABELS[entry]}
-                  {progress[entry] && !current ? ' ✓' : ''}
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-      </nav>
-
       <div className="grid gap-8 lg:grid-cols-[1fr_18rem]">
         <div className="flex flex-col gap-6">
-          <Step
-            draft={draft}
-            context={context}
-            onChange={update}
-            onPatchData={patchData}
-            members={members}
-            canManage={role !== 'player'}
-            systems={systems}
-          />
+          <CharacterCreationStepper
+            currentStep={allowed}
+            isStepEnabled={(entry) => resolveStep(entry, draft, context) === entry}
+            onStepChange={goTo}
+            previousDisabled={index === 0 || busy}
+            nextDisabled={busy || problems.length > 0}
+            onPrevious={() => goTo(WIZARD_STEPS[index - 1])}
+            onNext={() => {
+              if (allowed === 'review') void finish()
+              else goTo(WIZARD_STEPS[index + 1])
+            }}
+            nextLabel={allowed === 'review' ? (busy ? 'Saving…' : 'Create character') : 'Next'}
+          >
+            <div className="flex flex-col gap-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {WIZARD_STEP_HINTS[allowed]}
+              </p>
 
-          {/*
-            Shown beside the button that will not move rather than on arrival at
-            the next step: "why can I not continue" is a question about this
-            page, and answering it on the following one answers it too late.
-          */}
-          {problems.length > 0 ? (
-            <Alert>
-              <ul className="list-disc pl-4">
-                {problems.map((problem) => (
-                  <li key={problem}>{problem}</li>
-                ))}
-              </ul>
-            </Alert>
-          ) : null}
+              <Step
+                draft={draft}
+                context={context}
+                onChange={update}
+                onPatchData={patchData}
+                members={members}
+                canManage={role !== 'player'}
+                systems={systems}
+              />
 
-          <div className="flex flex-wrap gap-2">
-            {index > 0 ? (
-              <Button variant="secondary" onClick={() => goTo(WIZARD_STEPS[index - 1])}>
-                Back
-              </Button>
-            ) : null}
+              {problems.length > 0 ? (
+                <Alert>
+                  <ul className="list-disc pl-4">
+                    {problems.map((problem) => (
+                      <li key={problem}>{problem}</li>
+                    ))}
+                  </ul>
+                </Alert>
+              ) : null}
+            </div>
+          </CharacterCreationStepper>
 
-            {allowed === 'review' ? (
-              <Button disabled={busy || problems.length > 0} onClick={() => void finish()}>
-                {busy ? 'Saving…' : 'Create character'}
-              </Button>
-            ) : (
-              <Button
-                disabled={problems.length > 0}
-                onClick={() => goTo(WIZARD_STEPS[index + 1])}
-              >
-                Continue
-              </Button>
-            )}
-
+          <div>
             <Button variant="secondary" disabled={busy} onClick={() => void discard()}>
               Discard
             </Button>
