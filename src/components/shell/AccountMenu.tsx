@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronsUpDown, LogOut, Moon, Settings, Sun } from 'lucide-react'
+import { ChevronUp, LogOut, Moon, Settings, Sun } from 'lucide-react'
 import { LazyMotion, domAnimation, m } from 'motion/react'
 import type { Variants } from 'motion/react'
 import { useAuth } from '../../auth/useAuth'
@@ -14,16 +14,17 @@ import { initialsOf } from './navigation'
 /**
  * Who you are signed in as, and everything that follows from that.
  *
- * The row identifies you and the panel acts. That split is what the previous
- * version did not have: the panel opened onto a row repeating your name, and
- * under it a "Settings" row going to the same route the name row went to — two
- * rows, one destination, and your email nowhere on screen at all. The identity
- * now lives entirely in the trigger, which has room for it, and the panel holds
- * only the three things there are to do.
+ * The row says who, the panel says what. The trigger is one line — a small
+ * tile, a name, a caret — because it is the last thing in the panel and the
+ * least often used thing in it, and a two-line block with an email in it was
+ * claiming three times the height of a nav row to say something you already
+ * know. The email is still one click away, at the head of the panel, where it
+ * is answering a question rather than filling a corner.
  *
- * The chevron is `ChevronsUpDown` rather than a single caret because the panel
- * opens upward from a control at the bottom of the sidebar; a caret pointing
- * down would be describing the wrong direction half the time.
+ * The caret points at the panel in both states rather than describing an
+ * abstract open/closed: it opens upward from the foot of the sidebar, so it
+ * points up while shut — that is where the thing will appear — and rotates to
+ * point back down while open, at the row that will take it away again.
  *
  * The panel never unmounts — it sits in the DOM at all times with `inert`
  * standing in for conditional rendering, which is what lets the *closing*
@@ -127,33 +128,29 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         aria-expanded={open}
         className={cn(
           // Eight-pixel corners and a twelve-pixel gutter, the same as every
-          // nav row above it: the avatar's left edge lands on the column the
-          // section icons are already standing in.
-          'group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left',
+          // nav row above it. The 24px tile and 6px of vertical padding make a
+          // 36px row — the height of a nav row, which is what this is.
+          'group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 text-left',
           'outline-hidden transition-colors duration-150',
           'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600',
           'hover:bg-gray-50 aria-expanded:bg-gray-50',
           'dark:hover:bg-gray-800/60 dark:aria-expanded:bg-gray-800/60',
         )}
       >
-        <Avatar initials={initialsOf(name)} size="md" />
+        <Avatar initials={initialsOf(name)} />
 
-        {/* Two lines in the space one used to take: the avatar is 36px and a
-            13px name over an 11px address is 34px, so the row does not grow. */}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {name}
-          </span>
-          {email ? (
-            <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{email}</span>
-          ) : null}
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white">
+          {name}
         </span>
 
-        <ChevronsUpDown
+        <ChevronUp
           className={cn(
-            'size-4 shrink-0 transition-colors',
+            // `transition` and not `transition-colors`: the rotation is the
+            // half that has to move.
+            'size-4 shrink-0 transition duration-150',
             'text-gray-400 group-hover:text-gray-500',
             'dark:text-gray-500 dark:group-hover:text-gray-400',
+            open && 'rotate-180',
           )}
           aria-hidden="true"
         />
@@ -171,6 +168,22 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           style={{ transformOrigin: 'bottom' }}
           className={cn(menuPanel, 'absolute inset-x-0 bottom-full mb-2')}
         >
+          {/*
+            Who, in full, at the head of the panel. `presentation` because it is
+            not a command: a screen reader walking a menu should hear three
+            things it can do, not two things and a paragraph.
+          */}
+          <m.div variants={itemVariants} role="presentation" className="px-2.5 pt-1 pb-2">
+            <p className="m-0 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {name}
+            </p>
+            {email ? (
+              <p className="m-0 truncate text-xs text-gray-500 dark:text-gray-400">{email}</p>
+            ) : null}
+          </m.div>
+
+          <div role="separator" className={menuSeparator} />
+
           <m.button
             variants={itemVariants}
             role="menuitem"

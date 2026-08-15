@@ -1,7 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router'
 import { Plus, X } from 'lucide-react'
-import { useId, useRef } from 'react'
-import type { ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { APP_NAME } from '../../constants'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { cn } from '../../lib/cn'
@@ -41,10 +40,15 @@ import './icons.css'
  * everybody sees. 8px corners, the same as the menu rows the account button
  * opens, and a focus ring, which none of the three had.
  *
- * Three bands, and the rules between them are the panel's only structure:
- * a 64px brand band that lines up exactly with the top bar beside it so the
- * horizon runs unbroken across the application, the scrolling navigation, and
- * the account. Everything inside them sits on one 12px gutter.
+ * Four bands, and the rules between them are the panel's only structure: a 64px
+ * brand band that lines up exactly with the top bar beside it so the horizon
+ * runs unbroken across the application, search, the navigation, and the
+ * account. Everything inside them sits on one 12px gutter.
+ *
+ * Only one of them scrolls. Every fixed point in the panel — the wordmark,
+ * search, the two workspace rows, who you are — stays where it was put, and the
+ * list of campaigns moves underneath them. A panel where everything scrolls is
+ * a panel where nothing is anywhere.
  */
 
 const ROW = cn(
@@ -101,6 +105,15 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
   // The lens should jump when the pointer reaches the field, not when it
   // finally reaches the 16 pixels of magnifier inside it.
   const searchIcon = useRef<AnimatedIconHandle>(null)
+
+  // Whether the campaign list has anything scrolled up under the "Campaigns"
+  // label. The label sits in the fixed part of the panel and the list in the
+  // scrolling part below it, and with nothing marking the seam a scrolled list
+  // reads as flush with its own heading rather than as passing beneath it. A
+  // shadow that only appears once there is something to separate from is the
+  // cheapest version of that: at the top of the list there is nothing under the
+  // label to hide, so there is nothing to cast one.
+  const [listScrolled, setListScrolled] = useState(false)
 
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
@@ -165,39 +178,77 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* `min-h-0` is what lets this actually scroll rather than push the
-          account band off the bottom of a short window. */}
-      <nav
-        className={cn(
-          'flex min-h-0 flex-1 flex-col overflow-y-auto pb-4',
-          '[scrollbar-color:var(--color-gray-300)_transparent] [scrollbar-width:thin]',
-          'dark:[scrollbar-color:var(--color-gray-700)_transparent]',
-          BAND,
-        )}
-        aria-label="Main"
-      >
-        <div className="border-b border-gray-200 py-3 dark:border-gray-800">
-          <NavGroup title="Workspace">
-            <NavItem
-              to="/app"
-              end
-              icon={ALL_CAMPAIGNS_ICON}
-              label="All campaigns"
-              onNavigate={onNavigate}
-            />
-            <NavItem
-              to="/app/campaigns/new"
-              icon={cssIcon(Plus, 'spin')}
-              label="New campaign"
-              onNavigate={onNavigate}
-            />
-          </NavGroup>
+      {/*
+        One nav, three parts, and only the last of them moves.
+
+        The two workspace rows are fixed points — they are the same two rows in
+        every campaign and on every route — so scrolling them away with a long
+        list of campaigns took the panel's only constants out of reach exactly
+        when the list was long enough to need them. They are pinned, and so is
+        the word Campaigns, which is what the moving list underneath it is.
+
+        They also lost their own heading. "Workspace" over two permanent rows
+        was a label naming a category nobody navigates by; "Campaigns" stays
+        because it names the boundary between the fixed part and the scrolling
+        one, which is now a thing the reader can see happen.
+      */}
+      <nav aria-label="Main" className="flex min-h-0 flex-1 flex-col">
+        <div
+          className={cn(
+            'flex shrink-0 flex-col gap-0.5 border-b border-gray-200 py-3 dark:border-gray-800',
+            BAND,
+          )}
+        >
+          <NavItem
+            to="/app"
+            end
+            icon={ALL_CAMPAIGNS_ICON}
+            label="All campaigns"
+            onNavigate={onNavigate}
+          />
+          <NavItem
+            to="/app/campaigns/new"
+            icon={cssIcon(Plus, 'spin')}
+            label="New campaign"
+            onNavigate={onNavigate}
+          />
         </div>
 
-        <div className="pt-3">
+        {/*
+          `relative` plus the shadow element below it: the shadow is drawn
+          under this band rather than as a CSS `box-shadow` on it, because a
+          shadow on the band itself is clipped by nothing and would show
+          through the band's own background on the side facing the list. Drawn
+          as its own layer, it can sit right on the seam and fade into
+          whatever is scrolling underneath.
+        */}
+        <div className={cn('relative shrink-0 pt-3', BAND)}>
           <p className="m-0 truncate px-3 pt-0.5 pb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
             Campaigns
           </p>
+          <div
+            aria-hidden="true"
+            className={cn(
+              'pointer-events-none absolute inset-x-0 top-full h-3 transition-opacity duration-150',
+              'bg-gradient-to-b from-gray-900/10 to-transparent dark:from-black/30',
+              listScrolled ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        </div>
+
+        {/* `min-h-0` is what lets this actually scroll rather than push the
+            account band off the bottom of a short window. The gutter is padding
+            on the scroller itself, so the scrollbar rides the panel's edge
+            instead of floating twelve pixels inside it. */}
+        <div
+          onScroll={(event) => setListScrolled(event.currentTarget.scrollTop > 0)}
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto pb-4',
+            '[scrollbar-color:var(--color-gray-300)_transparent] [scrollbar-width:thin]',
+            'dark:[scrollbar-color:var(--color-gray-700)_transparent]',
+            BAND,
+          )}
+        >
           <CampaignTree
             campaigns={campaigns}
             loading={campaignsLoading}
@@ -209,65 +260,16 @@ export function Sidebar({ onSearch, onNavigate, onClose }: SidebarProps) {
         </div>
       </nav>
 
+      {/* Two, not three: the row inside is a nav row's height now, and the band
+          should sit around it the way the search band sits around its own. */}
       <div
         className={cn(
-          'mt-auto shrink-0 border-t border-gray-200 py-3 dark:border-gray-800',
+          'mt-auto shrink-0 border-t border-gray-200 py-2 dark:border-gray-800',
           BAND,
         )}
       >
         <AccountMenu onNavigate={onNavigate} />
       </div>
-    </div>
-  )
-}
-
-/**
- * The campaign you are inside, named rather than labelled.
- *
- * It had been the group heading every other sidebar gives a section: eleven-pixel
- * grey capitals, letter-spaced, shouting SECTIONS at you. But this line is not a
- * category — it is the proper noun the whole panel below it belongs to, and the
- * one place in the chrome where the reader's own writing appears. Serif, at rest,
- * in the text colour: the campaign is the loudest thing here and it still says
- * nothing.
- *
- * Not a link. The row directly beneath it goes to the same place, and two
- * controls one pixel apart leading to one destination is the ambiguity the
- * account menu was already fixed for.
- */
-type NavGroupProps = {
-  /** The group's accessible name. Also the visible label, unless `heading` says otherwise. */
-  title?: string
-  /** A richer rendering of `title` — the campaign identity block, in practice. */
-  heading?: ReactNode
-  children: ReactNode
-}
-
-function NavGroup({ title, heading, children }: NavGroupProps) {
-  const headingId = useId()
-
-  return (
-    // A named group rather than a bare div: a screen reader moving through the
-    // nav now hears which campaign the nine sections belong to, which is
-    // exactly what the sighted reader gets from the heading.
-    <div
-      role={title ? 'group' : undefined}
-      aria-labelledby={title ? headingId : undefined}
-      className="flex flex-col gap-0.5"
-    >
-      {title ? (
-        heading ? (
-          <div id={headingId}>{heading}</div>
-        ) : (
-          <p
-            id={headingId}
-            className="m-0 truncate px-3 pt-0.5 pb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400"
-          >
-            {title}
-          </p>
-        )
-      ) : null}
-      {children}
     </div>
   )
 }
