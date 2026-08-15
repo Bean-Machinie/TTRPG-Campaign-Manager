@@ -36,7 +36,7 @@ export function SetupStep({ draft, onChange, canManage, systems, members }: Step
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid gap-5 sm:grid-cols-2">
       <Input
         label="Name"
         required

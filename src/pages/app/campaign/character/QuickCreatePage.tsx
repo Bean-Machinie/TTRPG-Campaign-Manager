@@ -7,6 +7,7 @@ import type { CampaignEntity, EntityInput } from '../../../../campaigns/types'
 import { useAutosave } from '../../../../documents/useAutosave'
 import { invalidateCampaignContents } from '../../../../components/shell/commands'
 import { canEditEntity } from '../../../../entities/access'
+import { catalogFor } from '../../../../entities/srd/catalog'
 import {
   formatChallengeRating,
   parseChallengeRating,
@@ -18,6 +19,8 @@ import { Button } from '../../../../components/ui/Button'
 import { Input } from '../../../../components/ui/Input'
 import { Textarea } from '../../../../components/ui/Textarea'
 import { useCampaignOutlet } from '../useCampaignOutlet'
+import { WizardSummary } from './WizardSummary'
+import { readDraftPortrait, writeDraftPortrait } from './draftPortrait'
 
 /**
  * The fifteen-second NPC.
@@ -82,6 +85,7 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
 
   const [actionError, setActionError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [portrait, setPortrait] = useState<string | null>(() => readDraftPortrait(entity.id))
 
   // Autosaved like the wizard, and for a reason that is not symmetry: the link
   // at the foot of this page leads into the full sequence, and a link that
@@ -95,6 +99,9 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
 
   const { name, summary, data } = { ...draft, summary: draft.summary ?? '' }
   const system = systems.find((entry) => entry.id === entity.systemId)
+  const context = system
+    ? { definition: system.definition, catalog: catalogFor(system.key) }
+    : null
   const creature = entity.kind === 'creature'
 
   function update(changes: Partial<EntityInput>) {
@@ -145,6 +152,17 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
       </header>
 
       {actionError ? <Alert>{actionError}</Alert> : null}
+
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <section className="flex min-w-0 flex-col gap-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+          <div>
+            <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Essentials
+            </p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Just enough detail to put this character into play.
+            </p>
+          </div>
 
       <Input
         label="Name"
@@ -212,6 +230,20 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
           instead — the draft carries over.
         </p>
       ) : null}
+        </section>
+
+        {context ? (
+          <WizardSummary
+            draft={draft}
+            context={context}
+            portrait={portrait}
+            onPortraitChange={(value) => {
+              setPortrait(value)
+              writeDraftPortrait(entity.id, value)
+            }}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }

@@ -55,6 +55,101 @@
   inset: 0;
 }
 
+.character-card--preview {
+  width: 100%;
+  min-height: 27rem;
+}
+
+.character-card--preview:hover {
+  transform: translateY(-0.25rem);
+}
+
+.character-card__upload-zone {
+  position: absolute;
+  inset: 0;
+  transition: box-shadow 160ms ease;
+}
+
+.character-card__upload-zone--dragging {
+  box-shadow: inset 0 0 0 3px rgb(255 255 255 / 72%);
+}
+
+.character-card__portrait {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.2, 0.7, 0, 1), filter 180ms ease;
+}
+
+.character-card:hover .character-card__portrait {
+  transform: scale(1.035);
+  filter: saturate(1.05);
+}
+
+.character-card__upload-button,
+.character-card__remove-portrait {
+  position: absolute;
+  z-index: 3;
+  top: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: rgb(16 24 40 / 54%);
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 14%);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.character-card__upload-button {
+  left: 0.875rem;
+  gap: 0.35rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.character-card__remove-portrait {
+  left: 8.25rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+}
+
+.character-card__upload-button:hover,
+.character-card__remove-portrait:hover {
+  background: rgb(16 24 40 / 76%);
+  transform: translateY(-1px);
+}
+
+.character-card__upload-button:focus-visible,
+.character-card__remove-portrait:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.character-card__upload-error {
+  position: absolute;
+  z-index: 4;
+  top: 3.35rem;
+  left: 0.875rem;
+  max-width: calc(100% - 1.75rem);
+  margin: 0;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.4rem;
+  background: rgb(180 35 24 / 88%);
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  backdrop-filter: blur(8px);
+}
+
 .character-card__art {
   z-index: -2;
   display: grid;

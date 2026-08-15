@@ -38,6 +38,7 @@ import { SkillsStep } from './steps/SkillsStep'
 import { DetailsStep } from './steps/DetailsStep'
 import { ReviewStep } from './steps/ReviewStep'
 import type { StepProps } from './stepProps'
+import { readDraftPortrait, writeDraftPortrait } from './draftPortrait'
 
 /**
  * The creation wizard: one draft, seven steps, one route each.
@@ -126,6 +127,7 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
 
   const [actionError, setActionError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [portrait, setPortrait] = useState<string | null>(() => readDraftPortrait(entity.id))
 
   const save = useCallback(
     (value: WizardDraft) => updateEntity(entity.id, value),
@@ -237,7 +239,7 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_18rem]">
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex flex-col gap-6">
           <CharacterCreationStepper
             currentStep={allowed}
@@ -252,10 +254,15 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
             }}
             nextLabel={allowed === 'review' ? (busy ? 'Saving…' : 'Create character') : 'Next'}
           >
-            <div className="flex flex-col gap-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {WIZARD_STEP_HINTS[allowed]}
-              </p>
+            <section className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+              <div>
+                <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {WIZARD_STEP_LABELS[allowed]}
+                </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {WIZARD_STEP_HINTS[allowed]}
+                </p>
+              </div>
 
               <Step
                 draft={draft}
@@ -276,7 +283,7 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
                   </ul>
                 </Alert>
               ) : null}
-            </div>
+            </section>
           </CharacterCreationStepper>
 
           <div>
@@ -286,7 +293,15 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
           </div>
         </div>
 
-        <WizardSummary draft={draft} context={context} />
+        <WizardSummary
+          draft={draft}
+          context={context}
+          portrait={portrait}
+          onPortraitChange={(value) => {
+            setPortrait(value)
+            writeDraftPortrait(entity.id, value)
+          }}
+        />
       </div>
     </div>
   )
