@@ -182,6 +182,12 @@ export function CampaignTree({
     <Tree
       aria-label="Campaigns"
       selectionMode="none"
+      // React Aria otherwise installs an implicit row action that toggles any
+      // branch, then composes it with the TreeItem's navigation action. A
+      // tree-level action suppresses that fallback. Each item still runs its
+      // own action below, and the chevron keeps its dedicated expand/collapse
+      // behavior.
+      onAction={() => undefined}
       expandedKeys={expanded}
       onExpandedChange={changeExpanded}
       className={cn(CONTAINER, className)}
