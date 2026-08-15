@@ -16,13 +16,19 @@ describe('expansionAfterSectionActivation', () => {
     ).toBe(true)
   })
 
+  it('keeps the parent expanded when navigating from a record inside it', () => {
+    expect(
+      expansionAfterSectionActivation(new Set([documents]), documents, false, true).has(documents),
+    ).toBe(true)
+  })
+
   it('opens a closed destination when navigating from another section', () => {
     expect(
       expansionAfterSectionActivation(new Set(), documents, false, true).has(documents),
     ).toBe(true)
   })
 
-  it('collapses an open section when its active label is pressed again', () => {
+  it('collapses an open section only when its exact overview label is pressed again', () => {
     expect(
       expansionAfterSectionActivation(new Set([documents]), documents, true, true).has(documents),
     ).toBe(false)

@@ -103,9 +103,11 @@ export function CampaignTree({
    * label again becomes a convenient toggle. The dedicated chevron continues
    * to toggle independently without navigating.
    */
-  function activateSection(key: Key, to: string, isActive: boolean, hasChildren: boolean) {
+  function activateSection(key: Key, to: string, isOverviewActive: boolean, hasChildren: boolean) {
     if (hasChildren) {
-      changeExpanded(expansionAfterSectionActivation(expanded, key, isActive, hasChildren))
+      changeExpanded(
+        expansionAfterSectionActivation(expanded, key, isOverviewActive, hasChildren),
+      )
     }
 
     onNavigate(to)
@@ -221,9 +223,10 @@ export function CampaignTree({
               )
               const hasChildren = sectionItems.length > 0
               const to = sectionHref(campaign.id, section.path)
+              const isSectionOverview = location.pathname === to
               const isSectionActive = section.path
-                ? location.pathname === to || location.pathname.startsWith(`${to}/`)
-                : location.pathname === to
+                ? isSectionOverview || location.pathname.startsWith(`${to}/`)
+                : isSectionOverview
 
               return (
                 <TreeItem
@@ -234,7 +237,7 @@ export function CampaignTree({
                     activateSection(
                       sectionKey(campaign.id, section.path),
                       to,
-                      isSectionActive,
+                      isSectionOverview,
                       hasChildren,
                     )
                   }

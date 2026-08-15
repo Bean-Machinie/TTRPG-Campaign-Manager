@@ -142,19 +142,20 @@ export const entryKey = (campaignId: string, entryId: string) =>
 
 /**
  * Expansion policy for activating a section label rather than its chevron.
- * Navigation from elsewhere opens the destination; activating the section
- * that is already current toggles it. Leaf sections have nothing to disclose.
+ * Navigation from elsewhere — including from a record inside that section —
+ * opens the destination. Only activating the exact section overview toggles
+ * it. Leaf sections have nothing to disclose.
  */
 export function expansionAfterSectionActivation<T>(
   expanded: ReadonlySet<T>,
   key: T,
-  isActive: boolean,
+  isOverviewActive: boolean,
   hasChildren: boolean,
 ): Set<T> {
   const next = new Set(expanded)
   if (!hasChildren) return next
 
-  if (isActive && next.has(key)) next.delete(key)
+  if (isOverviewActive && next.has(key)) next.delete(key)
   else next.add(key)
 
   return next
