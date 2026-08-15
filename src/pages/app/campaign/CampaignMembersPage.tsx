@@ -17,6 +17,8 @@ import { Card } from '../../../components/ui/Card'
 import { Input } from '../../../components/ui/Input'
 import { Select } from '../../../components/ui/Select'
 import { UserPlusIcon } from '../../../components/shell/icons/UserPlusIcon'
+import { Avatar } from '../../../components/shell/Avatar'
+import { initialsOf } from '../../../components/shell/navigation'
 import type { AnimatedIconHandle } from '../../../components/shell/icons/types'
 import { useCampaignOutlet } from './useCampaignOutlet'
 import './CampaignMembersPage.css'
@@ -81,7 +83,14 @@ export function CampaignMembersPage() {
 
             return (
               <li className="members__row" key={member.membershipId}>
-                <div>
+                <div className="members__identity">
+                  <Avatar
+                    initials={initialsOf(member.name)}
+                    src={member.avatarUrl}
+                    preset={member.avatarPreset}
+                    size="md"
+                  />
+                  <div>
                   <span className="members__email">{member.name}</span>
                   {isSelf ? <span className="members__you"> (you)</span> : null}
                   <span className="members__role">{ROLE_LABELS[member.role]}</span>
@@ -89,6 +98,7 @@ export function CampaignMembersPage() {
                   {member.displayName ? (
                     <span className="members__meta">{member.email}</span>
                   ) : null}
+                  </div>
                 </div>
 
                 {isSelf && member.role !== 'owner' ? (

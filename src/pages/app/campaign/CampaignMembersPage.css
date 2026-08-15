@@ -30,6 +30,17 @@
   overflow-wrap: anywhere;
 }
 
+.members__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.members__identity > div {
+  min-width: 0;
+}
+
 .members__you,
 .members__meta {
   color: var(--color-text-muted);

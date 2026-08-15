@@ -32,6 +32,8 @@ export type CampaignMember = {
   userId: string
   email: string
   displayName: string | null
+  avatarPreset: import('../profile/avatarPresets').AvatarPreset | null
+  avatarUrl: string | null
   /** The display name when set, the email otherwise. What lists should show. */
   name: string
   role: CampaignRole

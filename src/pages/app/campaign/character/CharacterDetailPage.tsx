@@ -238,11 +238,11 @@ export function CharacterDetailPage() {
 
       <Outlet context={context} />
 
-      {/* Attribution where the material is, with the full notice in Settings. */}
+      {/* Attribution where the material is, with the full notice on the profile page. */}
       {system.definition.license ? (
         <p className="border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
           Rules from {system.name}, used under {system.definition.license.name}.{' '}
-          <Link className="underline" to="/app/settings">
+          <Link className="underline" to="/app/profile">
             Licences
           </Link>
         </p>

@@ -54,7 +54,7 @@ Only `.env.example` is committed; `.env*` files are git-ignored.
 | `/app/campaigns/:campaignId/documents/:documentId` | authenticated | One document, in the editor |
 | `/app/campaigns/:campaignId/maps` | authenticated | Uploaded map images         |
 | `/app/campaigns/:campaignId/members` | authenticated | Members and invitations |
-| `/app/settings`              | authenticated | Account settings (placeholder) |
+| `/app/profile`               | authenticated | Profile, avatar, account and licences |
 
 Campaign sections are child routes of `:campaignId`. The layout loads the campaign
 once and passes it down through the router outlet context, so `Locations`,
@@ -220,9 +220,11 @@ that, so a campaign and its first member always appear together:
 - `accept_invitation(p_invitation_id)` — creates the membership and consumes the invitation
 
 `profiles` exists because `auth.users` is not reachable through the API; a trigger
-keeps `email` in step. `display_name` is the one field a user writes themselves,
-and a column level grant — not a policy — is what stops them touching `email`:
-policies cannot compare against the old row. `campaign_invitations` is addressed to an email because the
+keeps `email` in step. Users may edit their display name, profile line, bio, and
+avatar fields. Column-level grants — not only the row policy — stop them touching
+the trigger-owned email. Uploaded avatars live in the private `profile-avatars`
+bucket under `<user_id>/<uuid>.<ext>`; signed URLs are issued only for the user or
+someone who shares a campaign with them. `campaign_invitations` is addressed to an email because the
 invited person may not have an account yet — a pending invitation is simply a row
 that still exists. Nothing sends email; the invitee sees it on their dashboard.
 
@@ -283,7 +285,7 @@ different roles, and arrives with the search feature.
 The 5e ruleset seeded by `supabase/migrations/20260814090000_entities.sql`
 transcribes mechanics from the SRD. The notice travels inside the system
 definition itself, so the app renders it from the same row that creates the
-obligation — see Settings → Rulesets and licences.
+obligation — see Profile → Rulesets and licences.
 
 > This work includes material from the System Reference Document 5.2.1
 > ("SRD 5.2.1") by Wizards of the Coast LLC, available at

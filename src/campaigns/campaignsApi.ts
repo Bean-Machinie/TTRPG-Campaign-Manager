@@ -2,6 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 import { requireSupabase } from '../lib/supabase/client'
 import { todayIsoDate } from '../lib/format'
 import { PROFILE_COLUMNS, personLabel } from '../profile/profileApi'
+import { isAvatarPreset } from '../profile/avatarPresets'
 import type { DocumentVisibility } from '../documents/visibility'
 import { parseEntityData, parseEntitySecrets } from '../entities/entityData'
 import type { EntitySecrets } from '../entities/entityData'
@@ -47,7 +48,13 @@ const CAMPAIGN_COLUMNS = 'id, name, created_at'
 
 type CampaignRow = { id: string; name: string; created_at: string }
 type MembershipRow = { id: string; user_id: string; role: CampaignRole }
-type MemberProfileRow = { id: string; email: string; display_name: string | null }
+type MemberProfileRow = {
+  id: string
+  email: string
+  display_name: string | null
+  avatar_path: string | null
+  avatar_preset: string | null
+}
 type InvitationRow = {
   id: string
   campaign_id: string
@@ -178,6 +185,19 @@ export async function listCampaignMembers(campaignId: string): Promise<CampaignM
 
   if (profileError) throw profileError
 
+  const avatarPaths = (profileData as MemberProfileRow[])
+    .map((profile) => profile.avatar_path)
+    .filter((path): path is string => Boolean(path))
+  const avatarUrlByPath = new Map<string, string>()
+  if (avatarPaths.length > 0) {
+    const { data: signedAvatars } = await supabase.storage
+      .from('profile-avatars')
+      .createSignedUrls(avatarPaths, 60 * 60)
+    for (const avatar of signedAvatars ?? []) {
+      if (avatar.path && avatar.signedUrl) avatarUrlByPath.set(avatar.path, avatar.signedUrl)
+    }
+  }
+
   const profileByUserId = new Map(
     (profileData as MemberProfileRow[]).map((profile) => [profile.id, profile]),
   )
@@ -193,6 +213,8 @@ export async function listCampaignMembers(campaignId: string): Promise<CampaignM
         userId: membership.user_id,
         email,
         displayName,
+        avatarPreset: isAvatarPreset(profile?.avatar_preset) ? profile.avatar_preset : null,
+        avatarUrl: profile?.avatar_path ? (avatarUrlByPath.get(profile.avatar_path) ?? null) : null,
         name: personLabel(displayName, email),
         role: membership.role,
       }

@@ -220,8 +220,8 @@ function useTrail(): Crumb[] {
   )
   const { byCampaign } = useCampaignContents(campaignsToLoad)
 
-  if (segments[0] === 'settings') {
-    crumbs.push({ label: 'Settings' })
+  if (segments[0] === 'profile') {
+    crumbs.push({ label: 'Profile' })
     return crumbs
   }
 

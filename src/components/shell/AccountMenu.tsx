@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ChevronUp, LogOut, Moon, Settings, Sun } from 'lucide-react'
+import { ChevronUp, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import { LazyMotion, domAnimation, m } from 'motion/react'
 import type { Variants } from 'motion/react'
 import { useAuth } from '../../auth/useAuth'
@@ -159,7 +159,11 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
           'dark:hover:bg-gray-800/60 dark:aria-expanded:bg-gray-800/60',
         )}
       >
-        <Avatar initials={initialsOf(name)} />
+        <Avatar
+          initials={initialsOf(name)}
+          src={profile?.avatarUrl}
+          preset={profile?.avatarPreset}
+        />
 
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white">
           {name}
@@ -225,11 +229,11 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             <m.button
               variants={itemVariants}
               role="menuitem"
-              onClick={() => go('/app/settings')}
+              onClick={() => go('/app/profile')}
               className={menuItem()}
             >
-              <Settings className={menuIcon} aria-hidden="true" />
-              <span className="flex-1">Settings</span>
+              <UserRound className={menuIcon} aria-hidden="true" />
+              <span className="flex-1">Profile</span>
             </m.button>
 
             {/*

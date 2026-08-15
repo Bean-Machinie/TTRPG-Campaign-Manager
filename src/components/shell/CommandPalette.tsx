@@ -14,7 +14,7 @@ import {
 } from 'react-aria-components'
 import type { Key } from 'react-aria-components'
 import { useNavigate } from 'react-router'
-import { Settings, Plus, X } from 'lucide-react'
+import { Plus, UserRound, X } from 'lucide-react'
 import type { CampaignSummary } from '../../campaigns/types'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { cn } from '../../lib/cn'
@@ -125,12 +125,12 @@ export function CommandPalette({ isOpen, onOpenChange, campaignId }: CommandPale
         to: '/app/campaigns/new',
       },
       {
-        id: 'nav:settings',
-        label: 'Settings',
-        hint: 'Your account',
+        id: 'nav:profile',
+        label: 'Profile',
+        hint: 'Your identity and account',
         group: 'Go to',
-        icon: cssIcon(Settings, 'spin'),
-        to: '/app/settings',
+        icon: cssIcon(UserRound, 'pulse'),
+        to: '/app/profile',
       },
     ]
 
@@ -335,7 +335,7 @@ function QuickActions({ onNavigate }: { onNavigate: (to: string) => void }) {
   const actions: Array<{ key: string; label: string; icon: SectionIcon; to: string }> = [
     { key: 'all', label: 'All campaigns', icon: ALL_CAMPAIGNS_ICON, to: '/app' },
     { key: 'new', label: 'New campaign', icon: cssIcon(Plus, 'spin'), to: '/app/campaigns/new' },
-    { key: 'settings', label: 'Settings', icon: cssIcon(Settings, 'spin'), to: '/app/settings' },
+    { key: 'profile', label: 'Profile', icon: cssIcon(UserRound, 'pulse'), to: '/app/profile' },
   ]
 
   return (
