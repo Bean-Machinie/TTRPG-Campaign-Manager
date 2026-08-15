@@ -7,6 +7,15 @@ import {
   sectionKey,
 } from './navigation'
 
+describe('tree item identity', () => {
+  it('gives the same section in different campaigns a different stable key', () => {
+    expect(sectionKey('campaign-a', 'documents')).not.toBe(
+      sectionKey('campaign-b', 'documents'),
+    )
+    expect(sectionKey('campaign-a', '')).not.toBe(sectionKey('campaign-b', ''))
+  })
+})
+
 describe('expansionAfterSectionActivation', () => {
   const documents = 'section:c1:documents'
 

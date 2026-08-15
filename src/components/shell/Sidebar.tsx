@@ -104,6 +104,7 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
           )}
         >
           <CampaignTree
+            key={activeCampaign?.id ?? 'no-campaign'}
             campaigns={activeCampaign ? [activeCampaign] : []}
             loading={campaignsLoading}
             rootless

@@ -10,7 +10,7 @@ import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
-import { Page, PageHeader } from '../../components/ui/Page'
+import { Page } from '../../components/ui/Page'
 import { Textarea } from '../../components/ui/Textarea'
 import { errorMessage } from '../../lib/errors'
 import { cn } from '../../lib/cn'
@@ -36,11 +36,6 @@ export function SettingsPage() {
 
   return (
     <Page>
-      <PageHeader
-        title="Profile"
-        description="Shape how you appear to the people in your campaigns."
-      />
-
       {error ? <Alert>{error}</Alert> : null}
       {loading ? <ProfileSkeleton /> : null}
       {profile ? (

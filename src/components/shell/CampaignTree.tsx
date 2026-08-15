@@ -199,7 +199,12 @@ export function CampaignTree({
 
       return (
         <TreeItem
-          key={section.path || 'overview'}
+          // In rootless sidebar mode these section items are top-level. Their
+          // React identity must therefore include the campaign as well as the
+          // section; otherwise switching campaigns reuses (for example) the
+          // old "overview" item while changing its React Aria id, which React
+          // Aria rejects with "Cannot change the id of an item".
+          key={sectionKey(campaign.id, section.path)}
           id={sectionKey(campaign.id, section.path)}
           textValue={section.label}
           onAction={() =>
