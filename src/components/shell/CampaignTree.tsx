@@ -60,6 +60,8 @@ type CampaignTreeProps = {
    */
   expandedKeys?: Set<Key>
   onExpandedChange?: (keys: Set<Key>) => void
+  /** Shows sections directly, for a campaign already named by the switcher above it. */
+  rootless?: boolean
   className?: string
   /** What stands in for the tree when there is nothing to put in it. */
   emptyState?: ReactNode
@@ -73,6 +75,7 @@ export function CampaignTree({
   onNavigate,
   expandedKeys,
   onExpandedChange,
+  rootless = false,
   className,
   emptyState,
 }: CampaignTreeProps) {
@@ -180,6 +183,101 @@ export function CampaignTree({
     )
   }
 
+  function sectionsFor(campaign: CampaignSummary) {
+    const campaignContents = byCampaign[campaign.id] ?? []
+
+    return CAMPAIGN_SECTIONS.map((section, sectionIndex) => {
+      const sectionItems = campaignContents.filter((item) =>
+        item.id.startsWith(`${section.path}:`),
+      )
+      const hasChildren = sectionItems.length > 0
+      const to = sectionHref(campaign.id, section.path)
+      const isSectionOverview = location.pathname === to
+      const isSectionActive = section.path
+        ? isSectionOverview || location.pathname.startsWith(`${to}/`)
+        : isSectionOverview
+
+      return (
+        <TreeItem
+          key={section.path || 'overview'}
+          id={sectionKey(campaign.id, section.path)}
+          textValue={section.label}
+          onAction={() =>
+            activateSection(
+              sectionKey(campaign.id, section.path),
+              to,
+              isSectionOverview,
+              hasChildren,
+            )
+          }
+          className="group outline-hidden"
+        >
+          <TreeItemContent>
+            {({ isExpanded }) => (
+              <TreeRow active={isSectionActive} level={rootless ? 0 : 1}>
+                {!rootless ? (
+                  <IndentGuides
+                    level={1}
+                    isLast={sectionIndex === CAMPAIGN_SECTIONS.length - 1}
+                  />
+                ) : null}
+                {hasChildren ? (
+                  <TreeChevron isExpanded={isExpanded} label={`${section.label} items`} />
+                ) : (
+                  <span className="size-5 shrink-0" aria-hidden="true" />
+                )}
+                <NavIcon
+                  icon={section.icon}
+                  size={18}
+                  className={cn(
+                    'shrink-0',
+                    isSectionActive
+                      ? 'text-brand-600 dark:text-brand-400'
+                      : 'text-gray-400 dark:text-gray-500',
+                  )}
+                />
+                <span className="min-w-0 flex-1 truncate">{section.label}</span>
+                {hasChildren ? (
+                  <span className="text-[0.6875rem] tabular-nums text-gray-400 dark:text-gray-500">
+                    {sectionItems.length}
+                  </span>
+                ) : null}
+              </TreeRow>
+            )}
+          </TreeItemContent>
+
+          {sectionItems.map((item, itemIndex) => (
+            <TreeItem
+              key={item.id}
+              id={entryKey(campaign.id, item.id)}
+              textValue={item.label}
+              onAction={() => onNavigate(item.to)}
+              className="group outline-hidden"
+            >
+              <TreeItemContent>
+                <TreeRow
+                  active={item.to !== to && isEntryRoute(location.pathname, item.to)}
+                  level={rootless ? 1 : 2}
+                >
+                  <IndentGuides
+                    level={rootless ? 1 : 2}
+                    isLast={itemIndex === sectionItems.length - 1}
+                    parentIsLast={sectionIndex === CAMPAIGN_SECTIONS.length - 1}
+                  />
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                </TreeRow>
+              </TreeItemContent>
+            </TreeItem>
+          ))}
+        </TreeItem>
+      )
+    })
+  }
+
   return (
     <Tree
       aria-label="Campaigns"
@@ -194,122 +292,36 @@ export function CampaignTree({
       onExpandedChange={changeExpanded}
       className={cn(CONTAINER, className)}
     >
-      {campaigns.map((campaign) => {
-        const campaignContents = byCampaign[campaign.id] ?? []
-        const isCampaignActive = location.pathname.startsWith(`/app/campaigns/${campaign.id}`)
+      {rootless
+        ? campaigns.flatMap((campaign) => sectionsFor(campaign))
+        : campaigns.map((campaign) => {
+            const isCampaignActive = location.pathname.startsWith(
+              `/app/campaigns/${campaign.id}`,
+            )
 
-        return (
-          <TreeItem
-            key={campaign.id}
-            id={campaignKey(campaign.id)}
-            textValue={campaign.name}
-            onAction={() => onNavigate(`/app/campaigns/${campaign.id}`)}
-            className="group outline-hidden"
-          >
-            <TreeItemContent>
-              {({ isExpanded }) => (
-                <TreeRow active={isCampaignActive} level={0} strong>
-                  <TreeChevron isExpanded={isExpanded} label={`${campaign.name} sections`} />
-                  <Avatar initials={initialsOf(campaign.name)} />
-                  <span className="min-w-0 flex-1 truncate">{campaign.name}</span>
-                  {loadingIds.has(campaign.id) ? <LoadingDot /> : null}
-                </TreeRow>
-              )}
-            </TreeItemContent>
+            return (
+              <TreeItem
+                key={campaign.id}
+                id={campaignKey(campaign.id)}
+                textValue={campaign.name}
+                onAction={() => onNavigate(`/app/campaigns/${campaign.id}`)}
+                className="group outline-hidden"
+              >
+                <TreeItemContent>
+                  {({ isExpanded }) => (
+                    <TreeRow active={isCampaignActive} level={0} strong>
+                      <TreeChevron isExpanded={isExpanded} label={`${campaign.name} sections`} />
+                      <Avatar initials={initialsOf(campaign.name)} />
+                      <span className="min-w-0 flex-1 truncate">{campaign.name}</span>
+                      {loadingIds.has(campaign.id) ? <LoadingDot /> : null}
+                    </TreeRow>
+                  )}
+                </TreeItemContent>
 
-            {CAMPAIGN_SECTIONS.map((section, sectionIndex) => {
-              const sectionItems = campaignContents.filter((item) =>
-                item.id.startsWith(`${section.path}:`),
-              )
-              const hasChildren = sectionItems.length > 0
-              const to = sectionHref(campaign.id, section.path)
-              const isSectionOverview = location.pathname === to
-              const isSectionActive = section.path
-                ? isSectionOverview || location.pathname.startsWith(`${to}/`)
-                : isSectionOverview
-
-              return (
-                <TreeItem
-                  key={section.path || 'overview'}
-                  id={sectionKey(campaign.id, section.path)}
-                  textValue={section.label}
-                  onAction={() =>
-                    activateSection(
-                      sectionKey(campaign.id, section.path),
-                      to,
-                      isSectionOverview,
-                      hasChildren,
-                    )
-                  }
-                  className="group outline-hidden"
-                >
-                  <TreeItemContent>
-                    {({ isExpanded }) => (
-                      <TreeRow active={isSectionActive} level={1}>
-                        <IndentGuides
-                          level={1}
-                          isLast={sectionIndex === CAMPAIGN_SECTIONS.length - 1}
-                        />
-                        {hasChildren ? (
-                          <TreeChevron isExpanded={isExpanded} label={`${section.label} items`} />
-                        ) : (
-                          <span className="size-5 shrink-0" aria-hidden="true" />
-                        )}
-                        <NavIcon
-                          icon={section.icon}
-                          size={18}
-                          className={cn(
-                            'shrink-0',
-                            isSectionActive
-                              ? 'text-brand-600 dark:text-brand-400'
-                              : 'text-gray-400 dark:text-gray-500',
-                          )}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{section.label}</span>
-                        {hasChildren ? (
-                          <span className="text-[0.6875rem] tabular-nums text-gray-400 dark:text-gray-500">
-                            {sectionItems.length}
-                          </span>
-                        ) : null}
-                      </TreeRow>
-                    )}
-                  </TreeItemContent>
-
-                  {sectionItems.map((item, itemIndex) => (
-                    <TreeItem
-                      key={item.id}
-                      id={entryKey(campaign.id, item.id)}
-                      textValue={item.label}
-                      onAction={() => onNavigate(item.to)}
-                      className="group outline-hidden"
-                    >
-                      <TreeItemContent>
-                        <TreeRow
-                          // At the entry's page, or at a section inside it — a
-                          // character's Sheet tab is still that character.
-                          active={item.to !== to && isEntryRoute(location.pathname, item.to)}
-                          level={2}
-                        >
-                          <IndentGuides
-                            level={2}
-                            isLast={itemIndex === sectionItems.length - 1}
-                            parentIsLast={sectionIndex === CAMPAIGN_SECTIONS.length - 1}
-                          />
-                          <span
-                            className="size-1.5 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"
-                            aria-hidden="true"
-                          />
-                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                        </TreeRow>
-                      </TreeItemContent>
-                    </TreeItem>
-                  ))}
-                </TreeItem>
-              )
-            })}
-          </TreeItem>
-        )
-      })}
+                {sectionsFor(campaign)}
+              </TreeItem>
+            )
+          })}
     </Tree>
   )
 }

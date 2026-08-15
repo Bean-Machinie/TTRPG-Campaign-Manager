@@ -65,7 +65,7 @@ function Shell() {
   return (
     <div className="flex h-dvh overflow-hidden bg-gray-50 dark:bg-gray-950">
       <aside className="hidden w-sidebar shrink-0 border-r border-gray-200 lg:block dark:border-gray-800">
-        <Sidebar onSearch={openSearch} />
+        <Sidebar />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -85,7 +85,6 @@ function Shell() {
         <Modal className="h-full w-sidebar max-w-[85vw] border-r border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
           <Dialog aria-label="Navigation" className="h-full outline-hidden">
             <Sidebar
-              onSearch={openSearch}
               onNavigate={() => setDrawerOpen(false)}
               onClose={() => setDrawerOpen(false)}
             />
