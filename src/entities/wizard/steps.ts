@@ -144,26 +144,50 @@ function classStepSchema(context: WizardContext) {
           message: `A ${entry.name} chooses a subclass at level ${entry.subclassLevel}.`,
         })
       }
+
+      if (first.subclass && !entry.subclasses.includes(first.subclass)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['data', 'classes', 0, 'subclass'],
+          message: `"${first.subclass}" is not an SRD subclass for ${entry.name}.`,
+        })
+      }
     })
 }
 
-function originStepSchema(_context: WizardContext) {
-  return z.object({
-    data: z.object({
-      species: z
-        .string()
-        .trim()
-        .min(1, 'Choose a species.')
-        .nullable()
-        .refine((value) => value !== null, 'Choose a species.'),
-      background: z
-        .string()
-        .trim()
-        .min(1, 'Choose a background.')
-        .nullable()
-        .refine((value) => value !== null, 'Choose a background.'),
-    }),
-  })
+function originStepSchema(context: WizardContext) {
+  return z
+    .object({
+      data: z.object({
+        species: z
+          .string()
+          .trim()
+          .min(1, 'Choose a species.')
+          .nullable()
+          .refine((value) => value !== null, 'Choose a species.'),
+        background: z
+          .string()
+          .trim()
+          .min(1, 'Choose a background.')
+          .nullable()
+          .refine((value) => value !== null, 'Choose a background.'),
+        size: z.string().nullable(),
+      }),
+    })
+    .superRefine((value, ctx) => {
+      const species = context.catalog?.species.find(
+        (entry) => entry.name.toLowerCase() === value.data.species?.toLowerCase(),
+      )
+      if (!species || species.sizes.length < 2) return
+
+      if (!value.data.size || !species.sizes.includes(value.data.size)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['data', 'size'],
+          message: `Choose ${species.sizes.join(' or ')} for this ${species.name}.`,
+        })
+      }
+    })
 }
 
 function abilitiesStepSchema(context: WizardContext) {

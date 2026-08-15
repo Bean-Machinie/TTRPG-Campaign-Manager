@@ -1,6 +1,6 @@
 import { cn } from '../../../lib/cn'
 import type { Variants } from 'motion/react'
-import { LazyMotion, domAnimation, m, useAnimation, useReducedMotion } from 'motion/react'
+import { LazyMotion, domAnimation, m, useReducedMotion } from 'motion/react'
 import {
   forwardRef,
   useCallback,
@@ -65,7 +65,7 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
         if (!isControlled.current) setState('animate')
         else onMouseEnter?.(e as React.MouseEvent<HTMLDivElement>)
       },
-      [controls, reduced, isAnimated, onMouseEnter],
+      [reduced, isAnimated, onMouseEnter],
     )
 
     const handleLeave = useCallback(
@@ -73,7 +73,7 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
         if (!isControlled.current) setState('normal')
         else onMouseLeave?.(e as React.MouseEvent<HTMLDivElement>)
       },
-      [controls, onMouseLeave],
+      [onMouseLeave],
     )
 
     const iconVariants: Variants = {

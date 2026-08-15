@@ -482,6 +482,7 @@ values (
       'name', 'CC BY 4.0',
       'url', 'https://creativecommons.org/licenses/by/4.0/legalcode',
       'sourceUrl', 'https://www.dndbeyond.com/srd',
+      'referenceUrl', 'https://github.com/downfallx/dnd-5e-srd-markdown',
       'notice',
         'This work includes material from the System Reference Document 5.2.1 '
         '("SRD 5.2.1") by Wizards of the Coast LLC, available at '

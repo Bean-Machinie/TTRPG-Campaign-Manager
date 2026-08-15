@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { catalogFor, findClass, findSpecies } from '../../../../../entities/srd/catalog'
+import {
+  SRD_REFERENCE,
+  catalogFor,
+  findBackground,
+  findClass,
+  findSpecies,
+  featuresForClass,
+} from '../../../../../entities/srd/catalog'
 import type { EntityData } from '../../../../../entities/entityData'
 import { useCharacterDetail } from '../detailContext'
 import { EditableSection, FeatureEditor } from '../editors'
@@ -25,6 +32,8 @@ export function FeaturesSection() {
   const catalog = catalogFor(system.key)
   const characterClass = findClass(catalog, display.classes[0]?.name ?? null)
   const species = findSpecies(catalog, display.species)
+  const background = findBackground(catalog, display.background)
+  const selectedSubclass = display.classes[0]?.subclass ?? null
 
   const [editing, setEditing] = useState<'traits' | 'actions' | null>(null)
   const [draft, setDraft] = useState<EntityData>(entity.data)
@@ -40,27 +49,32 @@ export function FeaturesSection() {
   }
 
   const level = display.level ?? 0
-  const classFeatures = (characterClass?.features ?? []).filter(
-    (feature) => feature.level <= level,
-  )
+  const classFeatures = featuresForClass(characterClass, level, selectedSubclass)
 
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-          Class features
-        </h2>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Class features
+          </h2>
+          {characterClass ? (
+            <a
+              className="text-xs text-gray-500 underline dark:text-gray-400"
+              href={SRD_REFERENCE.classesUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read canonical SRD rules
+            </a>
+          ) : null}
+        </div>
 
         {!characterClass ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {display.classes.length > 0
               ? `"${display.classes[0].name}" is not a class this ruleset knows about, so there is nothing to list.`
               : 'No class.'}
-          </p>
-        ) : classFeatures.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            The {characterClass.name} feature list has not been catalogued yet. The traits and
-            actions below are this character's own.
           </p>
         ) : (
           <ul className="flex flex-col gap-1 text-sm">
@@ -69,12 +83,36 @@ export function FeaturesSection() {
                 <span className="w-16 shrink-0 text-gray-500 dark:text-gray-400">
                   Level {feature.level}
                 </span>
-                <span className="text-gray-700 dark:text-gray-300">{feature.name}</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  {feature.name}
+                  {feature.subclass ? (
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                      {feature.subclass}
+                    </span>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {characterClass ? (
+        <section>
+          <h2 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Core proficiencies and equipment
+          </h2>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <ReferenceRow label="Primary ability" value={characterClass.primaryAbility} />
+            <ReferenceRow label="Weapons" value={characterClass.weaponProficiencies} />
+            <ReferenceRow label="Armor training" value={characterClass.armorTraining} />
+            {characterClass.toolProficiencies ? (
+              <ReferenceRow label="Class tools" value={characterClass.toolProficiencies} />
+            ) : null}
+            <ReferenceRow label="Starting equipment" value={characterClass.startingEquipment} wide />
+          </dl>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
@@ -100,6 +138,29 @@ export function FeaturesSection() {
           </p>
         )}
       </section>
+
+      {background ? (
+        <section>
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+              Background benefits
+            </h2>
+            <a
+              className="text-xs text-gray-500 underline dark:text-gray-400"
+              href={SRD_REFERENCE.originsUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read canonical SRD rules
+            </a>
+          </div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <ReferenceRow label="Origin feat" value={background.feat} />
+            <ReferenceRow label="Tool proficiency" value={background.toolProficiency} />
+            <ReferenceRow label="Starting equipment" value={background.startingEquipment} wide />
+          </dl>
+        </section>
+      ) : null}
 
       <EditableSection
         title="Traits"
@@ -149,6 +210,15 @@ export function FeaturesSection() {
           </p>
         </section>
       ) : null}
+    </div>
+  )
+}
+
+function ReferenceRow({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="font-medium text-gray-900 dark:text-gray-100">{label}</dt>
+      <dd className="mt-0.5 text-gray-500 dark:text-gray-400">{value}</dd>
     </div>
   )
 }

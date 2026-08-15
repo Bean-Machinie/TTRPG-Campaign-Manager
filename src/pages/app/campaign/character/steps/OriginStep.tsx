@@ -27,7 +27,7 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
 
     onPatchData({
       species: name || null,
-      ...(entry ? { size: entry.size, speed: `${entry.speed} ft.` } : {}),
+      ...(entry ? { size: entry.sizes[0], speed: `${entry.speed} ft.`, creatureType: 'humanoid' } : {}),
     })
   }
 
@@ -39,7 +39,8 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="flex flex-col gap-6">
+      <div className="grid gap-5 sm:grid-cols-2">
       {catalog ? (
         <Select
           label="Species"
@@ -93,6 +94,41 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
           onChange={(event) => setBackground(event.target.value)}
         />
       )}
+      {species && species.sizes.length > 1 ? (
+        <Select
+          label="Size"
+          value={draft.data.size ?? species.sizes[0]}
+          hint="This species lets you choose."
+          onChange={(event) => onPatchData({ size: event.target.value })}
+        >
+          {species.sizes.map((size) => (
+            <option key={size} value={size}>{size}</option>
+          ))}
+        </Select>
+      ) : null}
+      </div>
+
+      {background ? (
+        <section className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {background.name} background
+          </h2>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+            <ReferenceRow label="Origin feat" value={background.feat} />
+            <ReferenceRow label="Tool proficiency" value={background.toolProficiency} />
+            <ReferenceRow label="Starting equipment" value={background.startingEquipment} wide />
+          </dl>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
+function ReferenceRow({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="font-medium text-gray-900 dark:text-gray-100">{label}</dt>
+      <dd className="mt-0.5 text-gray-500 dark:text-gray-400">{value}</dd>
     </div>
   )
 }

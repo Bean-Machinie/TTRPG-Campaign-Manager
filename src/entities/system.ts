@@ -164,6 +164,8 @@ export const licenseSchema = z.object({
   name: z.string().min(1).max(120),
   url: z.string().max(400).optional(),
   sourceUrl: z.string().max(400).optional(),
+  /** Developer-friendly conversion used to verify the app's catalog. */
+  referenceUrl: z.string().max(400).optional(),
   notice: z.string().min(1).max(4000),
 })
 

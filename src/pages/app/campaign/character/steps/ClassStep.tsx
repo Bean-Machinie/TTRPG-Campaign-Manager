@@ -61,7 +61,8 @@ export function ClassStep({ draft, context, onPatchData }: StepProps) {
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="flex flex-col gap-6">
+      <div className="grid gap-5 sm:grid-cols-2">
       {catalog ? (
         <Select
           label="Class"
@@ -114,6 +115,34 @@ export function ClassStep({ draft, context, onPatchData }: StepProps) {
           yet.
         </p>
       ) : null}
+      </div>
+
+      {known ? (
+        <section className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Core {known.name} traits
+          </h2>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+            <ReferenceRow label="Primary ability" value={known.primaryAbility} />
+            <ReferenceRow label="Hit Point Die" value={`d${known.hitDie} per level`} />
+            <ReferenceRow label="Weapons" value={known.weaponProficiencies} />
+            <ReferenceRow label="Armor training" value={known.armorTraining} />
+            {known.toolProficiencies ? (
+              <ReferenceRow label="Tools" value={known.toolProficiencies} />
+            ) : null}
+            <ReferenceRow label="Starting equipment" value={known.startingEquipment} wide />
+          </dl>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
+function ReferenceRow({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="font-medium text-gray-900 dark:text-gray-100">{label}</dt>
+      <dd className="mt-0.5 text-gray-500 dark:text-gray-400">{value}</dd>
     </div>
   )
 }

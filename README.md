@@ -146,6 +146,15 @@ block's inherited visibility with its document's tier, so a secret inside an
 told apart by `kind`. It replaces `campaign_characters`, which is left in place
 but no longer read.
 
+The built-in D&D ruleset targets **SRD 5.2.1 (2024)**. Its character catalog in
+`src/entities/srd/catalog.ts` is checked against the pinned Markdown conversion
+at commit `1b4b99dcb786cdd1a2fb26f8acec1551191f1ca4` of
+[`downfallx/dnd-5e-srd-markdown`](https://github.com/downfallx/dnd-5e-srd-markdown).
+The catalog contains the SRD's 12 classes, 9 species, 4 backgrounds, core class
+traits, starting-equipment guidance, and level-gated core/subclass feature
+names. It intentionally does not copy feature rules prose; character pages link
+to the canonical reference, and unknown names continue to work as homebrew.
+
 **No rule is a column.** There is no `strength` field and there will not be one.
 A ruleset is a row in `game_systems` whose `definition` jsonb says which
 abilities exist, which ability governs each skill, what proficiency bonus a

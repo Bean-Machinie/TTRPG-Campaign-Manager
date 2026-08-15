@@ -122,6 +122,25 @@ describe('what each step demands before it will let go', () => {
     )
   })
 
+  it('rejects a subclass that belongs to a different class', () => {
+    const crossed = draft({
+      level: 3,
+      classes: [{ name: 'Rogue', level: 3, subclass: 'Champion' }],
+    })
+    expect(validateStep('class', crossed, context)).toContain(
+      '"Champion" is not an SRD subclass for Rogue.',
+    )
+  })
+
+  it('requires the size choice offered by a flexible-size species', () => {
+    const human = draft({ species: 'Human', background: 'Soldier', size: null })
+    expect(validateStep('origin', human, context)).toContain(
+      'Choose Small or Medium for this Human.',
+    )
+
+    expect(validateStep('origin', { ...human, data: { ...human.data, size: 'Small' } }, context)).toEqual([])
+  })
+
   it('leaves a homebrew class alone', () => {
     const homebrew = draft({
       level: 9,

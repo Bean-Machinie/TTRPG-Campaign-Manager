@@ -83,6 +83,21 @@ function Licences() {
               <strong>{system.name}</strong> · {license.name}
             </p>
             <p className="settings__hint">{license.notice}</p>
+            <p className="settings__hint">
+              {license.sourceUrl ? (
+                <a href={license.sourceUrl} target="_blank" rel="noreferrer">Official source</a>
+              ) : null}
+              {license.sourceUrl && license.referenceUrl ? ' · ' : null}
+              {license.referenceUrl ? (
+                <a href={license.referenceUrl} target="_blank" rel="noreferrer">
+                  Markdown reference used by this app
+                </a>
+              ) : null}
+              {(license.sourceUrl || license.referenceUrl) && license.url ? ' · ' : null}
+              {license.url ? (
+                <a href={license.url} target="_blank" rel="noreferrer">Licence</a>
+              ) : null}
+            </p>
           </div>
         )
       })}
