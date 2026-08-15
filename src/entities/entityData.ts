@@ -80,6 +80,20 @@ export const entityDataSchema = z.object({
   challengeRating: z.number().min(0).max(100).nullable().default(null),
 
   abilities: abilityScoresSchema.default({}),
+  /**
+   * How much of each ability score came from somewhere other than the roll.
+   *
+   * `abilities` still holds the *total*, so nothing that reads a score — the
+   * derivation module, the sheet, every formula — needs to know this field
+   * exists. What it buys is the ability to say where a 17 came from: a 15 the
+   * player assigned and a +2 their background granted, shown as two lines
+   * instead of one number that has quietly absorbed the other.
+   *
+   * Not recoverable after the fact, which is why it is stored. Totals plus a
+   * standard array admit several splits, and guessing which one the player
+   * chose would be a guess presented as a record.
+   */
+  abilityIncreases: abilityScoresSchema.default({}),
   proficiencies: z
     .object({
       saves: proficiencySchema.default({}),
@@ -118,6 +132,29 @@ export const entityDataSchema = z.object({
 
   traits: z.array(featureSchema).default([]),
   actions: z.array(featureSchema).default([]),
+
+  /**
+   * Who they are away from the arithmetic.
+   *
+   * Three fields rather than one, because they are three questions and a single
+   * "notes" box would collapse them back into the wall of text the detail page
+   * exists to break up. All optional, all prose, and none of them ever read by
+   * a rule.
+   */
+  appearance: z.string().max(4000).nullable().default(null),
+  personality: z.string().max(4000).nullable().default(null),
+  backstory: z.string().max(20000).nullable().default(null),
+
+  /**
+   * A statblock as typed, for the fifteen-second NPC.
+   *
+   * The structured fields above can express a monster completely, and quick
+   * create is the case where nobody wants to. A GM inventing a shopkeeper
+   * mid-session pastes or types whatever they have; it renders as text and
+   * derives nothing. Anything worth computing can be filled in later on the
+   * detail page, which is where the structured fields still are.
+   */
+  statblock: z.string().max(20000).nullable().default(null),
 })
 
 export type EntityData = z.infer<typeof entityDataSchema>
@@ -239,6 +276,10 @@ export function checkAgainstSystem(
   const knownStatKeys = new Set(statKeys(definition))
 
   for (const key of Object.keys(data.abilities)) {
+    if (!abilityKeys.has(key)) problems.push(`"${key}" is not an ability in this system.`)
+  }
+
+  for (const key of Object.keys(data.abilityIncreases)) {
     if (!abilityKeys.has(key)) problems.push(`"${key}" is not an ability in this system.`)
   }
 

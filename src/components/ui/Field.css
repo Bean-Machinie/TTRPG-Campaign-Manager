@@ -12,6 +12,12 @@
   color: var(--color-text-muted);
 }
 
+/* A sentence under a control, for a dependency the label has no room to state. */
+.field__hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
 .field__input {
   padding: 0.55rem 0.7rem;
   background-color: var(--color-bg);

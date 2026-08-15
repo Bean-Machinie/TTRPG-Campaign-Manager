@@ -1,14 +1,17 @@
 import { useId } from 'react'
-import type { InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode } from 'react'
 import './Field.css'
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string
+  /** A sentence under the control, tied to it by aria-describedby. */
+  hint?: ReactNode
 }
 
-export function Input({ label, id, className, ...rest }: InputProps) {
+export function Input({ label, hint, id, className, ...rest }: InputProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
+  const hintId = `${inputId}-hint`
 
   return (
     <div className="field">
@@ -18,8 +21,14 @@ export function Input({ label, id, className, ...rest }: InputProps) {
       <input
         className={['field__input', className].filter(Boolean).join(' ')}
         id={inputId}
+        aria-describedby={hint ? hintId : undefined}
         {...rest}
       />
+      {hint ? (
+        <p className="field__hint" id={hintId}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   )
 }

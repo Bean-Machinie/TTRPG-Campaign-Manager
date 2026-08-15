@@ -13,6 +13,7 @@ import {
   listCampaignQuests,
   listCampaignSessions,
   listCampaigns,
+  listEntityDrafts,
   listGameSystems,
   listPendingInvitations,
 } from './campaignsApi'
@@ -72,6 +73,16 @@ export function useCampaignEntities(campaignId: string) {
     'Could not load the characters of this campaign.',
   )
   return { entities: data ?? [], loading, error, reload }
+}
+
+/** Characters somebody started and did not finish, newest first. */
+export function useEntityDrafts(campaignId: string) {
+  const { data, loading, error, reload } = useAsyncData(
+    () => listEntityDrafts(campaignId),
+    `entity-drafts:${campaignId}`,
+    'Could not load the unfinished characters of this campaign.',
+  )
+  return { drafts: data ?? [], loading, error, reload }
 }
 
 /** One entity with its stats. Null means "not yours to read", as elsewhere. */

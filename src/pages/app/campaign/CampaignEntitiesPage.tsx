@@ -1,7 +1,11 @@
 import { Link } from 'react-router'
 import { useAuth } from '../../../auth/useAuth'
-import { useCampaignEntities, useCampaignMembers } from '../../../campaigns/hooks'
-import { ENTITY_KIND_PLURALS } from '../../../campaigns/types'
+import {
+  useCampaignEntities,
+  useCampaignMembers,
+  useEntityDrafts,
+} from '../../../campaigns/hooks'
+import { ENTITY_KIND_LABELS, ENTITY_KIND_PLURALS } from '../../../campaigns/types'
 import type { CampaignEntitySummary, EntityKind } from '../../../campaigns/types'
 import { VISIBILITY_BADGES } from '../../../documents/visibility'
 import { formatChallengeRating } from '../../../entities/entityData'
@@ -27,6 +31,7 @@ export function CampaignEntitiesPage() {
   const { user } = useAuth()
 
   const { entities, loading, error } = useCampaignEntities(campaign.id)
+  const { drafts } = useEntityDrafts(campaign.id)
   const { members } = useCampaignMembers(campaign.id)
 
   const nameByUserId = new Map(members.map((member) => [member.userId, member.name]))
@@ -68,6 +73,55 @@ export function CampaignEntitiesPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Nobody here yet. Start with a player character or an NPC.
         </p>
+      ) : null}
+
+      {/*
+        Unfinished characters, above the finished ones because they are the only
+        thing on this page that is waiting on somebody. They are excluded from
+        every other query — the list below, the command palette, anything that
+        counts characters — by listCampaignEntities, so this is the one place
+        they exist.
+      */}
+      {drafts.length > 0 ? (
+        <section>
+          <h2 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Unfinished
+          </h2>
+
+          <ul className="divide-y divide-gray-100 border-y border-gray-100 dark:divide-gray-800 dark:border-gray-800">
+            {drafts.map((entity) => (
+              <li key={entity.id} className="flex items-baseline justify-between gap-2 py-3">
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                    {entity.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {ENTITY_KIND_LABELS[entity.kind]} · started{' '}
+                    {entity.authorId === user?.id
+                      ? 'by you'
+                      : `by ${nameByUserId.get(entity.authorId) ?? 'a member'}`}
+                  </p>
+                </div>
+
+                {/*
+                  `resume` is not a step. The wizard reads it as "wherever this
+                  draft got to" and redirects to the earliest unfinished step,
+                  which is the same question its guard already answers.
+
+                  An NPC or a creature goes back to quick create instead,
+                  because that is where it was almost certainly started; the
+                  full wizard is one link away from there.
+                */}
+                <Link
+                  className="text-sm underline underline-offset-2"
+                  to={`new/${entity.id}/${entity.kind === 'pc' ? 'resume' : 'quick'}`}
+                >
+                  Resume
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {GROUPS.map((kind) => {

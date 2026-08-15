@@ -88,6 +88,15 @@ export const ENTITY_KIND_PLURALS: Record<EntityKind, string> = {
   creature: 'Creatures',
 }
 
+/**
+ * Mirrors the `status` check constraint on public.campaign_entities.
+ *
+ * Not a workflow. A draft is a character somebody is part-way through building,
+ * and the only thing the value decides is which list it appears in — every
+ * other query, renderer and permission treats the two identically.
+ */
+export type EntityStatus = 'draft' | 'complete'
+
 /** A ruleset: one row of public.game_systems, with its definition validated. */
 export type GameSystem = {
   id: string
@@ -114,6 +123,8 @@ export type CampaignEntitySummary = {
   playerUserId: string | null
   summary: string | null
   visibility: DocumentVisibility
+  /** Whether creation finished. Drafts are excluded from the character list. */
+  status: EntityStatus
   authorId: string
   level: number | null
   challengeRating: number | null
@@ -141,6 +152,12 @@ export type CampaignEntity = CampaignEntitySummary & {
  * write that emptiness back over the GM's notes — a data-loss bug with no
  * error message and no way to notice. Secrets are written through their own
  * call, by someone the policies would let write them anyway.
+ *
+ * Deliberately without `status` for a milder version of the same reason. The
+ * wizard saves this whole object after every step, and a status carried along
+ * with it is a status that can be written by accident — a finished character
+ * edited from the detail page would be sent back to whatever the form happened
+ * to be holding. Completion is its own call, made once, on purpose.
  */
 export type EntityInput = {
   name: string

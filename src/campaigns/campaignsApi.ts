@@ -26,6 +26,7 @@ import type {
   DocumentType,
   EntityInput,
   EntityKind,
+  EntityStatus,
   GameSystem,
   InvitableRole,
   LocationInput,
@@ -401,7 +402,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
 // One literal, unwrapped: supabase-js parses this string as a type, and a
 // concatenation of two literals widens to `string` and defeats it.
 // prettier-ignore
-const ENTITY_SUMMARY_COLUMNS = 'id, name, kind, system_id, player_user_id, summary, visibility, author_id, level, challenge_rating, creature_type, updated_at'
+const ENTITY_SUMMARY_COLUMNS = 'id, name, kind, system_id, player_user_id, summary, visibility, status, author_id, level, challenge_rating, creature_type, updated_at'
 
 type EntitySummaryRow = {
   id: string
@@ -411,6 +412,7 @@ type EntitySummaryRow = {
   player_user_id: string | null
   summary: string | null
   visibility: DocumentVisibility
+  status: EntityStatus
   author_id: string
   level: number | null
   challenge_rating: number | null
@@ -442,6 +444,7 @@ function toEntitySummary(row: EntitySummaryRow): CampaignEntitySummary {
     playerUserId: row.player_user_id,
     summary: row.summary,
     visibility: row.visibility,
+    status: row.status,
     authorId: row.author_id,
     level: row.level,
     challengeRating: row.challenge_rating,
@@ -519,8 +522,40 @@ export async function listCampaignEntities(
     .from('campaign_entities')
     .select(ENTITY_SUMMARY_COLUMNS)
     .eq('campaign_id', campaignId)
+    // A half-built character is not a character yet. Filtered here rather than
+    // on the page, so that everything downstream of this one function — the
+    // list, the command palette, anything counting entities — is spared having
+    // to remember. There is exactly one query that wants the other status, and
+    // it is the next function down.
+    .eq('status', 'complete')
     .order('kind', { ascending: true })
     .order('name', { ascending: true })
+
+  if (error) throw error
+  return (data as EntitySummaryRow[]).map(toEntitySummary)
+}
+
+/**
+ * Characters somebody started and did not finish.
+ *
+ * Not filtered by author: the read policy has already decided what may be seen,
+ * and a GM who can see your finished character can see your unfinished one. The
+ * list page groups them by whose they are; that is presentation, as with kinds.
+ *
+ * Newest first, because the one you want is nearly always the one you were just
+ * working on.
+ */
+export async function listEntityDrafts(
+  campaignId: string,
+): Promise<CampaignEntitySummary[]> {
+  const supabase = requireSupabase()
+
+  const { data, error } = await supabase
+    .from('campaign_entities')
+    .select(ENTITY_SUMMARY_COLUMNS)
+    .eq('campaign_id', campaignId)
+    .eq('status', 'draft')
+    .order('updated_at', { ascending: false })
 
   if (error) throw error
   return (data as EntitySummaryRow[]).map(toEntitySummary)
@@ -558,18 +593,49 @@ export async function getCampaignEntity(entityId: string): Promise<CampaignEntit
   }
 }
 
-/** Returns the new id, because creating an entity means opening it. */
-export async function createEntity(campaignId: string, input: EntityInput): Promise<string> {
+/**
+ * Returns the new id, because creating an entity means opening it — or, for a
+ * draft, because every step after the first is addressed by it.
+ *
+ * `status` is an argument here and nowhere else. Creation is the one moment
+ * where "this is not finished yet" is genuinely being decided; every later
+ * write is a save, and a save that could change this would eventually change it
+ * by accident.
+ */
+export async function createEntity(
+  campaignId: string,
+  input: EntityInput,
+  status: EntityStatus = 'complete',
+): Promise<string> {
   const supabase = requireSupabase()
 
   const { data, error } = await supabase
     .from('campaign_entities')
-    .insert({ campaign_id: campaignId, ...toEntityRow(input) })
+    .insert({ campaign_id: campaignId, status, ...toEntityRow(input) })
     .select('id')
     .single()
 
   if (error) throw error
   return (data as { id: string }).id
+}
+
+/**
+ * The end of the wizard: a draft becomes a character.
+ *
+ * One column, on its own, rather than a flag on the final save. The last step
+ * saves like every other step, and then this runs — so a completion that fails
+ * leaves a draft that is merely still a draft, rather than a character saved
+ * under a status nobody can account for.
+ */
+export async function completeEntity(entityId: string): Promise<void> {
+  const supabase = requireSupabase()
+
+  const { error } = await supabase
+    .from('campaign_entities')
+    .update({ status: 'complete' })
+    .eq('id', entityId)
+
+  if (error) throw error
 }
 
 export async function updateEntity(entityId: string, input: EntityInput): Promise<void> {

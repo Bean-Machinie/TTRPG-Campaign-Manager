@@ -15,8 +15,14 @@ import { CampaignOverviewPage } from './pages/app/campaign/CampaignOverviewPage'
 import { CampaignMembersPage } from './pages/app/campaign/CampaignMembersPage'
 import { CampaignSessionsPage } from './pages/app/campaign/CampaignSessionsPage'
 import { CampaignEntitiesPage } from './pages/app/campaign/CampaignEntitiesPage'
-import { CampaignEntityPage } from './pages/app/campaign/CampaignEntityPage'
-import { CampaignEntityEditPage } from './pages/app/campaign/CampaignEntityEditPage'
+import { NewCharacterPage } from './pages/app/campaign/character/NewCharacterPage'
+import { CharacterWizardPage } from './pages/app/campaign/character/CharacterWizardPage'
+import { QuickCreatePage } from './pages/app/campaign/character/QuickCreatePage'
+import { CharacterDetailPage } from './pages/app/campaign/character/CharacterDetailPage'
+import { SheetSection } from './pages/app/campaign/character/sections/SheetSection'
+import { FeaturesSection } from './pages/app/campaign/character/sections/FeaturesSection'
+import { DescriptionSection } from './pages/app/campaign/character/sections/DescriptionSection'
+import { NotesSection } from './pages/app/campaign/character/sections/NotesSection'
 import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPage'
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
 import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
@@ -76,9 +82,32 @@ export default function App() {
                 /characters path is kept as a redirect so links still resolve. */}
             <Route path="characters" element={<Navigate to="../entities" replace />} />
             <Route path="entities" element={<CampaignEntitiesPage />} />
-            <Route path="entities/new" element={<CampaignEntityEditPage />} />
-            <Route path="entities/:entityId" element={<CampaignEntityPage />} />
-            <Route path="entities/:entityId/edit" element={<CampaignEntityEditPage />} />
+
+            {/*
+              Creation is a sequence and editing is random access, so they are
+              different routes rather than one page doing both.
+
+              The wizard's step is a URL segment, which is what gives it a back
+              button, deep links and survival across a refresh. It is one route
+              and not seven: the step list lives in entities/wizard/steps.ts,
+              where the guard and the progress rail also read it, and a second
+              copy here would be a list that could disagree with the one
+              enforcing it. `new/:draftId/quick` is matched before it because a
+              static segment outranks a dynamic one.
+            */}
+            <Route path="entities/new" element={<NewCharacterPage />} />
+            <Route path="entities/new/:draftId/quick" element={<QuickCreatePage />} />
+            <Route path="entities/new/:draftId/:step" element={<CharacterWizardPage />} />
+
+            <Route path="entities/:entityId" element={<CharacterDetailPage />}>
+              <Route index element={<Navigate to="sheet" replace />} />
+              <Route path="sheet" element={<SheetSection />} />
+              <Route path="features" element={<FeaturesSection />} />
+              <Route path="description" element={<DescriptionSection />} />
+              <Route path="notes" element={<NotesSection />} />
+              {/* The old edit route, kept so existing links still resolve. */}
+              <Route path="edit" element={<Navigate to="../sheet" replace />} />
+            </Route>
             <Route path="locations" element={<CampaignLocationsPage />} />
             <Route path="quests" element={<CampaignQuestsPage />} />
             <Route path="notes" element={<CampaignNotesPage />} />
