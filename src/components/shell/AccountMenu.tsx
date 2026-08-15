@@ -185,7 +185,16 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         `clip-path` on the panel inside changes, so the box itself has nowhere
         to wander from.
       */}
-      <div className="absolute inset-x-0 bottom-full mb-2">
+      <div
+        className={cn(
+          'absolute inset-x-0 bottom-full mb-2',
+          // The closed panel keeps its full layout box so clip-path can animate
+          // without reflow. Make that invisible box transparent to the mouse;
+          // otherwise it sits over the lower campaign rows and swallows their
+          // clicks and wheel events even though the menu itself is inert.
+          open ? 'pointer-events-auto' : 'pointer-events-none',
+        )}
+      >
         <LazyMotion features={domAnimation} strict>
           <m.div
             role="menu"

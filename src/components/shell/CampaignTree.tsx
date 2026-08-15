@@ -18,6 +18,7 @@ import {
   CAMPAIGN_SECTIONS,
   campaignKey,
   entryKey,
+  expansionAfterSectionActivation,
   initialsOf,
   isEntryRoute,
   revealedKeys,
@@ -92,6 +93,22 @@ export function CampaignTree({
   function changeExpanded(keys: Set<Key>) {
     if (!expandedKeys) setOwnExpandedKeys(keys)
     onExpandedChange?.(keys)
+  }
+
+  /**
+   * Section labels navigate first and disclose second.
+   *
+   * Arriving from another section always leaves the destination open so its
+   * records remain visible. Once the section is already active, pressing its
+   * label again becomes a convenient toggle. The dedicated chevron continues
+   * to toggle independently without navigating.
+   */
+  function activateSection(key: Key, to: string, isActive: boolean, hasChildren: boolean) {
+    if (hasChildren) {
+      changeExpanded(expansionAfterSectionActivation(expanded, key, isActive, hasChildren))
+    }
+
+    onNavigate(to)
   }
 
   // Resolved in two passes rather than one, and that is fine: expanding the
@@ -207,7 +224,14 @@ export function CampaignTree({
                   key={section.path || 'overview'}
                   id={sectionKey(campaign.id, section.path)}
                   textValue={section.label}
-                  onAction={() => onNavigate(to)}
+                  onAction={() =>
+                    activateSection(
+                      sectionKey(campaign.id, section.path),
+                      to,
+                      isSectionActive,
+                      hasChildren,
+                    )
+                  }
                   className="group outline-hidden"
                 >
                   <TreeItemContent>

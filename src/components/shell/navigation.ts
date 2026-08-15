@@ -141,6 +141,26 @@ export const entryKey = (campaignId: string, entryId: string) =>
   `entry:${campaignId}:${entryId}`
 
 /**
+ * Expansion policy for activating a section label rather than its chevron.
+ * Navigation from elsewhere opens the destination; activating the section
+ * that is already current toggles it. Leaf sections have nothing to disclose.
+ */
+export function expansionAfterSectionActivation<T>(
+  expanded: ReadonlySet<T>,
+  key: T,
+  isActive: boolean,
+  hasChildren: boolean,
+): Set<T> {
+  const next = new Set(expanded)
+  if (!hasChildren) return next
+
+  if (isActive && next.has(key)) next.delete(key)
+  else next.add(key)
+
+  return next
+}
+
+/**
  * Whether a route is an entry's own page, or a page inside it.
  *
  * An entry used to be one URL, and this was an equality test. A character is

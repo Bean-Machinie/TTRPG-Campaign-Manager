@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Breadcrumb, Breadcrumbs } from 'react-aria-components'
 import { Link, useLocation } from 'react-router'
 import { ChevronRight, Dices, Menu } from 'lucide-react'
 import { APP_NAME } from '../../constants'
+import { useCampaignContents } from './commands'
 import { useCampaignList } from '../../campaigns/useCampaignList'
 import { IconButton } from '../ui/IconButton'
 import { SearchIcon } from './icons/SearchIcon'
@@ -96,8 +97,9 @@ type Crumb = { label: string; to?: string }
  *
  * Deriving it from the path rather than having each page declare its own is
  * what keeps it honest: there is no page that can forget to say where it is.
- * The one thing the URL cannot supply is a document's title — that is the
- * document page's own heading, and repeating it here would say it twice.
+ * Record names are resolved from the campaign-content cache when the route is
+ * inside a character. The URL only has an id, and putting that id in the trail
+ * would be technically accurate but useless to the person navigating it.
  */
 function useTrail(): Crumb[] {
   const { pathname } = useLocation()
@@ -105,6 +107,17 @@ function useTrail(): Crumb[] {
 
   const segments = pathname.split('/').filter(Boolean).slice(1)
   const crumbs: Crumb[] = [{ label: 'Campaigns', to: '/app' }]
+  const campaignId = segments[0] === 'campaigns' ? segments[1] : undefined
+  const campaign = campaigns.find((entry) => entry.id === campaignId)
+  const characterId =
+    segments[2] === 'entities' && segments[3] && segments[3] !== 'new'
+      ? segments[3]
+      : undefined
+  const campaignsToLoad = useMemo(
+    () => (campaign && characterId ? [campaign] : []),
+    [campaign, characterId],
+  )
+  const { byCampaign } = useCampaignContents(campaignsToLoad)
 
   if (segments[0] === 'settings') {
     crumbs.push({ label: 'Settings' })
@@ -118,12 +131,18 @@ function useTrail(): Crumb[] {
     return crumbs
   }
 
-  const campaignId = segments[1]
-  const campaign = campaigns.find((entry) => entry.id === campaignId)
+  if (!campaignId) return crumbs
   crumbs.push({ label: campaign?.name ?? 'Campaign', to: `/app/campaigns/${campaignId}` })
 
   const section = CAMPAIGN_SECTIONS.find((entry) => entry.path && entry.path === segments[2])
   if (section) crumbs.push({ label: section.label, to: sectionHref(campaignId, section.path) })
+
+  if (characterId) {
+    const character = byCampaign[campaignId]?.find(
+      (entry) => entry.id === `entities:${characterId}`,
+    )
+    crumbs.push({ label: character?.label ?? 'Character' })
+  }
 
   return crumbs
 }

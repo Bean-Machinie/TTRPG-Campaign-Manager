@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { campaignKey, isEntryRoute, revealedKeys, sectionKey } from './navigation'
+import {
+  campaignKey,
+  expansionAfterSectionActivation,
+  isEntryRoute,
+  revealedKeys,
+  sectionKey,
+} from './navigation'
+
+describe('expansionAfterSectionActivation', () => {
+  const documents = 'section:c1:documents'
+
+  it('keeps an open destination expanded when navigating from another section', () => {
+    expect(
+      expansionAfterSectionActivation(new Set([documents]), documents, false, true).has(documents),
+    ).toBe(true)
+  })
+
+  it('opens a closed destination when navigating from another section', () => {
+    expect(
+      expansionAfterSectionActivation(new Set(), documents, false, true).has(documents),
+    ).toBe(true)
+  })
+
+  it('collapses an open section when its active label is pressed again', () => {
+    expect(
+      expansionAfterSectionActivation(new Set([documents]), documents, true, true).has(documents),
+    ).toBe(false)
+  })
+
+  it('does not invent expansion state for a section without children', () => {
+    expect(
+      expansionAfterSectionActivation(new Set(), documents, false, false).has(documents),
+    ).toBe(false)
+  })
+})
 
 describe('isEntryRoute', () => {
   const character = '/app/campaigns/c1/entities/e-1'

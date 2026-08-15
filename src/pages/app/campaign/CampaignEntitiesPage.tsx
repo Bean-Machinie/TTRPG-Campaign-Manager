@@ -12,6 +12,7 @@ import { formatChallengeRating } from '../../../entities/entityData'
 import { Alert } from '../../../components/ui/Alert'
 import { ButtonLink } from '../../../components/ui/Button'
 import { useCampaignOutlet } from './useCampaignOutlet'
+import './characterGallery.css'
 
 /**
  * Everyone and everything in a campaign, in one list.
@@ -58,9 +59,18 @@ export function CampaignEntitiesPage() {
     return parts.join(' · ')
   }
 
+  function entityBadge(entity: CampaignEntitySummary): string {
+    if (entity.kind === 'pc' && entity.level !== null) return `LV ${entity.level}`
+    if (entity.kind !== 'pc' && entity.challengeRating !== null) {
+      return `CR ${formatChallengeRating(entity.challengeRating)}`
+    }
+    return ENTITY_KIND_LABELS[entity.kind]
+  }
+
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <div className="character-gallery__toolbar">
+        <p>{campaign.name}</p>
         <ButtonLink to="new">New character</ButtonLink>
       </div>
 
@@ -134,38 +144,39 @@ export function CampaignEntitiesPage() {
               {ENTITY_KIND_PLURALS[kind]}
             </h2>
 
-            <ul className="divide-y divide-gray-100 border-y border-gray-100 dark:divide-gray-800 dark:border-gray-800">
+            <ul className="character-gallery">
               {group.map((entity) => {
-                const badge = VISIBILITY_BADGES[entity.visibility]
+                const visibilityBadge = VISIBILITY_BADGES[entity.visibility]
 
                 return (
-                  <li key={entity.id} className="py-3">
-                    <h3 className="font-medium">
-                      <Link
-                        to={entity.id}
-                        className="text-gray-900 underline-offset-2 hover:underline dark:text-gray-100"
-                      >
-                        {entity.name}
-                      </Link>
-                      {/*
-                        Only ever a badge on something the reader can already
-                        see. There is no "3 hidden" line, because a count of
-                        NPCs you cannot open still tells you they exist.
-                      */}
-                      {badge ? (
-                        <span className="ml-2 rounded border border-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                          {badge}
+                  <li key={entity.id}>
+                    <Link
+                      to={entity.id}
+                      className={`character-card character-card--${cardPalette(entity)}`}
+                    >
+                      <span className="character-card__art" aria-hidden="true">
+                        <span className="character-card__monogram">
+                          {initials(entity.name)}
                         </span>
-                      ) : null}
-                    </h3>
+                      </span>
+                      <span className="character-card__scrim" aria-hidden="true" />
 
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{meta(entity)}</p>
+                      <span className="character-card__level">{entityBadge(entity)}</span>
 
-                    {entity.summary ? (
-                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                        {entity.summary}
-                      </p>
-                    ) : null}
+                      <span className="character-card__content">
+                        <span className="character-card__name">{entity.name}</span>
+                        <span className="character-card__subtitle">
+                          {entity.summary ?? meta(entity) ?? ENTITY_KIND_LABELS[entity.kind]}
+                        </span>
+                        <span className="character-card__rule" aria-hidden="true" />
+                        <span className="character-card__meta">
+                          <span>{ENTITY_KIND_LABELS[entity.kind]}</span>
+                          {meta(entity) ? <span>{meta(entity)}</span> : null}
+                          {/* Visibility is only labelled after access has already been granted. */}
+                          {visibilityBadge ? <span>{visibilityBadge}</span> : null}
+                        </span>
+                      </span>
+                    </Link>
                   </li>
                 )
               })}
@@ -175,4 +186,24 @@ export function CampaignEntitiesPage() {
       })}
     </div>
   )
+}
+
+const CARD_PALETTES = ['indigo', 'slate', 'violet', 'emerald', 'ember', 'ocean'] as const
+
+function cardPalette(entity: CampaignEntitySummary) {
+  let value = 0
+  for (const character of `${entity.kind}:${entity.id}`) {
+    value = (value * 31 + character.charCodeAt(0)) >>> 0
+  }
+  return CARD_PALETTES[value % CARD_PALETTES.length]
+}
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
 }
