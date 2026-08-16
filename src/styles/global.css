@@ -71,7 +71,7 @@
    * entire product without flattening the hierarchy between controls, cards,
    * dialogs and canvases.
    */
-  --roundness: 0.6;
+  --roundness: 0.4;
   --radius-xs: calc(4px * var(--roundness));
   --radius-sm: calc(6px * var(--roundness));
   --radius-md: calc(8px * var(--roundness));
