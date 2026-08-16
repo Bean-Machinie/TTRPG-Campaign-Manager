@@ -1,10 +1,13 @@
-import { FileText, MapPin, NotebookPen, ScrollText } from 'lucide-react'
+import { FileText, NotebookPen } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ComponentType, Ref } from 'react'
-import { CalendarRangeIcon } from './icons/CalendarRangeIcon'
+import { CalendarIcon } from './icons/CalendarIcon'
 import { CompassIcon } from './icons/CompassIcon'
+import { FolderIcon } from './icons/FolderIcon'
+import { LayoutDashboardIcon } from './icons/LayoutDashboardIcon'
 import { OrbitIcon } from './icons/OrbitIcon'
-import { TelescopeIcon } from './icons/TelescopeIcon'
+import { PinIcon } from './icons/PinIcon'
+import { SlidersHorizontalIcon } from './icons/SlidersHorizontalIcon'
 import { UserRoundPenIcon } from './icons/UserRoundPenIcon'
 import { UsersIcon } from './icons/UsersIcon'
 import type { AnimatedIconHandle } from './icons/types'
@@ -68,17 +71,46 @@ export type CampaignSection = {
   hint: string
 }
 
+export type MaterialGroup = {
+  label: string
+  path: 'documents' | 'notes' | 'quests'
+  icon: SectionIcon
+  hint: string
+}
+
+/** The three kinds of campaign material, nested beneath one workspace section. */
+export const MATERIAL_GROUPS: MaterialGroup[] = [
+  {
+    label: 'Documents',
+    path: 'documents',
+    icon: cssIcon(FileText, 'flip'),
+    hint: 'Pages, session logs, handouts and lore',
+  },
+  {
+    label: 'Notes',
+    path: 'notes',
+    icon: cssIcon(NotebookPen, 'wiggle'),
+    hint: 'Shared and private notes',
+  },
+  {
+    label: 'Quests',
+    path: 'quests',
+    icon: motionIcon(SlidersHorizontalIcon),
+    hint: 'Active, completed and abandoned threads',
+  },
+]
+
 export const CAMPAIGN_SECTIONS: CampaignSection[] = [
   {
     label: 'Overview',
     path: '',
-    icon: motionIcon(TelescopeIcon),
+    icon: motionIcon(LayoutDashboardIcon),
     hint: 'The campaign at a glance',
   },
   {
     label: 'Sessions',
     path: 'sessions',
-    icon: motionIcon(CalendarRangeIcon),
+    icon: motionIcon(CalendarIcon),
     hint: 'What you played, and what is scheduled',
   },
   {
@@ -90,26 +122,14 @@ export const CAMPAIGN_SECTIONS: CampaignSection[] = [
   {
     label: 'Locations',
     path: 'locations',
-    icon: cssIcon(MapPin, 'drop'),
+    icon: motionIcon(PinIcon),
     hint: 'Places in the world',
   },
   {
-    label: 'Quests',
-    path: 'quests',
-    icon: cssIcon(ScrollText, 'wiggle'),
-    hint: 'Active, completed and abandoned threads',
-  },
-  {
-    label: 'Notes',
-    path: 'notes',
-    icon: cssIcon(NotebookPen, 'wiggle'),
-    hint: 'Shared and private notes',
-  },
-  {
-    label: 'Documents',
-    path: 'documents',
-    icon: cssIcon(FileText, 'flip'),
-    hint: 'Pages, session logs, handouts and lore',
+    label: 'Material',
+    path: 'material',
+    icon: motionIcon(FolderIcon),
+    hint: 'Documents, notes and quests in one nested workspace',
   },
   {
     label: 'Maps',
@@ -130,12 +150,20 @@ export function sectionHref(campaignId: string, path: string) {
   return path ? `/app/campaigns/${campaignId}/${path}` : `/app/campaigns/${campaignId}`
 }
 
+export function materialHref(campaignId: string, path?: string) {
+  const root = sectionHref(campaignId, 'material')
+  return path ? `${root}/${path}` : root
+}
+
 /* The tree's row keys. One scheme, so that a key can be built from a route as
    easily as from the row that renders it. */
 export const campaignKey = (campaignId: string) => `campaign:${campaignId}`
 
 export const sectionKey = (campaignId: string, path: string) =>
   `section:${campaignId}:${path || 'overview'}`
+
+export const materialGroupKey = (campaignId: string, path: string) =>
+  `material-group:${campaignId}:${path}`
 
 export const entryKey = (campaignId: string, entryId: string) =>
   `entry:${campaignId}:${entryId}`
@@ -199,6 +227,16 @@ export function revealedKeys(
   if (!campaignId) return []
 
   const keys = [campaignKey(campaignId)]
+
+  const materialRoot = materialHref(campaignId)
+  if (pathname === materialRoot || pathname.startsWith(`${materialRoot}/`)) {
+    keys.push(sectionKey(campaignId, 'material'))
+    const group = MATERIAL_GROUPS.find(({ path }) =>
+      pathname === `${materialRoot}/${path}` || pathname.startsWith(`${materialRoot}/${path}/`),
+    )
+    if (group) keys.push(materialGroupKey(campaignId, group.path))
+    return keys
+  }
 
   const entry = entries.find((item) => {
     if (!isEntryRoute(pathname, item.to)) return false

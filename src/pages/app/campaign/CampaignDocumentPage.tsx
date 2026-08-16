@@ -45,7 +45,7 @@ export function CampaignDocumentPage() {
         <h2 className="section-title">Document not found</h2>
         <p className="entry-status">
           It does not exist, or it is not shared with you.{' '}
-          <Link to={`/app/campaigns/${campaign.id}/documents`}>Back to documents</Link>
+          <Link to={`/app/campaigns/${campaign.id}/material/documents`}>Back to documents</Link>
         </p>
       </Card>
     )

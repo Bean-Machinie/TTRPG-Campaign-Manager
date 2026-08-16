@@ -105,6 +105,7 @@ function useSectionHeading(): { title: string; description: string } | 'own' | n
   const segments = pathname.split('/').filter(Boolean).slice(3)
 
   if (segments.length === 0) return null
+  if (segments[0] === 'material') return 'own'
   if (segments.length > 1) return 'own'
 
   const section = CAMPAIGN_SECTIONS.find((entry) => entry.path === segments[0])

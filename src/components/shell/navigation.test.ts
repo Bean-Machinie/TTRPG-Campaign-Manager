@@ -3,6 +3,7 @@ import {
   campaignKey,
   expansionAfterSectionActivation,
   isEntryRoute,
+  materialGroupKey,
   revealedKeys,
   sectionKey,
 } from './navigation'
@@ -101,6 +102,31 @@ describe('revealedKeys', () => {
   it('opens the campaign but not a section for a section route', () => {
     expect(revealedKeys('c1', documents, '/app/campaigns/c1/documents')).toEqual([
       campaignKey('c1'),
+    ])
+  })
+
+  it('opens Material and the nested type for a material route', () => {
+    expect(revealedKeys('c1', [], '/app/campaigns/c1/material/notes')).toEqual([
+      campaignKey('c1'),
+      sectionKey('c1', 'material'),
+      materialGroupKey('c1', 'notes'),
+    ])
+  })
+
+  it('reveals every parent of a document in the material tree', () => {
+    const materialDocuments = [
+      {
+        id: 'documents:doc-2',
+        to: '/app/campaigns/c1/material/documents/doc-2',
+      },
+    ]
+
+    expect(
+      revealedKeys('c1', materialDocuments, '/app/campaigns/c1/material/documents/doc-2'),
+    ).toEqual([
+      campaignKey('c1'),
+      sectionKey('c1', 'material'),
+      materialGroupKey('c1', 'documents'),
     ])
   })
 

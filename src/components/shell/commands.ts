@@ -10,7 +10,13 @@ import {
   listCampaignQuests,
   listCampaignSessions,
 } from '../../campaigns/campaignsApi'
-import { ALL_CAMPAIGNS_ICON, CAMPAIGN_SECTIONS, sectionHref } from './navigation'
+import {
+  ALL_CAMPAIGNS_ICON,
+  CAMPAIGN_SECTIONS,
+  MATERIAL_GROUPS,
+  materialHref,
+  sectionHref,
+} from './navigation'
 import type { SectionIcon } from './navigation'
 
 /**
@@ -174,6 +180,7 @@ export function useCampaignContents(campaigns: CampaignSummary[]) {
 }
 
 const sectionByPath = new Map(CAMPAIGN_SECTIONS.map((section) => [section.path, section]))
+const materialGroupByPath = new Map(MATERIAL_GROUPS.map((group) => [group.path, group]))
 
 function settledValue<T>(result: PromiseSettledResult<T[]>): T[] {
   return result.status === 'fulfilled' ? result.value : []
@@ -316,7 +323,7 @@ async function fetchCampaignContents(
       id: item.id,
       label: item.title,
       hint: 'Document',
-      to: `${sectionHref(campaignId, 'documents')}/${item.id}`,
+      to: `${materialHref(campaignId, 'documents')}/${item.id}`,
     })),
     ...toCommands(maps, 'maps', group, (item) => ({
       id: item.id,
@@ -334,6 +341,7 @@ async function fetchCampaignContents(
     describe: (item: T) => { id: string; label: string; hint: string; to?: string },
   ): Command[] {
     const section = sectionByPath.get(path)
+    const materialGroup = materialGroupByPath.get(path as 'documents' | 'notes' | 'quests')
 
     return items.map((item) => {
       const described = describe(item)
@@ -342,8 +350,8 @@ async function fetchCampaignContents(
         label: described.label,
         hint: described.hint,
         group: groupName,
-        icon: section?.icon ?? ALL_CAMPAIGNS_ICON,
-        to: described.to ?? sectionHref(campaignId, path),
+        icon: section?.icon ?? materialGroup?.icon ?? ALL_CAMPAIGNS_ICON,
+        to: described.to ?? (materialGroup ? materialHref(campaignId, path) : sectionHref(campaignId, path)),
         campaignId,
       }
     })

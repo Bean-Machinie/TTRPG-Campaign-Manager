@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useParams } from 'react-router'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { LoadingScreen } from './components/layout/LoadingScreen'
 import { PublicOnlyRoute } from './auth/PublicOnlyRoute'
@@ -27,6 +27,7 @@ import { CampaignLocationsPage } from './pages/app/campaign/CampaignLocationsPag
 import { CampaignQuestsPage } from './pages/app/campaign/CampaignQuestsPage'
 import { CampaignNotesPage } from './pages/app/campaign/CampaignNotesPage'
 import { CampaignDocumentsPage } from './pages/app/campaign/CampaignDocumentsPage'
+import { CampaignMaterialPage } from './pages/app/campaign/CampaignMaterialPage'
 import { CampaignMapsPage } from './pages/app/campaign/CampaignMapsPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -104,19 +105,25 @@ export default function App() {
               <Route path="edit" element={<Navigate to="../sheet" replace />} />
             </Route>
             <Route path="locations" element={<CampaignLocationsPage />} />
-            <Route path="quests" element={<CampaignQuestsPage />} />
-            <Route path="notes" element={<CampaignNotesPage />} />
-            {/* A document is the only section with a page of its own, because
-                it is the only one you open rather than read from a list. */}
-            <Route path="documents" element={<CampaignDocumentsPage />} />
-            <Route
-              path="documents/:documentId"
-              element={
-                <Suspense fallback={<LoadingScreen />}>
-                  <CampaignDocumentPage />
-                </Suspense>
-              }
-            />
+            <Route path="material" element={<CampaignMaterialPage />}>
+              <Route index element={<Navigate to="documents" replace />} />
+              <Route path="quests" element={<CampaignQuestsPage />} />
+              <Route path="notes" element={<CampaignNotesPage />} />
+              <Route path="documents" element={<CampaignDocumentsPage />} />
+              <Route
+                path="documents/:documentId"
+                element={
+                  <Suspense fallback={<LoadingScreen />}>
+                    <CampaignDocumentPage />
+                  </Suspense>
+                }
+              />
+            </Route>
+            {/* Compatibility redirects for bookmarks from before Material became one tree. */}
+            <Route path="quests" element={<Navigate to="../material/quests" replace />} />
+            <Route path="notes" element={<Navigate to="../material/notes" replace />} />
+            <Route path="documents" element={<Navigate to="../material/documents" replace />} />
+            <Route path="documents/:documentId" element={<LegacyDocumentRedirect />} />
             <Route path="maps" element={<CampaignMapsPage />} />
             <Route path="members" element={<CampaignMembersPage />} />
           </Route>
@@ -127,4 +134,9 @@ export default function App() {
       </Route>
     </Routes>
   )
+}
+
+function LegacyDocumentRedirect() {
+  const { documentId } = useParams()
+  return <Navigate to={`../material/documents/${documentId ?? ''}`} replace />
 }

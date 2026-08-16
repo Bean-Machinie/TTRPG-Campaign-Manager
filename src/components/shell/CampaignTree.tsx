@@ -16,11 +16,14 @@ import { useCampaignContents } from './commands'
 import { NavIcon } from './NavIcon'
 import {
   CAMPAIGN_SECTIONS,
+  MATERIAL_GROUPS,
   campaignKey,
   entryKey,
   expansionAfterSectionActivation,
   initialsOf,
   isEntryRoute,
+  materialGroupKey,
+  materialHref,
   revealedKeys,
   sectionHref,
   sectionKey,
@@ -187,10 +190,13 @@ export function CampaignTree({
     const campaignContents = byCampaign[campaign.id] ?? []
 
     return CAMPAIGN_SECTIONS.map((section, sectionIndex) => {
-      const sectionItems = campaignContents.filter((item) =>
-        item.id.startsWith(`${section.path}:`),
-      )
-      const hasChildren = sectionItems.length > 0
+      const sectionItems =
+        section.path === 'material'
+          ? campaignContents.filter((item) =>
+              MATERIAL_GROUPS.some((group) => item.id.startsWith(`${group.path}:`)),
+            )
+          : campaignContents.filter((item) => item.id.startsWith(`${section.path}:`))
+      const hasChildren = section.path === 'material' || sectionItems.length > 0
       const to = sectionHref(campaign.id, section.path)
       const isSectionOverview = location.pathname === to
       const isSectionActive = section.path
@@ -251,7 +257,98 @@ export function CampaignTree({
             )}
           </TreeItemContent>
 
-          {sectionItems.map((item, itemIndex) => (
+          {section.path === 'material'
+            ? MATERIAL_GROUPS.map((group, groupIndex) => {
+                const groupItems = sectionItems.filter((item) =>
+                  item.id.startsWith(`${group.path}:`),
+                )
+                const groupTo = materialHref(campaign.id, group.path)
+                const isGroupOverview = location.pathname === groupTo
+                const isGroupActive =
+                  isGroupOverview || location.pathname.startsWith(`${groupTo}/`)
+                const groupKey = materialGroupKey(campaign.id, group.path)
+
+                return (
+                  <TreeItem
+                    key={groupKey}
+                    id={groupKey}
+                    textValue={group.label}
+                    onAction={() =>
+                      activateSection(
+                        groupKey,
+                        groupTo,
+                        isGroupOverview,
+                        groupItems.length > 0,
+                      )
+                    }
+                    className="group outline-hidden"
+                  >
+                    <TreeItemContent>
+                      {({ isExpanded }) => (
+                        <TreeRow active={isGroupActive} level={rootless ? 1 : 2}>
+                          <IndentGuides
+                            level={rootless ? 1 : 2}
+                            isLast={groupIndex === MATERIAL_GROUPS.length - 1}
+                            parentIsLast={sectionIndex === CAMPAIGN_SECTIONS.length - 1}
+                          />
+                          {groupItems.length > 0 ? (
+                            <TreeChevron isExpanded={isExpanded} label={`${group.label} items`} />
+                          ) : (
+                            <span className="size-5 shrink-0" aria-hidden="true" />
+                          )}
+                          <NavIcon
+                            icon={group.icon}
+                            size={17}
+                            className={cn(
+                              isGroupActive
+                                ? 'text-brand-600 dark:text-brand-400'
+                                : 'text-gray-400 dark:text-gray-500',
+                            )}
+                          />
+                          <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                          {groupItems.length > 0 ? (
+                            <span className="text-[0.6875rem] tabular-nums text-gray-400 dark:text-gray-500">
+                              {groupItems.length}
+                            </span>
+                          ) : null}
+                        </TreeRow>
+                      )}
+                    </TreeItemContent>
+
+                    {groupItems.map((item, itemIndex) => (
+                      <TreeItem
+                        key={item.id}
+                        id={entryKey(campaign.id, item.id)}
+                        textValue={item.label}
+                        onAction={() => onNavigate(item.to)}
+                        className="group outline-hidden"
+                      >
+                        <TreeItemContent>
+                          <TreeRow
+                            active={item.to !== groupTo && isEntryRoute(location.pathname, item.to)}
+                            level={rootless ? 2 : 3}
+                          >
+                            <IndentGuides
+                              level={rootless ? 2 : 3}
+                              isLast={itemIndex === groupItems.length - 1}
+                              parentIsLast={groupIndex === MATERIAL_GROUPS.length - 1}
+                              grandparentIsLast={
+                                sectionIndex === CAMPAIGN_SECTIONS.length - 1
+                              }
+                            />
+                            <span
+                              className="size-1.5 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"
+                              aria-hidden="true"
+                            />
+                            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          </TreeRow>
+                        </TreeItemContent>
+                      </TreeItem>
+                    ))}
+                  </TreeItem>
+                )
+              })
+            : sectionItems.map((item, itemIndex) => (
             <TreeItem
               key={item.id}
               id={entryKey(campaign.id, item.id)}
@@ -277,7 +374,7 @@ export function CampaignTree({
                 </TreeRow>
               </TreeItemContent>
             </TreeItem>
-          ))}
+              ))}
         </TreeItem>
       )
     })
@@ -338,20 +435,21 @@ function TreeRow({
   children,
 }: {
   active: boolean
-  level: 0 | 1 | 2
+  level: 0 | 1 | 2 | 3
   strong?: boolean
   children: ReactNode
 }) {
   return (
     <div
       className={cn(
-        'relative flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 text-sm',
+        'icon-host relative flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 text-sm',
         'transition-colors duration-100 outline-hidden',
         'group-data-[hovered]:bg-gray-50 group-data-[focus-visible]:outline-2 group-data-[focus-visible]:-outline-offset-2 group-data-[focus-visible]:outline-brand-600',
         'dark:group-data-[hovered]:bg-gray-800/60',
         level === 0 && 'pl-1',
         level === 1 && 'pl-8',
         level === 2 && 'pl-15 text-[0.8125rem]',
+        level === 3 && 'pl-22 text-[0.8125rem]',
         strong ? 'font-semibold' : 'font-medium',
         active
           ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50'
@@ -400,18 +498,27 @@ function IndentGuides({
   level,
   isLast,
   parentIsLast = true,
+  grandparentIsLast = true,
 }: {
-  level: 1 | 2
+  level: 1 | 2 | 3
   isLast: boolean
   parentIsLast?: boolean
+  grandparentIsLast?: boolean
 }) {
   const stroke = 'bg-gray-200 dark:bg-gray-700'
-  const column = level === 1 ? 'left-3.5' : 'left-[2.625rem]'
+  const column =
+    level === 1 ? 'left-3.5' : level === 2 ? 'left-[2.625rem]' : 'left-[4.375rem]'
 
   return (
     <span aria-hidden="true" className="pointer-events-none absolute inset-0">
       {level === 2 && !parentIsLast ? (
         <span className={cn('absolute -inset-y-0.5 left-3.5 w-px', stroke)} />
+      ) : null}
+      {level === 3 && !grandparentIsLast ? (
+        <span className={cn('absolute -inset-y-0.5 left-3.5 w-px', stroke)} />
+      ) : null}
+      {level === 3 && !parentIsLast ? (
+        <span className={cn('absolute -inset-y-0.5 left-[2.625rem] w-px', stroke)} />
       ) : null}
       <span
         className={cn(
