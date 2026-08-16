@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { Link, NavLink, Navigate, Outlet, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  ArrowLeft,
+  BookOpenText,
+  EyeOff,
+  Shield,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '../../../../auth/useAuth'
 import {
   useCampaignEntity,
@@ -15,14 +25,18 @@ import { ENTITY_KIND_LABELS } from '../../../../campaigns/types'
 import type { EntityInput } from '../../../../campaigns/types'
 import { VISIBILITY_BADGES, VISIBILITY_LABELS } from '../../../../documents/visibility'
 import { canEditEntity } from '../../../../entities/access'
-import { applyOverlay, formatChallengeRating } from '../../../../entities/entityData'
+import { deriveEntity, displayValue } from '../../../../entities/derive'
+import { applyOverlay, formatChallengeRating, formatModifier } from '../../../../entities/entityData'
 import type { EntitySecrets } from '../../../../entities/entityData'
+import { PROFICIENCY_BONUS_KEY } from '../../../../entities/system'
 import { invalidateCampaignContents } from '../../../../components/shell/commands'
 import { errorMessage } from '../../../../lib/errors'
 import { Alert } from '../../../../components/ui/Alert'
 import { Button } from '../../../../components/ui/Button'
 import { useCampaignOutlet } from '../useCampaignOutlet'
 import type { CharacterDetailContext } from './detailContext'
+import { readDraftPortrait } from './draftPortrait'
+import './characterExperience.css'
 
 /**
  * One character, as four sections rather than one scroll.
@@ -44,13 +58,13 @@ import type { CharacterDetailContext } from './detailContext'
  * steps.
  */
 
-const SECTIONS: Array<{ path: string; label: string; managersOnly?: boolean }> = [
-  { path: 'sheet', label: 'Sheet' },
-  { path: 'features', label: 'Features' },
-  { path: 'description', label: 'Description' },
+const SECTIONS: Array<{ path: string; label: string; icon: LucideIcon; managersOnly?: boolean }> = [
+  { path: 'sheet', label: 'Sheet', icon: Shield },
+  { path: 'features', label: 'Features', icon: Sparkles },
+  { path: 'description', label: 'Story', icon: BookOpenText },
   // Hidden rather than gated: for anyone who is not a manager the server sends
   // an empty secrets object, so there would be nothing behind this tab anyway.
-  { path: 'notes', label: 'GM notes', managersOnly: true },
+  { path: 'notes', label: 'GM notes', icon: EyeOff, managersOnly: true },
 ]
 
 export function CharacterDetailPage() {
@@ -58,6 +72,7 @@ export function CharacterDetailPage() {
   const { campaign, role } = useCampaignOutlet()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const { entity, loading, error, reload } = useCampaignEntity(entityId)
   const { systems, loading: systemsLoading, error: systemsError } = useGameSystems()
@@ -165,10 +180,11 @@ export function CharacterDetailPage() {
       .finally(() => setBusy(false))
   }
 
+  const display = applyOverlay(entity.data, entity.secrets.data)
   const context: CharacterDetailContext = {
     entity,
     system,
-    display: applyOverlay(entity.data, entity.secrets.data),
+    display,
     editable,
     canManage,
     save,
@@ -176,59 +192,107 @@ export function CharacterDetailPage() {
   }
 
   const sections = SECTIONS.filter((section) => !section.managersOnly || canManage)
+  const sheet = deriveEntity(system.definition, display)
+  const portrait = readDraftPortrait(entity.id)
+  const characterClass = display.classes[0]
+  const heroStats = [
+    {
+      label: 'Hit points',
+      value: display.resources.hitPoints?.max ?? '—',
+    },
+    {
+      label: 'Proficiency',
+      value: sheetValue(sheet, PROFICIENCY_BONUS_KEY, true),
+    },
+    ...system.definition.derived.slice(0, 2).map((stat) => ({
+      label: stat.label,
+      value: sheetValue(sheet, stat.key, stat.display === 'modifier'),
+    })),
+  ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="character-overview flex flex-col gap-5">
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            {entity.name}
-            {badge ? (
-              <span className="ml-2 rounded-xs border border-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                {badge}
-              </span>
-            ) : null}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {[
-              ENTITY_KIND_LABELS[entity.kind],
-              system.name,
-              playedBy ? `Played by ${playedBy}` : null,
-              entity.challengeRating !== null
-                ? `CR ${formatChallengeRating(entity.challengeRating)}`
-                : null,
-              VISIBILITY_LABELS[entity.visibility],
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
+      <Link className="character-overview__back" to={listHref}>
+        <ArrowLeft aria-hidden="true" />
+        Back to the cast
+      </Link>
+
+      <header className="character-overview__hero">
+        <div className="character-overview__portrait">
+          {portrait ? (
+            <img src={portrait} alt={`${entity.name} portrait`} />
+          ) : (
+            <span className="character-overview__monogram" aria-hidden="true">
+              {initials(entity.name)}
+            </span>
+          )}
         </div>
 
-        {editable ? (
-          <Button variant="secondary" disabled={busy} onClick={handleDelete}>
-            Delete
-          </Button>
-        ) : null}
+        <div className="character-overview__identity">
+          <p className="character-overview__eyebrow">
+            {characterClass?.name ?? ENTITY_KIND_LABELS[entity.kind]}
+            {display.level !== null ? ` · Level ${display.level}` : ''}
+          </p>
+          <div className="character-overview__title-row">
+            <div>
+              <h1 className="character-overview__title">{entity.name}</h1>
+              <div className="character-overview__badges">
+                {display.species ? <span className="character-overview__badge">{display.species}</span> : null}
+                {display.background ? <span className="character-overview__badge">{display.background}</span> : null}
+                {playedBy ? <span className="character-overview__badge">Played by {playedBy}</span> : null}
+                {entity.challengeRating !== null ? (
+                  <span className="character-overview__badge">
+                    CR {formatChallengeRating(entity.challengeRating)}
+                  </span>
+                ) : null}
+                {badge ? <span className="character-overview__badge">{badge}</span> : null}
+                <span className="character-overview__badge">{VISIBILITY_LABELS[entity.visibility]}</span>
+              </div>
+            </div>
+
+            {editable ? (
+              <Button
+                className="character-overview__delete"
+                variant="secondary"
+                disabled={busy}
+                onClick={handleDelete}
+              >
+                <Trash2 aria-hidden="true" />
+                Delete
+              </Button>
+            ) : null}
+          </div>
+
+          <p className="character-overview__summary">
+            {entity.summary ?? identityFallback(display.species, characterClass?.name)}
+          </p>
+
+          <div className="character-overview__stats" aria-label="At a glance">
+            {heroStats.map((stat) => (
+              <div key={stat.label} className="character-overview__stat">
+                <span className="character-overview__stat-label">{stat.label}</span>
+                <span className="character-overview__stat-value">{stat.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </header>
 
-      {entity.summary ? (
-        <p className="text-gray-700 dark:text-gray-300">{entity.summary}</p>
-      ) : null}
-
-      <nav aria-label="Character sections" className="border-b border-gray-200 dark:border-gray-800">
-        <ul className="-mb-px flex flex-wrap gap-4 text-sm">
+      <nav aria-label="Character sections" className="character-overview__nav-shell">
+        <ul className="character-overview__nav">
           {sections.map((section) => (
             <li key={section.path}>
               <NavLink
                 to={section.path}
                 className={({ isActive }) =>
                   isActive
-                    ? 'inline-block border-b-2 border-gray-900 py-2 font-semibold text-gray-900 dark:border-gray-100 dark:text-gray-100'
-                    : 'inline-block border-b-2 border-transparent py-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+                    ? 'character-overview__tab character-overview__tab--active'
+                    : 'character-overview__tab'
                 }
               >
+                <section.icon aria-hidden="true" />
                 {section.label}
               </NavLink>
             </li>
@@ -236,7 +300,19 @@ export function CharacterDetailPage() {
         </ul>
       </nav>
 
-      <Outlet context={context} />
+      <main className="character-overview__content">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            <Outlet context={context} />
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
       {/* Attribution where the material is, with the full notice on the profile page. */}
       {system.definition.license ? (
@@ -249,4 +325,30 @@ export function CharacterDetailPage() {
       ) : null}
     </div>
   )
+}
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+}
+
+function sheetValue(
+  sheet: ReturnType<typeof deriveEntity>,
+  key: string,
+  asModifier: boolean,
+): string {
+  const derived = sheet.stats[key]
+  const value = derived ? displayValue(derived) : null
+  if (value === null) return '—'
+  return asModifier ? formatModifier(value) : String(value)
+}
+
+function identityFallback(species: string | null, characterClass: string | undefined) {
+  const identity = [species, characterClass].filter(Boolean).join(' ')
+  return identity ? `A ${identity} whose story is still unfolding.` : 'Their story is still unfolding.'
 }

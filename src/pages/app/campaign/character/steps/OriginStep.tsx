@@ -1,6 +1,7 @@
 import { findBackground, findSpecies } from '../../../../../entities/srd/catalog'
 import { Input } from '../../../../../components/ui/Input'
-import { Select } from '../../../../../components/ui/Select'
+import { ChoiceCards } from '../../../../../components/diceui/ChoiceCards'
+import { ComboboxField } from '../../../../../components/diceui/ComboboxField'
 import type { StepProps } from '../stepProps'
 
 /**
@@ -42,19 +43,19 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
     <div className="flex flex-col gap-6">
       <div className="grid gap-5 sm:grid-cols-2">
       {catalog ? (
-        <Select
+        <ComboboxField
           label="Species"
           value={species?.name ?? ''}
           hint={species ? species.traits.join(' · ') : undefined}
-          onChange={(event) => setSpecies(event.target.value)}
-        >
-          <option value="">Choose a species…</option>
-          {catalog.species.map((option) => (
-            <option key={option.key} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </Select>
+          placeholder="Search species…"
+          onValueChange={setSpecies}
+          options={catalog.species.map((option) => ({
+            value: option.name,
+            label: option.name,
+            description: option.traits.slice(0, 3).join(' · '),
+            meta: `${option.speed} ft.`,
+          }))}
+        />
       ) : (
         <Input
           label="Species"
@@ -64,7 +65,7 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
       )}
 
       {catalog ? (
-        <Select
+        <ComboboxField
           label="Background"
           value={background?.name ?? ''}
           hint={
@@ -78,15 +79,15 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
                   .join(', ')} — chosen on the next step. Grants ${background.skills.length} skills and the ${background.feat} feat.`
               : 'What they did before adventuring. It decides two skills and which abilities they can raise.'
           }
-          onChange={(event) => setBackground(event.target.value)}
-        >
-          <option value="">Choose a background…</option>
-          {catalog.backgrounds.map((option) => (
-            <option key={option.key} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </Select>
+          placeholder="Search backgrounds…"
+          onValueChange={setBackground}
+          options={catalog.backgrounds.map((option) => ({
+            value: option.name,
+            label: option.name,
+            description: `${option.feat} · ${option.toolProficiency}`,
+            meta: `${option.skills.length} skills`,
+          }))}
+        />
       ) : (
         <Input
           label="Background"
@@ -94,19 +95,18 @@ export function OriginStep({ draft, context, onPatchData }: StepProps) {
           onChange={(event) => setBackground(event.target.value)}
         />
       )}
-      {species && species.sizes.length > 1 ? (
-        <Select
-          label="Size"
-          value={draft.data.size ?? species.sizes[0]}
-          hint="This species lets you choose."
-          onChange={(event) => onPatchData({ size: event.target.value })}
-        >
-          {species.sizes.map((size) => (
-            <option key={size} value={size}>{size}</option>
-          ))}
-        </Select>
-      ) : null}
       </div>
+
+      {species && species.sizes.length > 1 ? (
+        <ChoiceCards
+          compact
+          label="Choose a size"
+          description="This species supports more than one size."
+          value={draft.data.size ?? species.sizes[0]}
+          onValueChange={(size) => onPatchData({ size })}
+          options={species.sizes.map((size) => ({ value: size, label: size }))}
+        />
+      ) : null}
 
       {background ? (
         <section className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">

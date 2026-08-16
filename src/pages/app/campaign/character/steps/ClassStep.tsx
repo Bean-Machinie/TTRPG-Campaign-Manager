@@ -1,7 +1,9 @@
 import { findClass } from '../../../../../entities/srd/catalog'
 import { hitPointResources } from '../../../../../entities/wizard/steps'
 import { Input } from '../../../../../components/ui/Input'
-import { Select } from '../../../../../components/ui/Select'
+import { ChoiceCards } from '../../../../../components/diceui/ChoiceCards'
+import { ComboboxField } from '../../../../../components/diceui/ComboboxField'
+import { Swords } from 'lucide-react'
 import type { StepProps } from '../stepProps'
 
 /**
@@ -62,20 +64,20 @@ export function ClassStep({ draft, context, onPatchData }: StepProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-5 sm:grid-cols-2">
       {catalog ? (
-        <Select
-          label="Class"
+        <ChoiceCards
+          label="Choose your calling"
+          description="Your class determines core proficiencies, hit points, and future features."
           value={known?.name ?? ''}
-          onChange={(event) => setClass({ name: event.target.value })}
-        >
-          <option value="">Choose a class…</option>
-          {catalog.classes.map((option) => (
-            <option key={option.key} value={option.name}>
-              {option.name}
-            </option>
-          ))}
-        </Select>
+          onValueChange={(name) => setClass({ name })}
+          options={catalog.classes.map((option) => ({
+            value: option.name,
+            label: option.name,
+            description: `${option.primaryAbility} · ${option.armorTraining}`,
+            badge: `d${option.hitDie}`,
+            icon: <Swords aria-hidden="true" />,
+          }))}
+        />
       ) : (
         <Input
           label="Class"
@@ -85,36 +87,37 @@ export function ClassStep({ draft, context, onPatchData }: StepProps) {
         />
       )}
 
-      <Input
-        label="Level"
-        type="number"
-        min={context.definition.levelRange.min}
-        max={context.definition.levelRange.max}
-        value={entry.level}
-        hint={known ? `A ${known.name} has a d${known.hitDie} hit die.` : undefined}
-        onChange={(event) => setClass({ level: Number(event.target.value) || 1 })}
-      />
 
-      {subclassDue ? (
-        <Select
-          label="Subclass"
-          value={entry.subclass ?? ''}
-          hint={`Chosen at level ${known.subclassLevel}.`}
-          onChange={(event) => setClass({ subclass: event.target.value || null })}
-        >
-          <option value="">Choose a subclass…</option>
-          {known.subclasses.map((subclass) => (
-            <option key={subclass} value={subclass}>
-              {subclass}
-            </option>
-          ))}
-        </Select>
-      ) : known ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          A {known.name} chooses a subclass at level {known.subclassLevel}. Nothing to decide
-          yet.
-        </p>
-      ) : null}
+      <div className="grid items-start gap-5 sm:grid-cols-2">
+        <Input
+          label="Starting level"
+          type="number"
+          min={context.definition.levelRange.min}
+          max={context.definition.levelRange.max}
+          value={entry.level}
+          hint={known ? `A ${known.name} uses a d${known.hitDie} Hit Point Die.` : undefined}
+          onChange={(event) => setClass({ level: Number(event.target.value) || 1 })}
+        />
+
+        {subclassDue ? (
+          <ComboboxField
+            label="Subclass"
+            value={entry.subclass ?? ''}
+            hint={`Unlocked at level ${known.subclassLevel}.`}
+            placeholder="Choose a subclass…"
+            onValueChange={(subclass) => setClass({ subclass: subclass || null })}
+            options={known.subclasses.map((subclass) => ({
+              value: subclass,
+              label: subclass,
+              description: `${known.name} specialization`,
+            }))}
+          />
+        ) : known ? (
+          <div className="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <strong className="block text-gray-900 dark:text-gray-100">Subclass comes later</strong>
+            A {known.name} chooses one at level {known.subclassLevel}.
+          </div>
+        ) : null}
       </div>
 
       {known ? (

@@ -12,7 +12,9 @@ import { formatChallengeRating } from '../../../entities/entityData'
 import { Alert } from '../../../components/ui/Alert'
 import { ButtonLink } from '../../../components/ui/Button'
 import { useCampaignOutlet } from './useCampaignOutlet'
+import { readDraftPortrait } from './character/draftPortrait'
 import './characterGallery.css'
+import './character/characterExperience.css'
 
 /**
  * Everyone and everything in a campaign, in one list.
@@ -69,10 +71,14 @@ export function CampaignEntitiesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="character-gallery__toolbar">
-        <p>{campaign.name}</p>
+      <header className="character-catalog__header">
+        <div>
+          <p className="character-builder__eyebrow">{campaign.name}</p>
+          <h1>Cast & creatures</h1>
+          <span>Every hero, ally, rival, and threat in one place.</span>
+        </div>
         <ButtonLink to="new">New character</ButtonLink>
-      </div>
+      </header>
 
       {error ? <Alert>{error}</Alert> : null}
       {loading ? (
@@ -98,9 +104,9 @@ export function CampaignEntitiesPage() {
             Unfinished
           </h2>
 
-          <ul className="divide-y divide-gray-100 border-y border-gray-100 dark:divide-gray-800 dark:border-gray-800">
+          <ul className="character-draft-list">
             {drafts.map((entity) => (
-              <li key={entity.id} className="flex items-baseline justify-between gap-2 py-3">
+              <li key={entity.id} className="character-draft-list__item">
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-gray-100">
                     {entity.name}
@@ -140,13 +146,15 @@ export function CampaignEntitiesPage() {
 
         return (
           <section key={kind}>
-            <h2 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-              {ENTITY_KIND_PLURALS[kind]}
-            </h2>
+            <div className="character-catalog__group-heading">
+              <h2>{ENTITY_KIND_PLURALS[kind]}</h2>
+              <span>{group.length}</span>
+            </div>
 
             <ul className="character-gallery">
               {group.map((entity) => {
                 const visibilityBadge = VISIBILITY_BADGES[entity.visibility]
+                const portrait = readDraftPortrait(entity.id)
 
                 return (
                   <li key={entity.id}>
@@ -159,6 +167,9 @@ export function CampaignEntitiesPage() {
                           {initials(entity.name)}
                         </span>
                       </span>
+                      {portrait ? (
+                        <img className="character-card__portrait" src={portrait} alt="" />
+                      ) : null}
                       <span className="character-card__scrim" aria-hidden="true" />
 
                       <span className="character-card__level">{entityBadge(entity)}</span>

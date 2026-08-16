@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { ComponentType } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { CircleAlert } from 'lucide-react'
 import { useAuth } from '../../../../auth/useAuth'
 import {
   useCampaignEntity,
@@ -39,6 +40,7 @@ import { DetailsStep } from './steps/DetailsStep'
 import { ReviewStep } from './steps/ReviewStep'
 import type { StepProps } from './stepProps'
 import { readDraftPortrait, writeDraftPortrait } from './draftPortrait'
+import './characterExperience.css'
 
 /**
  * The creation wizard: one draft, seven steps, one route each.
@@ -225,21 +227,25 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
   const Step = STEP_COMPONENTS[allowed]
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
+    <div className="character-builder flex flex-col gap-6">
+      <header className="character-builder__masthead">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            {WIZARD_STEP_LABELS[allowed]}
+          <p className="character-builder__eyebrow">Character forge</p>
+          <h1 className="character-builder__title">
+            {draft.name.trim() ? `Shape ${draft.name}` : 'Shape your character'}
           </h1>
+          <p className="character-builder__subtitle">
+            Make one meaningful decision at a time. Your sheet and portrait evolve beside you.
+          </p>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="character-builder__save-state">
           {saveError ?? SAVE_STATUS_LABELS[saveStatus]}
         </p>
       </header>
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="character-builder-grid">
         <div className="flex flex-col gap-6">
           <CharacterCreationStepper
             currentStep={allowed}
@@ -254,12 +260,15 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
             }}
             nextLabel={allowed === 'review' ? (busy ? 'Saving…' : 'Create character') : 'Next'}
           >
-            <section className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+            <section className="character-builder__panel">
               <div>
-                <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {WIZARD_STEP_LABELS[allowed]}
+                <p className="character-builder__chapter">
+                  Chapter {index + 1} of {WIZARD_STEPS.length}
                 </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <h2 className="character-builder__panel-title">
+                  {WIZARD_STEP_LABELS[allowed]}
+                </h2>
+                <p className="character-builder__panel-hint">
                   {WIZARD_STEP_HINTS[allowed]}
                 </p>
               </div>
@@ -275,22 +284,26 @@ function Wizard({ entity }: { entity: CampaignEntity }) {
               />
 
               {problems.length > 0 ? (
-                <Alert>
-                  <ul className="list-disc pl-4">
-                    {problems.map((problem) => (
-                      <li key={problem}>{problem}</li>
-                    ))}
-                  </ul>
-                </Alert>
+                <div className="character-builder__requirements" aria-label="Needed before continuing">
+                  {problems.map((problem) => (
+                    <span key={problem} className="character-builder__requirement">
+                      <CircleAlert aria-hidden="true" />
+                      {problem}
+                    </span>
+                  ))}
+                </div>
               ) : null}
             </section>
           </CharacterCreationStepper>
 
-          <div>
-            <Button variant="secondary" disabled={busy} onClick={() => void discard()}>
-              Discard
-            </Button>
-          </div>
+          <Button
+            className="character-flow__discard"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void discard()}
+          >
+            Discard this draft
+          </Button>
         </div>
 
         <WizardSummary

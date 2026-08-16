@@ -3,8 +3,11 @@ import type { EntityKind } from '../../../../../campaigns/types'
 import { VISIBILITY_LABELS, VISIBILITY_TIERS } from '../../../../../documents/visibility'
 import type { DocumentVisibility } from '../../../../../documents/visibility'
 import { emptyEntityData } from '../../../../../entities/entityData'
+import { useAuth } from '../../../../../auth/useAuth'
 import { Input } from '../../../../../components/ui/Input'
-import { Select } from '../../../../../components/ui/Select'
+import { ChoiceCards } from '../../../../../components/diceui/ChoiceCards'
+import { ComboboxField } from '../../../../../components/diceui/ComboboxField'
+import { Eye, LockKeyhole, PawPrint, Theater, UserRound, UsersRound } from 'lucide-react'
 import type { StepProps } from '../stepProps'
 
 /**
@@ -23,22 +26,44 @@ import type { StepProps } from '../stepProps'
  */
 const KINDS = Object.keys(ENTITY_KIND_LABELS) as EntityKind[]
 
+const KIND_DETAILS: Record<EntityKind, { description: string; icon: typeof UserRound }> = {
+  pc: {
+    description: 'A player-led hero with guided rules and derived statistics.',
+    icon: UserRound,
+  },
+  npc: {
+    description: 'A memorable ally, rival, or face you can create in moments.',
+    icon: Theater,
+  },
+  creature: {
+    description: 'An encounter-ready monster or custom statblock.',
+    icon: PawPrint,
+  },
+}
+
+const VISIBILITY_DETAILS: Record<DocumentVisibility, { description: string; icon: typeof Eye }> = {
+  shared: { description: 'Everyone in the campaign can find it.', icon: UsersRound },
+  gm_only: { description: 'Visible only to the campaign team.', icon: Eye },
+  author_only: { description: 'Visible only to you.', icon: LockKeyhole },
+}
+
 export function SetupStep({ draft, onChange, canManage, systems, members }: StepProps) {
+  const { user } = useAuth()
   const tiers = VISIBILITY_TIERS.filter((tier) => tier !== 'gm_only' || canManage)
 
   function setKind(kind: EntityKind) {
     onChange({
       kind,
       // A player character belongs to somebody; nothing else may.
-      playerUserId: kind === 'pc' ? draft.playerUserId : null,
+      playerUserId: kind === 'pc' ? (draft.playerUserId ?? user?.id ?? null) : null,
       data: { ...emptyEntityData(kind), ...carryOver(draft) },
     })
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="flex flex-col gap-6">
       <Input
-        label="Name"
+        label="Character name"
         required
         maxLength={120}
         placeholder="Thalia Bramblefoot"
@@ -47,63 +72,72 @@ export function SetupStep({ draft, onChange, canManage, systems, members }: Step
       />
 
       {canManage ? (
-        <Select
-          label="Kind"
-          hint="An NPC or a creature can be written down in fifteen seconds instead of seven steps."
+        <ChoiceCards
+          label="What are you creating?"
+          description="This changes the pace of the next steps."
           value={draft.kind}
-          onChange={(event) => setKind(event.target.value as EntityKind)}
-        >
-          {KINDS.map((kind) => (
-            <option key={kind} value={kind}>
-              {ENTITY_KIND_LABELS[kind]}
-            </option>
-          ))}
-        </Select>
+          onValueChange={(value) => setKind(value as EntityKind)}
+          options={KINDS.map((kind) => {
+            const detail = KIND_DETAILS[kind]
+            const Icon = detail.icon
+            return {
+              value: kind,
+              label: ENTITY_KIND_LABELS[kind],
+              description: detail.description,
+              icon: <Icon aria-hidden="true" />,
+            }
+          })}
+        />
       ) : null}
 
-      <Select
-        label="Ruleset"
-        hint={
-          systems.length === 1
-            ? 'One ruleset is installed. More can be added later without rebuilding this.'
-            : undefined
-        }
-        value={draft.systemId}
-        onChange={(event) => onChange({ systemId: event.target.value })}
-      >
-        {systems.map((system) => (
-          <option key={system.id} value={system.id}>
-            {system.name}
-          </option>
-        ))}
-      </Select>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <ComboboxField
+          label="Ruleset"
+          value={draft.systemId}
+          onValueChange={(systemId) => onChange({ systemId })}
+          options={systems.map((system) => ({
+            value: system.id,
+            label: system.name,
+            description: 'Rules, progression, and available character options.',
+          }))}
+          hint={
+            systems.length === 1
+              ? 'This campaign currently uses one ruleset.'
+              : 'Choose the rules this character follows.'
+          }
+        />
 
-      {canManage && draft.kind === 'pc' ? (
-        <Select
-          label="Played by"
-          value={draft.playerUserId ?? ''}
-          onChange={(event) => onChange({ playerUserId: event.target.value || null })}
-        >
-          <option value="">Unassigned</option>
-          {members.map((member) => (
-            <option key={member.userId} value={member.userId}>
-              {member.name}
-            </option>
-          ))}
-        </Select>
-      ) : null}
+        {canManage && draft.kind === 'pc' ? (
+          <ComboboxField
+            label="Played by"
+            value={draft.playerUserId ?? user?.id ?? ''}
+            onValueChange={(playerUserId) => onChange({ playerUserId: playerUserId || null })}
+            options={members.map((member) => ({
+              value: member.userId,
+              label: member.name,
+              description: member.userId === user?.id ? 'You' : 'Campaign member',
+            }))}
+            placeholder="Choose a player…"
+          />
+        ) : null}
+      </div>
 
-      <Select
-        label="Who can see it"
+      <ChoiceCards
+        compact
+        label="Who can see it?"
         value={draft.visibility}
-        onChange={(event) => onChange({ visibility: event.target.value as DocumentVisibility })}
-      >
-        {tiers.map((tier) => (
-          <option key={tier} value={tier}>
-            {VISIBILITY_LABELS[tier]}
-          </option>
-        ))}
-      </Select>
+        onValueChange={(visibility) => onChange({ visibility: visibility as DocumentVisibility })}
+        options={tiers.map((tier) => {
+          const detail = VISIBILITY_DETAILS[tier]
+          const Icon = detail.icon
+          return {
+            value: tier,
+            label: VISIBILITY_LABELS[tier],
+            description: detail.description,
+            icon: <Icon aria-hidden="true" />,
+          }
+        })}
+      />
     </div>
   )
 }

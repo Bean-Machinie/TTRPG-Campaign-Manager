@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { CircleAlert } from 'lucide-react'
 import { useAuth } from '../../../../auth/useAuth'
 import { useCampaignMembers, useGameSystems } from '../../../../campaigns/hooks'
 import { createEntity } from '../../../../campaigns/campaignsApi'
@@ -15,6 +16,7 @@ import { CharacterCreationStepper } from './CharacterCreationStepper'
 import { WizardSummary } from './WizardSummary'
 import { SetupStep } from './steps/SetupStep'
 import { writeDraftPortrait } from './draftPortrait'
+import './characterExperience.css'
 
 /**
  * Where a character starts, and the only step with no draft behind it.
@@ -64,7 +66,7 @@ export function NewCharacterPage() {
     )
   }
 
-  const value = draft ?? blank(systems[0].id, canManage, user?.id)
+  const value = draft ?? blank(systems[0].id, user?.id)
   const system = systems.find((entry) => entry.id === value.systemId) ?? systems[0]
   const context: WizardContext = {
     definition: system.definition,
@@ -92,14 +94,20 @@ export function NewCharacterPage() {
   const quick = value.kind !== 'pc'
 
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">New character</h1>
+    <div className="character-builder flex flex-col gap-6">
+      <header className="character-builder__masthead">
+        <div>
+          <p className="character-builder__eyebrow">Character forge</p>
+          <h1 className="character-builder__title">Begin a new legend</h1>
+          <p className="character-builder__subtitle">
+            Start with the role they will play. The path adapts for heroes, NPCs, and creatures.
+          </p>
+        </div>
       </header>
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="character-builder-grid">
         <div className="flex min-w-0 flex-col gap-6">
           <CharacterCreationStepper
             currentStep="setup"
@@ -111,12 +119,11 @@ export function NewCharacterPage() {
             onNext={() => void start(quick ? 'quick' : 'wizard')}
             nextLabel={busy ? 'Starting…' : 'Next'}
           >
-            <section className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+            <section className="character-builder__panel">
               <div>
-                <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Identity and rules
-                </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p className="character-builder__chapter">Chapter 1 of 7</p>
+                <h2 className="character-builder__panel-title">Identity and rules</h2>
+                <p className="character-builder__panel-hint">
                   Who this is, and which rules they are built under.
                 </p>
               </div>
@@ -134,13 +141,14 @@ export function NewCharacterPage() {
               />
 
               {problems.length > 0 ? (
-                <Alert>
-                  <ul className="list-disc pl-4">
-                    {problems.map((problem) => (
-                      <li key={problem}>{problem}</li>
-                    ))}
-                  </ul>
-                </Alert>
+                <div className="character-builder__requirements" aria-label="Needed before continuing">
+                  {problems.map((problem) => (
+                    <span key={problem} className="character-builder__requirement">
+                      <CircleAlert aria-hidden="true" />
+                      {problem}
+                    </span>
+                  ))}
+                </div>
               ) : null}
 
               {quick ? (
@@ -157,7 +165,7 @@ export function NewCharacterPage() {
           </CharacterCreationStepper>
 
           {quick ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="character-builder__subtitle">
               An {value.kind === 'npc' ? 'NPC' : 'creature'} goes to one short page: a
               description and a statblock, with nothing derived. Build with full rules to take
               it through all seven steps instead.
@@ -177,19 +185,16 @@ export function NewCharacterPage() {
 }
 
 /** A character with nothing decided, which is what step one is for deciding. */
-function blank(systemId: string, canManage: boolean, userId: string | undefined): WizardDraft {
-  const kind = canManage ? 'npc' : 'pc'
-
+function blank(systemId: string, userId: string | undefined): WizardDraft {
   return {
     name: '',
-    kind,
+    kind: 'pc',
     systemId,
-    // A player may only ever create their own character, and the database
-    // policies say the same thing. Filling it in here saves them a field that
-    // has one legal value.
-    playerUserId: kind === 'pc' ? (userId ?? null) : null,
+    // Creation starts with a player character assigned to its creator. GMs can
+    // still choose another member or switch the kind to an NPC or creature.
+    playerUserId: userId ?? null,
     summary: null,
     visibility: 'shared',
-    data: emptyEntityData(kind),
+    data: emptyEntityData('pc'),
   }
 }

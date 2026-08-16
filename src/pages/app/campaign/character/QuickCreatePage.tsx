@@ -21,6 +21,7 @@ import { Textarea } from '../../../../components/ui/Textarea'
 import { useCampaignOutlet } from '../useCampaignOutlet'
 import { WizardSummary } from './WizardSummary'
 import { readDraftPortrait, writeDraftPortrait } from './draftPortrait'
+import './characterExperience.css'
 
 /**
  * The fifteen-second NPC.
@@ -141,25 +142,27 @@ function QuickForm({ entity }: { entity: CampaignEntity }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+    <div className="character-builder flex flex-col gap-6">
+      <header className="character-builder__masthead">
+        <div>
+        <p className="character-builder__eyebrow">Quick forge</p>
+        <h1 className="character-builder__title">
           {creature ? 'New creature' : 'New NPC'}
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="character-builder__subtitle">
           Enough to run them tonight. Everything else can wait.
         </p>
+        </div>
       </header>
 
       {actionError ? <Alert>{actionError}</Alert> : null}
 
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
-        <section className="flex min-w-0 flex-col gap-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+      <div className="character-builder-grid">
+        <section className="character-flow__stage character-builder__panel">
           <div>
-            <p className="m-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Essentials
-            </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="character-builder__chapter">Fast path</p>
+            <h2 className="character-builder__panel-title">Essentials</h2>
+            <p className="character-builder__panel-hint">
               Just enough detail to put this character into play.
             </p>
           </div>

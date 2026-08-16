@@ -1,6 +1,6 @@
 import { attributeSkills, skillGrants } from '../../../../../entities/wizard/steps'
 import type { SkillGrant } from '../../../../../entities/wizard/steps'
-import { Checkbox } from '../../../../../components/ui/Checkbox'
+import { CheckboxCards } from '../../../../../components/diceui/CheckboxCards'
 import type { StepProps } from '../stepProps'
 
 /**
@@ -138,28 +138,33 @@ function SkillList({
   full?: boolean
   onToggle: (skill: string, proficient: boolean) => void
 }) {
+  const selected = skills.filter((skill) => Boolean(chosen[skill.key])).map((skill) => skill.key)
+
   return (
-    <ul className="grid gap-1 sm:grid-cols-2">
-      {skills.map((skill) => {
+    <CheckboxCards
+      label={owner === 'manual' ? 'Choose proficiencies' : 'Available skills'}
+      description={full ? 'This source has granted all of its choices.' : 'Select the skills this source grants.'}
+      value={selected}
+      onValueChange={(next) => {
+        const changed = skills.find(
+          (skill) => next.includes(skill.key) !== Boolean(chosen[skill.key]),
+        )
+        if (changed) onToggle(changed.key, next.includes(changed.key))
+      }}
+      options={skills.map((skill) => {
         const source = sources.get(skill.key)
         const mine = source === owner
         const elsewhere = source !== undefined && !mine
 
         return (
-          <li key={skill.key}>
-            <Checkbox
-              label={
-                elsewhere
-                  ? `${skill.name} — already from your ${source}`
-                  : skill.name
-              }
-              checked={Boolean(chosen[skill.key])}
-              disabled={elsewhere || (full && !mine)}
-              onChange={(event) => onToggle(skill.key, event.target.checked)}
-            />
-          </li>
+          {
+            value: skill.key,
+            label: skill.name,
+            description: elsewhere ? `Already granted by ${source}` : mine ? 'Selected here' : undefined,
+            disabled: elsewhere || (full && !mine),
+          }
         )
       })}
-    </ul>
+    />
   )
 }

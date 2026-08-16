@@ -7,6 +7,8 @@ import {
 } from '../../../../../entities/wizard/steps'
 import type { AbilityMethod } from '../../../../../entities/wizard/steps'
 import { formatModifier } from '../../../../../entities/entityData'
+import { ChoiceCards } from '../../../../../components/diceui/ChoiceCards'
+import { Dices, PencilRuler, SlidersHorizontal } from 'lucide-react'
 import type { StepProps } from '../stepProps'
 
 /**
@@ -112,56 +114,51 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          How are these being decided?
-        </legend>
-        <div className="flex flex-wrap gap-4">
-          {(['standardArray', 'pointBuy', 'manual'] as AbilityMethod[]).map((option) => (
-            <label
-              key={option}
-              className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
-            >
-              <input
-                type="radio"
-                name="ability-method"
-                value={option}
-                checked={method === option}
-                disabled={option !== 'manual' && !catalog}
-                onChange={() => changeMethod(option)}
-              />
-              {ABILITY_METHOD_LABELS[option]}
-            </label>
-          ))}
-        </div>
+      <ChoiceCards
+        compact
+        label="Choose a score method"
+        value={method}
+        onValueChange={(value) => changeMethod(value as AbilityMethod)}
+        options={[
+          {
+            value: 'standardArray',
+            label: ABILITY_METHOD_LABELS.standardArray,
+            description: standardArray.length > 0 ? standardArray.join(', ') : 'Use the ruleset array.',
+            icon: <SlidersHorizontal aria-hidden="true" />,
+            disabled: !catalog,
+          },
+          {
+            value: 'pointBuy',
+            label: ABILITY_METHOD_LABELS.pointBuy,
+            description: pointBuy ? `${pointBuy.budget} points to spend.` : 'Use the ruleset budget.',
+            icon: <PencilRuler aria-hidden="true" />,
+            disabled: !catalog,
+          },
+          {
+            value: 'manual',
+            label: ABILITY_METHOD_LABELS.manual,
+            description: 'Enter rolled or custom values.',
+            icon: <Dices aria-hidden="true" />,
+          },
+        ]}
+      />
 
-        {method === 'standardArray' ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Assign {standardArray.join(', ')} — each number once.
-          </p>
-        ) : null}
+      {method === 'standardArray' ? (
+        <p className="ability-builder__budget">
+          Assign each value once: <strong>{standardArray.join(', ')}</strong>
+        </p>
+      ) : null}
 
-        {method === 'pointBuy' && pointBuy ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {spent === null
-              ? 'Scores are 8 to 15 before increases.'
-              : `${spent} of ${pointBuy.budget} points spent.`}
-          </p>
-        ) : null}
-      </fieldset>
+      {method === 'pointBuy' && pointBuy ? (
+        <p className="ability-builder__budget">
+          {spent === null
+            ? 'Scores begin between 8 and 15.'
+            : <><strong>{spent}</strong> of {pointBuy.budget} points spent.</>}
+        </p>
+      ) : null}
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
-            <th className="py-1 font-semibold">Ability</th>
-            <th className="py-1 font-semibold">Score</th>
-            <th className="py-1 font-semibold">Background</th>
-            <th className="py-1 font-semibold">Total</th>
-            <th className="py-1 font-semibold">Modifier</th>
-          </tr>
-        </thead>
-        <tbody>
-          {abilities.map((ability) => {
+      <div className="ability-builder-grid">
+        {abilities.map((ability) => {
             const scored = base[ability.key] || null
             const increase = increases[ability.key] ?? 0
             const total = scored === null ? null : scored + increase
@@ -175,17 +172,23 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
             const raisable = background ? background.abilities.includes(ability.key) : true
 
             return (
-              <tr key={ability.key} className="border-t border-gray-100 dark:border-gray-800">
-                <th scope="row" className="py-2 text-left font-medium">
-                  {ability.name}
-                </th>
+              <article key={ability.key} className="ability-builder-card">
+                <header className="ability-builder-card__header">
+                  <span>
+                    <strong>{ability.abbr}</strong>
+                    <small>{ability.name}</small>
+                  </span>
+                  <span className="ability-builder-card__total">{total ?? '—'}</span>
+                </header>
 
-                <td className="py-2">
+                <div className="ability-builder-card__controls">
+                  <label>
+                    <span>Base score</span>
                   {method === 'manual' ? (
                     <input
                       aria-label={`${ability.name} score`}
                       type="number"
-                      className="field__input w-20"
+                      className="field__input"
                       min={definition.abilityScoreRange.min}
                       max={definition.abilityScoreRange.max}
                       value={scored ?? ''}
@@ -196,7 +199,7 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
                   ) : (
                     <select
                       aria-label={`${ability.name} score`}
-                      className="field__input field__select w-20"
+                      className="field__input field__select"
                       value={scored ?? ''}
                       onChange={(event) =>
                         setBase(ability.key, numberOrNull(event.target.value))
@@ -223,9 +226,10 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
                       ))}
                     </select>
                   )}
-                </td>
+                  </label>
 
-                <td className="py-2">
+                  <label>
+                    <span>Origin bonus</span>
                   {/*
                     Its own column rather than a note beside the total. The
                     background's increase is a decision the player makes, and a
@@ -233,7 +237,7 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
                   */}
                   <select
                     aria-label={`${ability.name} increase`}
-                    className="field__input field__select w-20"
+                    className="field__input field__select"
                     disabled={!raisable}
                     value={increase || ''}
                     onChange={(event) => setIncrease(ability.key, Number(event.target.value) || 0)}
@@ -242,17 +246,17 @@ export function AbilitiesStep({ draft, context, onPatchData }: StepProps) {
                     <option value="1">+1</option>
                     <option value="2">+2</option>
                   </select>
-                </td>
+                  </label>
+                </div>
 
-                <td className="py-2 font-semibold tabular-nums">{total ?? '—'}</td>
-                <td className="py-2 tabular-nums text-gray-500 dark:text-gray-400">
-                  {formatModifier(modifier)}
-                </td>
-              </tr>
+                <footer className="ability-builder-card__footer">
+                  <span>Modifier</span>
+                  <strong>{formatModifier(modifier)}</strong>
+                </footer>
+              </article>
             )
           })}
-        </tbody>
-      </table>
+      </div>
 
       {background ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">

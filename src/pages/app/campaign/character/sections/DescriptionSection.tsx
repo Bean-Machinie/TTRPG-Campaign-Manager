@@ -2,9 +2,9 @@ import { useState } from 'react'
 import type { EntityData } from '../../../../../entities/entityData'
 import { Input } from '../../../../../components/ui/Input'
 import { Textarea } from '../../../../../components/ui/Textarea'
+import { TagsField } from '../../../../../components/diceui/TagsField'
 import { useCharacterDetail } from '../detailContext'
 import { Datalist, EditableSection } from '../editors'
-import { toList } from '../fields'
 
 /**
  * Who they are away from the arithmetic.
@@ -95,21 +95,23 @@ export function DescriptionSection() {
               value={draft.languages ?? ''}
               onChange={(event) => patch({ languages: event.target.value || null })}
             />
-            <Input
+            <TagsField
               label="Damage resistances"
-              placeholder="fire, cold"
-              value={draft.damageResistances.join(', ')}
-              onChange={(event) => patch({ damageResistances: toList(event.target.value) })}
+              placeholder="Type one and press Enter"
+              value={draft.damageResistances}
+              onValueChange={(damageResistances) => patch({ damageResistances })}
             />
-            <Input
+            <TagsField
               label="Damage immunities"
-              value={draft.damageImmunities.join(', ')}
-              onChange={(event) => patch({ damageImmunities: toList(event.target.value) })}
+              placeholder="Add an immunity"
+              value={draft.damageImmunities}
+              onValueChange={(damageImmunities) => patch({ damageImmunities })}
             />
-            <Input
+            <TagsField
               label="Condition immunities"
-              value={draft.conditionImmunities.join(', ')}
-              onChange={(event) => patch({ conditionImmunities: toList(event.target.value) })}
+              placeholder="Add a condition"
+              value={draft.conditionImmunities}
+              onValueChange={(conditionImmunities) => patch({ conditionImmunities })}
             />
           </div>
 

@@ -110,13 +110,18 @@ export function CampaignTree({
    * to toggle independently without navigating.
    */
   function activateSection(key: Key, to: string, isOverviewActive: boolean, hasChildren: boolean) {
+    const isCollapsing = hasChildren && isOverviewActive && expanded.has(key)
+
     if (hasChildren) {
       changeExpanded(
         expansionAfterSectionActivation(expanded, key, isOverviewActive, hasChildren),
       )
     }
 
-    onNavigate(to)
+    // Collapsing is a disclosure action, not navigation. This is especially
+    // important for Material: its index redirects to Documents, and navigating
+    // there while collapsing would make route revelation open the branch again.
+    if (!isCollapsing) onNavigate(to)
   }
 
   // Resolved in two passes rather than one, and that is fine: expanding the
@@ -217,7 +222,7 @@ export function CampaignTree({
             activateSection(
               sectionKey(campaign.id, section.path),
               to,
-              isSectionOverview,
+              section.path === 'material' ? isSectionActive : isSectionOverview,
               hasChildren,
             )
           }
